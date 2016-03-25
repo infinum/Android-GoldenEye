@@ -1,4 +1,15 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+// library version used when deploying the artifact
+version = getVersionFromGit()
+
+// Maven Group ID for the artifact
+group = 'co.infinum.easycamera'
+
+// Maven Artifact ID
+def mavenArtifactId = 'easy-camera'
 
 android {
     compileSdkVersion 23
@@ -7,7 +18,7 @@ android {
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 23
-        versionName "0.1.0-alpha"
+        versionName version
     }
     buildTypes {
         release {
@@ -22,4 +33,91 @@ dependencies {
     compile 'com.android.support:support-annotations:23.2.1'
 
     testCompile 'junit:junit:4.12'
+}
+
+def siteUrl = 'https://github.com/infinum/Android-Easy-Camera'      // Homepage URL of the library
+def gitUrl = 'https://github.com/infinum/Android-Easy-Camera.git'   // Git repository URL
+
+// this ensures the archives have the correct name instead of just using the module name
+project.archivesBaseName = mavenArtifactId
+
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom {
+            project {
+                packaging 'aar'
+
+                // Add your description here
+                name 'Easy Camera'
+                url siteUrl
+
+                // Set your license
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'jmarkovic'
+                        name 'Josip Marković'
+                        email 'josip.markovic@infinum.co'
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.javadocDeps
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+    encoding = 'UTF-8'
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+bintray {
+    user = getProperty('bintray.user')
+    key = getProperty('bintray.apikey')
+    def gpgPassword = getProperty('bintray.gpg.password')
+
+    configurations = ['archives']
+    pkg {
+        repo = 'android'
+        name = mavenArtifactId
+        userOrg = 'infinum'
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ['Apache-2.0']
+        publish = true // if set to false, you need to click publish on bintray after deploy
+    }
+}
+
+/**
+ * @return the tag if this commit is tagged, a unique version identifier otherwise
+ */
+def getVersionFromGit() {
+    return 'git describe --always'.execute().text.trim()
 }
