@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">EasyCam</string>
+    <string name="request_access_to_camera_and_storage">Camera access is required for you to be able to snap pictures of your documents. External storage is the place where picture taken with the camera will be stored.</string>
+</resources>

@@ -1,0 +1,9 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+
+    <dimen name="camera_transparent_bar_height">120dp</dimen>
+    <dimen name="camera_control_panel_height">84dp</dimen>
+    <dimen name="camera_post_control_size">42dp</dimen>
+</resources>

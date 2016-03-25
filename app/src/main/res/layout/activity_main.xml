@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
+        android:background="@color/background_dark"
+        tools:background="@android:color/white">
+
+    <co.infinum.easycamera.AutoFitTextureView
+            android:id="@+id/texture_view_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
+            tools:visibility="invisible"/>
+
+    <ImageView
+            android:id="@+id/iv_image_taken_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fitsSystemWindows="true"
+            android:visibility="invisible"/>
+
+    <View
+            android:id="@+id/v_top_bar"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/camera_transparent_bar_height"
+            android:background="@color/transparent_dark"/>
+
+    <View
+            android:id="@+id/v_bottom_bar"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/camera_transparent_bar_height"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="@dimen/camera_control_panel_height"
+            android:background="@color/transparent_dark"/>
+
+    <FrameLayout
+            android:id="@+id/fl_camera_control_panel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/camera_control_panel_height"
+            android:background="@color/background_dark"
+            android:layout_gravity="bottom">
+
+        <ImageView
+                android:id="@+id/iv_take_picture"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_camera"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="?attr/colorAccent"
+                android:layout_gravity="center"
+                android:clickable="true"
+                tools:visibility="gone"/>
+
+        <LinearLayout
+                android:id="@+id/ll_camera_control_post_take_image"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+            <ImageView
+                    android:id="@+id/iv_retake_picture"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/camera_post_control_size"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:tint="?attr/colorAccent"
+                    android:src="@drawable/ic_retry"
+                    android:background="?attr/selectableItemBackgroundBorderless"/>
+
+            <ImageView
+                    android:id="@+id/iv_accept_picture"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/camera_post_control_size"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:tint="?attr/colorAccent"
+                    android:src="@drawable/ic_accept"
+                    android:background="?attr/selectableItemBackgroundBorderless"/>
+
+            <ImageView
+                    android:id="@+id/iv_close"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/camera_post_control_size"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:tint="?attr/colorAccent"
+                    android:src="@drawable/ic_close"
+                    android:background="?attr/selectableItemBackgroundBorderless"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</FrameLayout>
