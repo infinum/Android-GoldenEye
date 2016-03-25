@@ -13,8 +13,7 @@ import java.nio.ByteBuffer;
 
 /**
  * Saves a JPEG {@link Image} into the specified {@link File}.
- * <br /> <br />
- * To be used with {@link Camera2Api}.
+ * To be used with {@code Camera2Api}.
  */
 @TargetApi(Build.VERSION_CODES.KITKAT)
 public class ImageSaver implements Runnable {

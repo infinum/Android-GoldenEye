@@ -84,7 +84,7 @@ task sourcesJar(type: Jar) {
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.javadocDeps
+//    classpath += configurations.javadocDeps
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
@@ -101,7 +101,6 @@ artifacts {
 bintray {
     user = getProperty('bintray.user')
     key = getProperty('bintray.apikey')
-    def gpgPassword = getProperty('bintray.gpg.password')
 
     configurations = ['archives']
     pkg {
@@ -119,5 +118,5 @@ bintray {
  * @return the tag if this commit is tagged, a unique version identifier otherwise
  */
 def getVersionFromGit() {
-    return 'git describe --always'.execute().text.trim()
+    return 'git describe --always --tags'.execute().text.trim()
 }

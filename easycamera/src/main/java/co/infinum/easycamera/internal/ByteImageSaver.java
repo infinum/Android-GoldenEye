@@ -9,12 +9,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import co.infinum.easycamera.internal.OnImageSavedListener;
-
 /**
  * Saves a JPEG expressed as {@code byte} array into the specified {@link File}.
- * <br /> <br />
- * To be used with {@link Camera1Api}, but can in practice be used with {@link Camera2Api}.
+ * To be used with {@code Camera1Api}, but can in practice be used with {@code Camera2Api}.
  */
 public class ByteImageSaver implements Runnable {
 

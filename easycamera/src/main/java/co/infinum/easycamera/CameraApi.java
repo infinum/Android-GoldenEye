@@ -48,11 +48,9 @@ public interface CameraApi {
     /**
      * Runs the camera API setup and provides a way to set a camera video stream
      * to preview.
-     * <br /><br />
      *
      * Calls {@link CameraApiCallbacks#onResolvedPreviewSize(int, int)} once all fields and
      * measures have been initialized.
-     * <br /><br />
      *
      * Starts background thread that will handle most of the hardware callbacks.
      *
@@ -75,7 +73,6 @@ public interface CameraApi {
     /**
      * Safely closes the hardware camera, dealing with all callbacks and cleanups
      * needed.
-     * <br /><br />
      *
      * Stops background thread as it is no longer needed.
      */
@@ -94,11 +91,9 @@ public interface CameraApi {
     /**
      * Runs a calculation with pre-initialized data and calculates the optimal
      * preview size, if supported by the API.
-     * <br /><br />
      *
      * Calls {@link CameraApiCallbacks#onTransformChanged(Matrix)} once all calculations
      * have been done.
-     * <br /><br />
      *
      * This should typically only be called from
      * {@link android.view.TextureView.SurfaceTextureListener#onSurfaceTextureSizeChanged(SurfaceTexture, int, int)}.

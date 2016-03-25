@@ -9,7 +9,7 @@ import java.io.File;
  * Callback interface for {@link CameraApi} operations.
  * Since most operations are asynchronous, data resolved
  * by these operations are provided through method in this callback
- * interface.<br/> <br/>
+ * interface.
  *
  * Created by jmarkovic on 25/03/16.
  */
