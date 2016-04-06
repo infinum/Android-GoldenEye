@@ -31,6 +31,7 @@ import co.infinum.easycamera.CameraApi;
 import co.infinum.easycamera.CameraApiCallbacks;
 import co.infinum.easycamera.CameraError;
 import co.infinum.easycamera.CameraApiManager;
+import co.infinum.easycamera.SimpleSurfaceTextureListener;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 import timber.log.Timber;
@@ -250,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         ivTakePicture.setVisibility(View.VISIBLE);
     }
 
-    private TextureView.SurfaceTextureListener surfaceTextureListener = new TextureView.SurfaceTextureListener() {
+    private TextureView.SurfaceTextureListener surfaceTextureListener = new SimpleSurfaceTextureListener(this.cameraApi) {
 
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
@@ -260,7 +261,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
 
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-            cameraApi.updatePreviewDimensions(width, height);
+            super.onSurfaceTextureSizeChanged(surface, width, height);
 
             // adjust layout to newly prepared width and height of the texture
             getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -286,15 +287,6 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
             params.height = textureViewCamera.getHeight();
             params.width = textureViewCamera.getWidth();
             ivImageTakenPreview.setLayoutParams(params);
-        }
-
-        @Override
-        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-            return true;
-        }
-
-        @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         }
     };
 
