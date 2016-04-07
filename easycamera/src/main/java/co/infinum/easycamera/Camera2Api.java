@@ -314,7 +314,8 @@ class Camera2Api implements CameraApi {
                     if (afState == null) {
                         captureStillPicture();
                     } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState
-                            || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                            || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState
+                            || CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED == afState) {
                         final Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
                         if (aeState == null || CaptureResult.CONTROL_AE_STATE_CONVERGED == aeState) {
                             state = STATE_PICTURE_TAKEN;
