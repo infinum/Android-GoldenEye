@@ -81,9 +81,14 @@ class Camera1Api implements CameraApi {
     private static final int MAX_PREVIEW_HEIGHT = 1080;
 
     /**
-     * Registered callbacks to the host.
+     * Configuration object with callbacks and optional settings.
      */
-    private CameraApiCallbacks callbacks;
+    private Config config;
+
+    /**
+     * Shared logic delegate.
+     */
+    private CamDelegate camDelegate;
 
     /**
      * Screen rotation. Either {@link Surface#ROTATION_0}, {@link Surface#ROTATION_90}, {@link Surface#ROTATION_180}
@@ -169,7 +174,7 @@ class Camera1Api implements CameraApi {
                 camera = openedCamera;
                 setUpCameraParameters(size.getWidth(), size.getHeight());
             } else {
-                callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
+                config.callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
             }
         }
     };
@@ -201,7 +206,7 @@ class Camera1Api implements CameraApi {
     private OnImageSavedListener imageSavedListener = new OnImageSavedListener() {
         @Override
         public void onImageSaved(@NonNull File imageFile) {
-            callbacks.onImageTaken(imageFile);
+            config.callbacks.onImageTaken(imageFile);
             // restart preview
             state = STATE_PREVIEW;
             // todo make start and stop preview configurable
@@ -209,8 +214,9 @@ class Camera1Api implements CameraApi {
         }
     };
 
-    Camera1Api(CameraApiCallbacks callbacks) {
-        this.callbacks = callbacks;
+    Camera1Api(Config config) {
+        this.config = config;
+        this.camDelegate = new CamDelegate(config);
     }
 
     @Override
@@ -221,7 +227,7 @@ class Camera1Api implements CameraApi {
             storageDirectory = activity.getExternalFilesDir(null);
             activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
         } else {
-            callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
+            config.callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
         }
         return this;
     }
@@ -253,7 +259,7 @@ class Camera1Api implements CameraApi {
             throw new RuntimeException("Interrupted while trying to lock camera opening.", e);
         } catch (Exception e) {
             e.printStackTrace();
-            callbacks.onCameraError(new CameraError(CameraError.ERROR_CAMERA_CONFIGURATION));
+            config.callbacks.onCameraError(new CameraError(CameraError.ERROR_CAMERA_CONFIGURATION));
         }
     }
 
@@ -357,6 +363,9 @@ class Camera1Api implements CameraApi {
             List<Size> convertedCameraSizes = new ArrayList<>(cameraSizes.size());
             convertCameraSizeListToInternalSizeList(cameraSizes, convertedCameraSizes);
 
+            // filter sizes per aspect ratio only if
+            camDelegate.filterAspect(convertedCameraSizes);
+
             Size largest = Collections.max(convertedCameraSizes, new CompareSizesByArea());
             params.setPictureSize(largest.getWidth(), largest.getHeight());
 
@@ -375,9 +384,9 @@ class Camera1Api implements CameraApi {
 
             // We fit the aspect ratio of TextureView to the size of preview we picked.
             if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                callbacks.onResolvedPreviewSize(previewSize.getWidth(), previewSize.getHeight());
+                config.callbacks.onResolvedPreviewSize(previewSize.getWidth(), previewSize.getHeight());
             } else {
-                callbacks.onResolvedPreviewSize(previewSize.getHeight(), previewSize.getWidth());
+                config.callbacks.onResolvedPreviewSize(previewSize.getHeight(), previewSize.getWidth());
             }
 
             configureTransform(width, height);
@@ -417,7 +426,7 @@ class Camera1Api implements CameraApi {
         } else if (Surface.ROTATION_180 == displayRotation) {
             matrix.postRotate(ROTATION_180, centerX, centerY);
         }
-        callbacks.onTransformChanged(matrix);
+        config.callbacks.onTransformChanged(matrix);
     }
 
     private int resolveCameraOrientation(Camera.CameraInfo info) {

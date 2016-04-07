@@ -14,11 +14,11 @@ public final class CameraApiManager {
     /**
      * Builds a new instance of SDK specific {@link CameraApi} implementation.
      */
-    public static CameraApi newInstance(CameraApiCallbacks callbacks) {
+    public static CameraApi newInstance(Config config) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return new Camera2Api(callbacks);
+            return new Camera2Api(config);
         } else {
-            return new Camera1Api(callbacks);
+            return new Camera1Api(config);
         }
     }
 

@@ -31,6 +31,7 @@ import co.infinum.easycamera.CameraApi;
 import co.infinum.easycamera.CameraApiCallbacks;
 import co.infinum.easycamera.CameraError;
 import co.infinum.easycamera.CameraApiManager;
+import co.infinum.easycamera.Config;
 import co.infinum.easycamera.SimpleSurfaceTextureListener;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -73,6 +74,11 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
      */
     private File currentImageFile;
 
+    /**
+     * SurfaceTextureListener which will adapt UI when there are dimensional differences to TextureView.
+     */
+    private TextureView.SurfaceTextureListener surfaceTextureListener;
+
     private int minControlPanelHeight = 0;
 
     @Override
@@ -81,9 +87,53 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        // create a configuration for CameraApi
+        Config config = new Config.Builder(this)
+                .aspectRatio(1.333)
+                .aspectRatioOffset(0.01) // gives 0.01 negative and positive offset to aspectRatio
+                .build();
         // initialize camera interface and camera api
-        this.cameraApi = CameraApiManager.newInstance(this).init(this);
+        this.cameraApi = CameraApiManager.newInstance(config).init(this);
         this.minControlPanelHeight = getResources().getDimensionPixelSize(R.dimen.camera_control_panel_height);
+
+        this.surfaceTextureListener = new SimpleSurfaceTextureListener(this.cameraApi) {
+
+            @Override
+            public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+                // setup the camera and open the preview
+                initializeCameraView();
+            }
+
+            @Override
+            public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+                super.onSurfaceTextureSizeChanged(surface, width, height);
+
+                // adjust layout to newly prepared width and height of the texture
+                getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+                final int screenHeight = displayMetrics.heightPixels;
+                final int surfaceHeight = textureViewCamera.getHeight();
+
+                final int diff = screenHeight - surfaceHeight;
+                final int newHeight = diff > minControlPanelHeight ? diff : minControlPanelHeight;
+
+                // set bottom layout height (layout holding camera controls)
+                FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) flCameraControlPanel.getLayoutParams();
+                params.height = newHeight;
+                flCameraControlPanel.setLayoutParams(params);
+                flCameraControlPanel.requestLayout();
+
+                // properly set bottom margin for bottom transparent bar
+                params = (FrameLayout.LayoutParams) vBottomBar.getLayoutParams();
+                params.bottomMargin = newHeight;
+                vBottomBar.setLayoutParams(params);
+
+                // mimic layout params for preview image view from texture view
+                params = (FrameLayout.LayoutParams) ivImageTakenPreview.getLayoutParams();
+                params.height = textureViewCamera.getHeight();
+                params.width = textureViewCamera.getWidth();
+                ivImageTakenPreview.setLayoutParams(params);
+            }
+        };
     }
 
     @Override
@@ -250,45 +300,6 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         llCameraControlPostTakeImage.setVisibility(View.GONE);
         ivTakePicture.setVisibility(View.VISIBLE);
     }
-
-    private TextureView.SurfaceTextureListener surfaceTextureListener = new SimpleSurfaceTextureListener(this.cameraApi) {
-
-        @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-            // setup the camera and open the preview
-            initializeCameraView();
-        }
-
-        @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-            super.onSurfaceTextureSizeChanged(surface, width, height);
-
-            // adjust layout to newly prepared width and height of the texture
-            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-            final int screenHeight = displayMetrics.heightPixels;
-            final int surfaceHeight = textureViewCamera.getHeight();
-
-            final int diff = screenHeight - surfaceHeight;
-            final int newHeight = diff > minControlPanelHeight ? diff : minControlPanelHeight;
-
-            // set bottom layout height (layout holding camera controls)
-            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) flCameraControlPanel.getLayoutParams();
-            params.height = newHeight;
-            flCameraControlPanel.setLayoutParams(params);
-            flCameraControlPanel.requestLayout();
-
-            // properly set bottom margin for bottom transparent bar
-            params = (FrameLayout.LayoutParams) vBottomBar.getLayoutParams();
-            params.bottomMargin = newHeight;
-            vBottomBar.setLayoutParams(params);
-
-            // mimic layout params for preview image view from texture view
-            params = (FrameLayout.LayoutParams) ivImageTakenPreview.getLayoutParams();
-            params.height = textureViewCamera.getHeight();
-            params.width = textureViewCamera.getWidth();
-            ivImageTakenPreview.setLayoutParams(params);
-        }
-    };
 
     @Override
     public void onPermissionsGranted(int requestCode, List<String> perms) {

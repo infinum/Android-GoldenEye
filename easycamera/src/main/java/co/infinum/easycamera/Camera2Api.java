@@ -103,9 +103,14 @@ class Camera2Api implements CameraApi {
     private static final int MAX_PREVIEW_HEIGHT = 1080;
 
     /**
-     * Registered callbacks to the host.
+     * Configuration object with callbacks and optional settings.
      */
-    private CameraApiCallbacks callbacks;
+    private Config config;
+
+    /**
+     * Shared logic delegate.
+     */
+    private CamDelegate camDelegate;
 
     /**
      * Screen rotation. Either {@link Surface#ROTATION_0}, {@link Surface#ROTATION_90}, {@link Surface#ROTATION_180}
@@ -228,7 +233,7 @@ class Camera2Api implements CameraApi {
     private final OnImageSavedListener imageSavedListener = new OnImageSavedListener() {
         @Override
         public void onImageSaved(@NonNull File imageFile) {
-            callbacks.onImageTaken(imageFile);
+            config.callbacks.onImageTaken(imageFile);
         }
     };
 
@@ -271,7 +276,7 @@ class Camera2Api implements CameraApi {
                     break;
             }
 
-            callbacks.onCameraError(cameraError);
+            config.callbacks.onCameraError(cameraError);
         }
     };
 
@@ -347,8 +352,9 @@ class Camera2Api implements CameraApi {
 
     };
 
-    Camera2Api(CameraApiCallbacks callbacks) {
-        this.callbacks = callbacks;
+    Camera2Api(Config config) {
+        this.config = config;
+        this.camDelegate = new CamDelegate(config);
     }
 
     @Override
@@ -361,7 +367,7 @@ class Camera2Api implements CameraApi {
             activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
         } else {
             // feature is unavailable, quit everything
-            callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
+            config.callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
         }
         return this;
     }
@@ -474,11 +480,14 @@ class Camera2Api implements CameraApi {
                     }
 
                     android.util.Size[] outputSizes = map.getOutputSizes(SurfaceTexture.class);
-                    Size[] internalOutputSizes = new Size[outputSizes.length];
+                    List<Size> internalOutputSizes = new ArrayList<>(outputSizes.length);
                     convertUtilSizeArrayToInternalSizeArray(outputSizes, internalOutputSizes);
 
+                    // filter sizes per aspect ratio only if
+                    camDelegate.filterAspect(internalOutputSizes);
+
                     // For still image captures, we use the largest available size.
-                    Size largest = Collections.max(Arrays.asList(internalOutputSizes), new CompareSizesByArea());
+                    Size largest = Collections.max(internalOutputSizes, new CompareSizesByArea());
                     imageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, MAX_IMAGES);
                     imageReader.setOnImageAvailableListener(onImageAvailableListener, backgroundHandler);
 
@@ -533,9 +542,9 @@ class Camera2Api implements CameraApi {
 
                     // We fit the aspect ratio of TextureView to the size of preview we picked.
                     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                        callbacks.onResolvedPreviewSize(previewSize.getWidth(), previewSize.getHeight());
+                        config.callbacks.onResolvedPreviewSize(previewSize.getWidth(), previewSize.getHeight());
                     } else {
-                        callbacks.onResolvedPreviewSize(previewSize.getHeight(), previewSize.getWidth());
+                        config.callbacks.onResolvedPreviewSize(previewSize.getHeight(), previewSize.getWidth());
                     }
 
                     // Check if the flash is supported.
@@ -553,7 +562,7 @@ class Camera2Api implements CameraApi {
             // device this code runs.
             Log.e(TAG, String.format("NPE thrown when trying to setup Camera2 API. Current device probably does not have the API. SDK_INT -> %d",
                     Build.VERSION.SDK_INT));
-            callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
+            config.callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
         }
     }
 
@@ -585,7 +594,7 @@ class Camera2Api implements CameraApi {
         } else if (Surface.ROTATION_180 == displayRotation) {
             matrix.postRotate(ROTATION_180, centerX, centerY);
         }
-        callbacks.onTransformChanged(matrix);
+        config.callbacks.onTransformChanged(matrix);
     }
 
     /**
@@ -604,7 +613,7 @@ class Camera2Api implements CameraApi {
      * @param aspectRatio       The aspect ratio
      * @return The optimal {@code Size}, or an arbitrary one if none were big enough
      */
-    private Size chooseOptimalSize(Size[] choices, int textureViewWidth,
+    private Size chooseOptimalSize(List<Size> choices, int textureViewWidth,
             int textureViewHeight, int maxWidth, int maxHeight, Size aspectRatio) {
 
         // Collect the supported resolutions that are at least as big as the preview Surface
@@ -634,7 +643,7 @@ class Camera2Api implements CameraApi {
             return Collections.max(notBigEnough, new CompareSizesByArea());
         } else {
             Log.e(TAG, "Couldn't find any suitable preview size");
-            return choices[0];
+            return choices.get(0);
         }
     }
 
@@ -681,7 +690,7 @@ class Camera2Api implements CameraApi {
 
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-                            callbacks.onCameraError(new CameraError(CameraError.ERROR_CAMERA_CONFIGURATION));
+                            config.callbacks.onCameraError(new CameraError(CameraError.ERROR_CAMERA_CONFIGURATION));
                         }
                     }, null
             );
@@ -842,9 +851,9 @@ class Camera2Api implements CameraApi {
      * @param internalSize {@link Size} array
      */
     private void convertUtilSizeArrayToInternalSizeArray(android.util.Size[] utilSize,
-            co.infinum.easycamera.internal.Size[] internalSize) {
+            List<co.infinum.easycamera.internal.Size> internalSize) {
         for (int i = 0; i < utilSize.length; i++) {
-            internalSize[i] = convertUtilSizeToInternalSize(utilSize[i]);
+            internalSize.add(convertUtilSizeToInternalSize(utilSize[i]));
         }
     }
 
