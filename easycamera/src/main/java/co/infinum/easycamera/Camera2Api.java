@@ -26,6 +26,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.WorkerThread;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
@@ -220,7 +221,13 @@ class Camera2Api implements CameraApi {
         @Override
         public void onImageAvailable(ImageReader reader) {
             // This is the output file for our picture.
-            File imageFile = new File(storageDirectory, String.format(Locale.getDefault(), "%d.jpg", System.currentTimeMillis()));
+            File imageFile;
+            if (TextUtils.isEmpty(config.filePath)) {
+                imageFile = new File(storageDirectory, String.format(Locale.getDefault(), "%d.jpg", System.currentTimeMillis()));
+            } else {
+                imageFile = new File(config.filePath);
+            }
+
             backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), imageFile, imageSavedListener));
         }
     };

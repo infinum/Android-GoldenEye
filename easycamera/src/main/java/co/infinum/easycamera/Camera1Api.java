@@ -13,6 +13,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
@@ -198,7 +199,12 @@ class Camera1Api implements CameraApi {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
             // This is the output file for our picture.
-            File imageFile = new File(storageDirectory, String.format(Locale.getDefault(), "%d.jpg", System.currentTimeMillis()));
+            File imageFile;
+            if (TextUtils.isEmpty(config.filePath)) {
+                imageFile = new File(storageDirectory, String.format(Locale.getDefault(), "%d.jpg", System.currentTimeMillis()));
+            } else {
+                imageFile = new File(config.filePath);
+            }
             backgroundHandler.post(new ByteImageSaver(data, imageFile, imageSavedListener));
         }
     };
