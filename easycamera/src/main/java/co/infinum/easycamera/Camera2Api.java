@@ -311,11 +311,12 @@ class Camera2Api implements CameraApi {
                 case STATE_WAITING_LOCK:
                     // lock has been requested, time before lock is done depends on the hardware
                     final Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-                    if (afState == null) {
+                    if (afState == null || CaptureResult.CONTROL_AF_STATE_INACTIVE == afState) {
                         captureStillPicture();
+                        state = STATE_PICTURE_TAKEN;
                     } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState
                             || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState
-                            || CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED == afState) {
+                            || CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED == afState) { // todo avoid checking this flag since devices can get a lock - use only for special devices
                         final Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
                         if (aeState == null || CaptureResult.CONTROL_AE_STATE_CONVERGED == aeState) {
                             state = STATE_PICTURE_TAKEN;
