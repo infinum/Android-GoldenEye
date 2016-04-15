@@ -1,6 +1,6 @@
 package co.infinum.easycamera;
 
-import android.util.Log;
+import android.support.annotation.IntDef;
 
 import java.util.List;
 
@@ -10,6 +10,17 @@ import co.infinum.easycamera.internal.Size;
  * Delegate class useful for shared logic on any API level.
  */
 class CamDelegate {
+
+    public static final int ASPECT_UNKNOWN = 0;
+    public static final int ASPECT_WITHIN_BOUNDS = -1;
+    public static final int ASPECT_OUT_OF_BOUNDS = -2;
+
+    @IntDef({
+            ASPECT_UNKNOWN,
+            ASPECT_WITHIN_BOUNDS,
+            ASPECT_OUT_OF_BOUNDS
+    })
+    public @interface AspectRatioDef { }
 
     private final Config config;
 
@@ -29,17 +40,28 @@ class CamDelegate {
 
                 final double aspect = (double) bigger / (double) smaller;
 
-                if (aspect < config.aspectRatio - config.aspectRatioOffset
-                        || aspect > config.aspectRatio + config.aspectRatioOffset) {
+                if (aspect <= config.aspectRatio - config.aspectRatioOffset
+                        || aspect >= config.aspectRatio + config.aspectRatioOffset) {
                     sizes.remove(i--);
-                    continue;
                 }
-
-
-                Log.d("CAM_DELEGATE", "height = " + size.getHeight()
-                        + " width = " + size.getWidth()
-                        + " aspect = " + aspect);
             }
+        }
+    }
+
+    /**
+     * todo
+     */
+    @AspectRatioDef
+    public int isAspectWithinBounds(final double aspectRatio) {
+        if (config.aspectRatio > 0) {
+            if (aspectRatio >= config.aspectRatio - config.aspectRatioOffset
+                    && aspectRatio <= config.aspectRatio + config.aspectRatioOffset) {
+                return ASPECT_WITHIN_BOUNDS;
+            } else {
+                return ASPECT_OUT_OF_BOUNDS;
+            }
+        } else {
+            return ASPECT_UNKNOWN;
         }
     }
 }

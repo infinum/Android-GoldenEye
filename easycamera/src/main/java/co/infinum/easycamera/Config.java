@@ -37,7 +37,7 @@ public class Config {
          * a result of larger value divided by smaller value.
          * In, for example, 4:3 aspect ratio, 4 has to be divided by 3.
          * Double value <b>must</b> not be smaller than 1.
-         * Default value is 4:3.
+         * There is no default value, meaning no filtering will be done.
          */
         public Builder aspectRatio(@FloatRange(from = 1.0, fromInclusive = true) double aspectRatio) {
             if (aspectRatio < 1) {
@@ -79,10 +79,6 @@ public class Config {
         }
 
         public Config build() {
-            if (aspectRatio == 0) {
-                aspectRatio = 4d / 3d;
-            }
-
             return new Config(callbacks, aspectRatio, aspectRatioOffset, imagePath);
         }
     }

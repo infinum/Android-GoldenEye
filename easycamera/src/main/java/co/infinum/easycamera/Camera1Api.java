@@ -499,8 +499,13 @@ class Camera1Api implements CameraApi {
         final int height = aspectRatio.getHeight();
 
         for (Size option : choices) {
+            final int aspectResult = camDelegate.isAspectWithinBounds((double) width / (double) height);
+            final boolean correctAspect = aspectResult == CamDelegate.ASPECT_UNKNOWN
+                    ? option.getHeight() == option.getWidth() * height / width
+                    : aspectResult == CamDelegate.ASPECT_WITHIN_BOUNDS;
+
             if (option.getWidth() <= maxWidth && option.getHeight() <= maxHeight
-                    && option.getHeight() == option.getWidth() * height / width) {
+                    && correctAspect) {
                 if (option.getWidth() >= textureViewWidth
                         && option.getHeight() >= textureViewHeight) {
                     bigEnough.add(option);
@@ -517,8 +522,9 @@ class Camera1Api implements CameraApi {
         } else if (notBigEnough.size() > 0) {
             return Collections.max(notBigEnough, new CompareSizesByArea());
         } else {
-            Log.e(TAG, "Couldn't find any suitable preview size");
-            return choices.get(0);
+            final Size defaultSize = choices.get(0);
+            Log.e(TAG, "Couldn't find any suitable preview size, returning default size -> " + String.valueOf(defaultSize));
+            return defaultSize;
         }
     }
 
