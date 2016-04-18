@@ -109,6 +109,14 @@ public interface CameraApi {
     void setFlashMode(@FlashDef int flashMode);
 
     /**
+     * Starts an AutoFocus process which will try to lock focus on
+     * a most dominant object in a visible screen.
+     * It is up to hardware to decide which object is the dominant
+     * object.
+     */
+    void acquireFocus(int x, int y);
+
+    /**
      * Starts an asynchronous sequence of operations for taking a single picture.
      * End result should be an image in a file.
      * Picture will be stored in external storage, meaning

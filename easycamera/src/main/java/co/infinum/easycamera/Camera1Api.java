@@ -6,6 +6,7 @@ import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -62,7 +63,7 @@ class Camera1Api implements CameraApi {
     private static final int STATE_PREVIEW = 0;
 
     /**
-     * Camera is trying to autofocus.
+     * Camera is trying to AutoFocus.
      */
     private static final int STATE_TAKING_FOCUS = 1;
 
@@ -181,13 +182,15 @@ class Camera1Api implements CameraApi {
     };
 
     /**
-     * Auto Focus callback is called whenever autofocus finishes.
+     * Auto Focus callback is called whenever AutoFocus finishes.
      */
     private Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
             if (STATE_TAKING_PICTURE == state) {
                 camera.takePicture(null, null, pictureCallback);
+            } else if (STATE_TAKING_FOCUS == state) {
+                state = STATE_PREVIEW;
             }
         }
     };
@@ -319,6 +322,42 @@ class Camera1Api implements CameraApi {
     }
 
     @Override
+    public void acquireFocus(final int x, final int y) {
+        state = STATE_TAKING_FOCUS;
+        camera.cancelAutoFocus();
+        try {
+            Camera.Parameters params = this.camera.getParameters();
+            if (params.getMaxNumFocusAreas() > 0) {
+                final float previewToDisplayRatio = (float) displaySize.x / (float) previewSize.getHeight();
+                final int width = (int) (previewSize.getHeight() * previewToDisplayRatio);
+                final int height = (int) (previewSize.getWidth() * previewToDisplayRatio);
+                final float relativeX = (float) x / (float) width;
+                final float relativeY = (float) y / (float) height;
+                int areaX = (int) (2000 * relativeX) - 1000;
+                if (areaX > 800) {
+                    areaX = 800;
+                } else if (areaX < -1000) {
+                    areaX = -1000;
+                }
+                int areaY = (int) (2000 * relativeY) - 1000;
+                if (areaY > 800) {
+                    areaY = 800;
+                } else if (areaY < -1000) {
+                    areaY = -1000;
+                }
+                final Rect areaRect = new Rect(areaX, areaY, areaX + 200, areaY + 200);
+                Log.d(TAG, "focus area rect -> " + String.valueOf(areaRect));
+                Camera.Area focusArea = new Camera.Area(areaRect, 500);
+                params.setFocusAreas(Collections.singletonList(focusArea));
+                camera.setParameters(params);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        camera.autoFocus(autoFocusCallback);
+    }
+
+    @Override
     public void setSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
         this.surfaceTexture = surfaceTexture;
     }
@@ -377,6 +416,8 @@ class Camera1Api implements CameraApi {
 
             // image needs to know screen orientation to properly rotate when saved
             params.setRotation(resolveCameraOrientation(info));
+
+            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
 
             // apply parameters
             camera.setParameters(params);

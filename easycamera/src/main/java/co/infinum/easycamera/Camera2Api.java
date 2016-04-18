@@ -19,6 +19,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
 import android.os.Build;
@@ -41,9 +42,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import co.infinum.easycamera.internal.CompareSizesByArea;
+import co.infinum.easycamera.internal.ImageSaver;
 import co.infinum.easycamera.internal.OnImageSavedListener;
 import co.infinum.easycamera.internal.Size;
-import co.infinum.easycamera.internal.ImageSaver;
 
 /**
  * Created by jmarkovic on 26/01/16.
@@ -54,6 +55,8 @@ class Camera2Api implements CameraApi {
     private static final String TAG = "Camera2Api";
 
     private static final int MAX_IMAGES = 2;
+
+    private static final int MAX_PASSIVE_FOCUSED_PASS_THROUGH = 5;
 
     /**
      * Lock timeout in millis.
@@ -68,30 +71,36 @@ class Camera2Api implements CameraApi {
 
     private static final int ROTATION_270 = 270;
 
+    private static final int METERING_SIZE = 100;
+
     /**
      * Camera state: Showing camera preview.
      */
     private static final int STATE_PREVIEW = 0;
 
     /**
-     * Camera state: Waiting for the focus to be locked.
+     * Camera state: Waiting for the focus to be locked, taking picture after it has been locked
      */
-    private static final int STATE_WAITING_LOCK = 1;
+    private static final int STATE_WAITING_LOCK_PIC = 1;
+    /**
+     * Camera state: waiting for the focus to be locked
+     */
+    private static final int STATE_WAITING_LOCK = 2;
 
     /**
      * Camera state: Waiting for the exposure to be precapture state.
      */
-    private static final int STATE_WAITING_PRE_CAPTURE = 2;
+    private static final int STATE_WAITING_PRE_CAPTURE = 3;
 
     /**
      * Camera state: Waiting for the exposure state to be something other than precapture.
      */
-    private static final int STATE_WAITING_NON_PRE_CAPTURE = 3;
+    private static final int STATE_WAITING_NON_PRE_CAPTURE = 4;
 
     /**
      * Camera state: Picture was taken.
      */
-    private static final int STATE_PICTURE_TAKEN = 4;
+    private static final int STATE_PICTURE_TAKEN = 5;
 
     /**
      * Max preview width that is guaranteed by Camera2 API.
@@ -208,6 +217,21 @@ class Camera2Api implements CameraApi {
     private int state = STATE_PREVIEW;
 
     /**
+     * Rectangle that represents part of the screen on which
+     * the camera should be focused on.
+     * If this is {@code null}, camera will try to AutoFocus
+     * depending on scenery at the point the image is being captured.
+     */
+    private MeteringRectangle meteringRectangle;
+
+    /**
+     * Some devices only report passive focus lock.
+     * For these devices, it is best to leave it be
+     * and just take the image at the point of user interaction.
+     */
+    private int passiveFocusedWorkaround = 0;
+
+    /**
      * Flag controlling the state of the camera. If true, {@link #openCamera(int, int)} does nothing.
      * Reset at {@link #closeCamera()}.
      */
@@ -309,20 +333,42 @@ class Camera2Api implements CameraApi {
         private void process(CaptureResult result) {
             switch (state) {
                 case STATE_WAITING_LOCK:
+                case STATE_WAITING_LOCK_PIC:
                     // lock has been requested, time before lock is done depends on the hardware
                     final Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
+                    Log.d(TAG, "afState -> " + afState);
                     if (afState == null || CaptureResult.CONTROL_AF_STATE_INACTIVE == afState) {
-                        captureStillPicture();
-                        state = STATE_PICTURE_TAKEN;
-                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState
-                            || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState
-                            || CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED == afState) { // todo avoid checking this flag since devices can get a lock - use only for special devices
-                        final Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                        if (aeState == null || CaptureResult.CONTROL_AE_STATE_CONVERGED == aeState) {
-                            state = STATE_PICTURE_TAKEN;
+                        if (STATE_WAITING_LOCK_PIC == state) {
                             captureStillPicture();
+                            state = STATE_PICTURE_TAKEN;
                         } else {
-                            runPreCaptureSequence();
+                            // focus has been acquired, release it
+                            unlockFocus();
+                        }
+                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState
+                            || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                        if (STATE_WAITING_LOCK_PIC == state) {
+                            final Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                            if (aeState == null || CaptureResult.CONTROL_AE_STATE_CONVERGED == aeState) {
+                                state = STATE_PICTURE_TAKEN;
+                                captureStillPicture();
+                            } else {
+                                runPreCaptureSequence();
+                            }
+                        } else {
+                            // focus has been acquired, release it
+                            unlockFocus();
+                        }
+                    } else if (afState == CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED) {
+                        if (passiveFocusedWorkaround++ >= MAX_PASSIVE_FOCUSED_PASS_THROUGH) {
+                            if (STATE_WAITING_LOCK_PIC == state) {
+                                // assume focus lock and take picture
+                                state = STATE_PICTURE_TAKEN;
+                                captureStillPicture();
+                            } else if (STATE_WAITING_LOCK == state) {
+                                unlockFocus();
+
+                            }
                         }
                     }
                     break;
@@ -330,11 +376,15 @@ class Camera2Api implements CameraApi {
                 case STATE_WAITING_PRE_CAPTURE:
                     // CONTROL_AE_STATE can be null on some devices
                     final Integer aeStatePreCapture = result.get(CaptureResult.CONTROL_AE_STATE);
+                    Log.d(TAG, "aeStatePreCapture -> " + String.valueOf(aeStatePreCapture));
                     if (aeStatePreCapture == null
                             || CaptureResult.CONTROL_AE_STATE_PRECAPTURE == aeStatePreCapture
                             || CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED == aeStatePreCapture) {
                         // for special set of devices, other will come to the proper state
                         state = STATE_WAITING_NON_PRE_CAPTURE;
+                    } else if (aeStatePreCapture == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                        state = STATE_PICTURE_TAKEN;
+                        captureStillPicture();
                     }
                     break;
 
@@ -349,6 +399,7 @@ class Camera2Api implements CameraApi {
 
                 case STATE_PICTURE_TAKEN:
                     // picture taken, onImageAvailableListener will be triggered at this point
+                    Log.d(TAG, "picture taken");
                     unlockFocus();
                     break;
 
@@ -419,6 +470,8 @@ class Camera2Api implements CameraApi {
         if (isCameraActive) {
             try {
                 cameraOpenCloseLock.acquire();
+
+                passiveFocusedWorkaround = 0;
                 if (null != captureSession) {
                     captureSession.close();
                     captureSession = null;
@@ -430,6 +483,9 @@ class Camera2Api implements CameraApi {
                 if (null != imageReader) {
                     imageReader.close();
                     imageReader = null;
+                }
+                if (null != meteringRectangle) {
+                    meteringRectangle = null;
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
@@ -455,6 +511,32 @@ class Camera2Api implements CameraApi {
     public void setFlashMode(@FlashDef int flashMode) {
         setFlashModeToRequestBuilder(previewRequestBuilder, flashMode);
         // todo set to camera somehow
+    }
+
+    @Override
+    public void acquireFocus(final int x, final int y) {
+        try {
+            Log.d(TAG, "acquire focus");
+
+            this.meteringRectangle = new MeteringRectangle(
+                    x - METERING_SIZE / 2,
+                    y - METERING_SIZE / 2,
+                    x + METERING_SIZE / 2,
+                    y + METERING_SIZE / 2, 500);
+            Log.d(TAG, "metering rect -> " + String.valueOf(this.meteringRectangle));
+            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS,
+                    new MeteringRectangle[]{ this.meteringRectangle });
+            // Tell the camera to lock focus.
+            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                    CaptureRequest.CONTROL_AF_MODE_AUTO);
+            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                    CameraMetadata.CONTROL_AF_TRIGGER_START);
+            // Tell #mCaptureCallback to wait for the lock.
+            state = STATE_WAITING_LOCK;
+            captureSession.capture(previewRequestBuilder.build(), captureCallback, backgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -744,13 +826,20 @@ class Camera2Api implements CameraApi {
      * Lock the focus as the first step for a still image capture.
      */
     private void lockFocus() {
+        Log.d(TAG, "lockFocus");
         try {
-            // Tell the camera to lock focus.
-            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-                    CameraMetadata.CONTROL_AF_TRIGGER_START);
-            // Tell #mCaptureCallback to wait for the lock.
-            state = STATE_WAITING_LOCK;
-            captureSession.capture(previewRequestBuilder.build(), captureCallback, backgroundHandler);
+            if (this.meteringRectangle == null) {
+                // Tell the camera to lock focus.
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                        CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                        CameraMetadata.CONTROL_AF_TRIGGER_START);
+                // Tell #mCaptureCallback to wait for the lock.
+                state = STATE_WAITING_LOCK_PIC;
+                captureSession.capture(previewRequestBuilder.build(), captureCallback, backgroundHandler);
+            } else {
+                runPreCaptureSequence();
+            }
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -762,9 +851,12 @@ class Camera2Api implements CameraApi {
      */
     private void unlockFocus() {
         try {
+            Log.d(TAG, "unlockFocus");
             // Reset the auto-focus trigger
             previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
+            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                    CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             setFlashModeToRequestBuilder(previewRequestBuilder, FLASH_MODE_AUTOMATIC); // todo make flash mode configurable
             captureSession.capture(previewRequestBuilder.build(), captureCallback, backgroundHandler);
             // After this, the camera will go back to the normal state of preview.

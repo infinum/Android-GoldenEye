@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
+import android.view.MotionEvent;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -25,12 +26,13 @@ import java.util.List;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import butterknife.OnTouch;
 import co.infinum.easycamera.AutoFitTextureView;
 import co.infinum.easycamera.BitmapUtils;
 import co.infinum.easycamera.CameraApi;
 import co.infinum.easycamera.CameraApiCallbacks;
-import co.infinum.easycamera.CameraError;
 import co.infinum.easycamera.CameraApiManager;
+import co.infinum.easycamera.CameraError;
 import co.infinum.easycamera.Config;
 import co.infinum.easycamera.SimpleSurfaceTextureListener;
 import pub.devrel.easypermissions.AfterPermissionGranted;
@@ -194,6 +196,15 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @OnClick(R.id.iv_accept_picture)
     protected void onAcceptPictureClick() {
         Toast.makeText(MainActivity.this, "Yay, image is great!", Toast.LENGTH_SHORT).show();
+    }
+
+    @OnTouch(R.id.texture_view_camera)
+    protected boolean takeFocus(MotionEvent event) {
+        // check for action UP to avoid calling acquireFocus multiple time during touch
+        if (cameraApi.isCameraActive() && MotionEvent.ACTION_UP == event.getAction()) {
+            cameraApi.acquireFocus((int) event.getX(), (int) event.getY());
+        }
+        return true;
     }
 
     @Override
