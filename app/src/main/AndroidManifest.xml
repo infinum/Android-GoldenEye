@@ -11,7 +11,7 @@
         <activity
                 android:name=".MainActivity"
                 android:theme="@style/AppTheme.Camera"
-                android:screenOrientation="portrait">
+                android:screenOrientation="fullSensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
