@@ -82,6 +82,7 @@ class Camera2Api implements CameraApi {
      * Camera state: Waiting for the focus to be locked, taking picture after it has been locked
      */
     private static final int STATE_WAITING_LOCK_PIC = 1;
+
     /**
      * Camera state: waiting for the focus to be locked
      */
@@ -525,7 +526,7 @@ class Camera2Api implements CameraApi {
                     y + METERING_SIZE / 2, 500);
             Log.d(TAG, "metering rect -> " + String.valueOf(this.meteringRectangle));
             previewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS,
-                    new MeteringRectangle[]{ this.meteringRectangle });
+                    new MeteringRectangle[]{this.meteringRectangle});
             // Tell the camera to lock focus.
             previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                     CaptureRequest.CONTROL_AF_MODE_AUTO);
@@ -561,7 +562,7 @@ class Camera2Api implements CameraApi {
             for (String cameraId : cameraManager.getCameraIdList()) {
                 CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
 
-                // todo create configurable front facing and back facing options, use only front facing for now.
+                // todo create configurable front facing and back facing options, use only back facing for now.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
                     // stream configuration; if this camera does not support it, skip it
@@ -651,7 +652,8 @@ class Camera2Api implements CameraApi {
         } catch (NullPointerException e) {
             // Currently an NPE is thrown when the Camera2API is used but not supported on the
             // device this code runs.
-            Log.e(TAG, String.format("NPE thrown when trying to setup Camera2 API. Current device probably does not have the API. SDK_INT -> %d",
+            Log.e(TAG, String.format(
+                    "NPE thrown when trying to setup Camera2 API. Current device probably does not have the API. SDK_INT -> %d",
                     Build.VERSION.SDK_INT));
             config.callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
         }
@@ -813,7 +815,8 @@ class Camera2Api implements CameraApi {
                     break;
 
                 default:
-                    Log.e(TAG, String.format("Unrecognized flash mode set, skipping this option and using default. [mode -> %d]", flashMode));
+                    Log.e(TAG,
+                            String.format("Unrecognized flash mode set, skipping this option and using default. [mode -> %d]", flashMode));
                     controlAeMode = CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH;
                     break;
             }
@@ -885,6 +888,35 @@ class Camera2Api implements CameraApi {
     }
 
     /**
+     * @param cameraCharacteristics a {@link CameraCharacteristics object for the target camera}
+     * @param deviceOrientation     device orientation in degrees
+     * @return The clockwise rotation angle in degrees, relative to the orientation
+     * to the camera, that the JPEG picture needs to be rotated by, to be viewed
+     * upright. See {@link CaptureRequest#JPEG_ORIENTATION}.
+     */
+    private int getJpegOrientation(CameraCharacteristics cameraCharacteristics, int deviceOrientation) {
+        if (deviceOrientation == android.view.OrientationEventListener.ORIENTATION_UNKNOWN) {
+            return 0;
+        }
+        int sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+
+        // Round device orientation to a multiple of 90
+        deviceOrientation = (deviceOrientation + 45) / 90 * 90;
+
+        // Reverse device orientation for front-facing cameras
+        boolean facingFront = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT;
+        if (facingFront) {
+            deviceOrientation = -deviceOrientation;
+        }
+
+        // Calculate desired JPEG orientation relative to camera orientation to make
+        // the image upright relative to the device orientation
+        int jpegOrientation = (sensorOrientation + deviceOrientation + 360) % 360;
+
+        return jpegOrientation;
+    }
+
+    /**
      * Capture a still picture. This method should be called when we get a response in
      * {@link #captureCallback} from both {@link #lockFocus()}.
      */
@@ -903,29 +935,38 @@ class Camera2Api implements CameraApi {
             setFlashModeToRequestBuilder(captureBuilder, FLASH_MODE_AUTOMATIC); // todo make flash mode configurable
 
             // Orientation
-            int captureOrientation;
+            int jpegOrientation;
+            int displayRotationDegrees;
+
             switch (displayRotation) {
                 case Surface.ROTATION_0:
-                    captureOrientation = ROTATION_90;
-                    break;
-
-                case Surface.ROTATION_90:
-                    captureOrientation = ROTATION_0;
+                    displayRotationDegrees = ROTATION_0;
                     break;
 
                 case Surface.ROTATION_180:
-                    captureOrientation = ROTATION_270;
+                    displayRotationDegrees = ROTATION_180;
+                    break;
+
+                /**
+                 * 90 and 270 are switched because {@link Display#getRotation()} returns the
+                 * 'rotation of the drawn graphics on the screen, which is the opposite direction of the physical rotation of the device'
+                 */
+                case Surface.ROTATION_90:
+                    displayRotationDegrees = ROTATION_270;
                     break;
 
                 case Surface.ROTATION_270:
-                    captureOrientation = ROTATION_180;
+                    displayRotationDegrees = ROTATION_90;
                     break;
 
                 default:
                     Log.e(TAG, String.format("Unknown display rotation, canceling procedure. [displayRotation -> %d]", displayRotation));
                     return;
             }
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, captureOrientation);
+
+            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+            jpegOrientation = getJpegOrientation(characteristics, displayRotationDegrees);
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, jpegOrientation);
 
             captureSession.stopRepeating();
             captureSession.capture(captureBuilder.build(), captureCallback, null);
