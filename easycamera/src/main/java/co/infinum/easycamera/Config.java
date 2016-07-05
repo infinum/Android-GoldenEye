@@ -42,6 +42,14 @@ public class Config {
             this.callbacks = callbacks;
         }
 
+        public Builder(Config config) {
+            this.aspectRatio = config.aspectRatio;
+            this.aspectRatioOffset = config.aspectRatioOffset;
+            this.imagePath = config.filePath;
+            this.callbacks = config.callbacks;
+            this.cameraFacing = config.cameraFacing;
+        }
+
         /**
          * Set requested {@code aspectRatio}. Double value here is
          * a result of larger value divided by smaller value.

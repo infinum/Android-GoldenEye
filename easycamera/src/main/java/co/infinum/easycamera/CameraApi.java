@@ -135,6 +135,7 @@ public interface CameraApi {
     @RequiresPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
     void takePicture();
 
+    @RequiresPermission(Manifest.permission.CAMERA)
     void switchCameraFacing();
 
     /**

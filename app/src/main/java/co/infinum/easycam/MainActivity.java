@@ -193,7 +193,14 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
 
     @OnClick(R.id.iv_switch_camera)
     protected void onSwitchCameraClick() {
-        cameraApi.switchCameraFacing();
+        String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
+        if (EasyPermissions.hasPermissions(this, permissions)) {
+            // noinspection ResourceType
+            cameraApi.switchCameraFacing();
+        } else {
+            Timber.w("Sneaky user removed %s permissions after initial request has been granted.",
+                    Arrays.toString(permissions));
+        }
     }
 
     @OnClick(R.id.iv_close)

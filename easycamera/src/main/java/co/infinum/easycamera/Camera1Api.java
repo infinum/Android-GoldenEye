@@ -391,7 +391,21 @@ class Camera1Api implements CameraApi {
 
     @Override
     public void switchCameraFacing() {
+        // Create a new copy of the Config with a different camera facing.
+        @CameraFacingDef int cameraFacing = config.cameraFacing == CAMERA_FACING_BACK ? CAMERA_FACING_FRONT : CAMERA_FACING_BACK;
+        this.config = new Config.Builder(config)
+                .cameraFacing(cameraFacing)
+                .build();
 
+        SurfaceTexture surfTexture = this.surfaceTexture;
+        int desiredWidth = camera.getParameters().getPreviewSize().width;
+        int desiredHeight = camera.getParameters().getPreviewSize().height;
+
+        closeCamera();
+
+        setSurfaceTexture(surfTexture);
+        // noinspection ResourceType
+        openCamera(desiredWidth, desiredHeight);
     }
 
     @Override
