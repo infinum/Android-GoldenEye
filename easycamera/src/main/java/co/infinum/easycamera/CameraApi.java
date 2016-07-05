@@ -33,6 +33,16 @@ public interface CameraApi {
     int FLASH_MODE_AUTOMATIC = 0x0012;
 
     /**
+     * The facing of the camera is opposite to that of the screen.
+     */
+    int CAMERA_FACING_BACK = 0x0013;
+
+    /**
+     * The facing of the camera is the same as that of the screen.
+     */
+    int CAMERA_FACING_FRONT = 0x0014;
+
+    /**
      * Initializes all fields required for using camera API.
      * Returns the calling object for convenience.
      */
@@ -125,8 +135,20 @@ public interface CameraApi {
     @RequiresPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
     void takePicture();
 
+    void switchCameraFacing();
+
+    /**
+     * Checks whether the device has the specified camera.
+     * @param cameraFacing
+     * @return true if the cameraFacing has the specified camera.
+     */
+    boolean hasCameraFacing(@CameraFacingDef int cameraFacing);
+
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FLASH_MODE_OFF, FLASH_MODE_ON, FLASH_MODE_AUTOMATIC})
     @interface FlashDef { }
 
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({CAMERA_FACING_BACK, CAMERA_FACING_FRONT})
+    @interface CameraFacingDef { }
 }

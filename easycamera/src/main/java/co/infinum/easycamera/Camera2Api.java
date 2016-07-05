@@ -541,6 +541,33 @@ class Camera2Api implements CameraApi {
     }
 
     @Override
+    public boolean hasCameraFacing(@CameraFacingDef int cameraFacing) {
+        try {
+            for (String cameraId : cameraManager.getCameraIdList()) {
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+
+                if (facing != null) {
+                    if (cameraFacing == CAMERA_FACING_BACK && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                        return true;
+                    } else if (cameraFacing == CAMERA_FACING_FRONT && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        return true;
+                    }
+                }
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    @Override
+    public void switchCameraFacing() {
+
+    }
+
+    @Override
     public void setSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
         this.surfaceTexture = surfaceTexture;
     }
@@ -562,89 +589,91 @@ class Camera2Api implements CameraApi {
             for (String cameraId : cameraManager.getCameraIdList()) {
                 CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
 
-                // todo create configurable front facing and back facing options, use only back facing for now.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
-                    // stream configuration; if this camera does not support it, skip it
-                    StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-                    if (map == null) {
-                        continue;
+                if (facing != null) {
+                    if (facing == CameraCharacteristics.LENS_FACING_BACK && config.cameraFacing == CAMERA_FACING_BACK
+                            || facing == CameraCharacteristics.LENS_FACING_FRONT && config.cameraFacing == CAMERA_FACING_FRONT) {
+                        // stream configuration; if this camera does not support it, skip it
+                        StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                        if (map == null) {
+                            continue;
+                        }
+
+                        android.util.Size[] outputSizes = map.getOutputSizes(SurfaceTexture.class);
+                        List<Size> internalOutputSizes = new ArrayList<>(outputSizes.length);
+                        convertUtilSizeArrayToInternalSizeArray(outputSizes, internalOutputSizes);
+
+                        // filter sizes per aspect ratio only if
+                        camDelegate.filterAspect(internalOutputSizes);
+
+                        // For still image captures, we use the largest available size.
+                        Size largest = Collections.max(internalOutputSizes, new CompareSizesByArea());
+                        imageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, MAX_IMAGES);
+                        imageReader.setOnImageAvailableListener(onImageAvailableListener, backgroundHandler);
+
+                        // Find out if we need to swap dimension to get the preview size relative to sensor coordinate.
+                        // If sensor orientation and screen orientation are not aligned, properly align them.
+                        final int sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                        boolean swappedDimensions = false;
+                        switch (displayRotation) {
+                            case Surface.ROTATION_0:
+                            case Surface.ROTATION_180:
+                                if (sensorOrientation == ROTATION_90 || sensorOrientation == ROTATION_270) {
+                                    swappedDimensions = true;
+                                }
+                                break;
+                            case Surface.ROTATION_90:
+                            case Surface.ROTATION_270:
+                                if (sensorOrientation == ROTATION_0 || sensorOrientation == ROTATION_180) {
+                                    swappedDimensions = true;
+                                }
+                                break;
+                            default:
+                                Log.e(TAG, String.format("Display rotation is invalid: %d", displayRotation));
+                        }
+
+                        // depending on the orientation check, define sizes
+                        int rotatedPreviewWidth = width;
+                        int rotatedPreviewHeight = height;
+                        int maxPreviewWidth = displaySize.x;
+                        int maxPreviewHeight = displaySize.y;
+
+                        if (swappedDimensions) {
+                            rotatedPreviewWidth = height;
+                            rotatedPreviewHeight = width;
+                            maxPreviewWidth = displaySize.y;
+                            maxPreviewHeight = displaySize.x;
+                        }
+
+                        if (maxPreviewWidth > MAX_PREVIEW_WIDTH) {
+                            maxPreviewWidth = MAX_PREVIEW_WIDTH;
+                        }
+
+                        if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) {
+                            maxPreviewHeight = MAX_PREVIEW_HEIGHT;
+                        }
+
+                        // Attempting to use too large a preview size could  exceed the camera
+                        // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
+                        // garbage capture data.
+                        previewSize = chooseOptimalSize(internalOutputSizes,
+                                rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
+                                maxPreviewHeight, largest);
+
+                        // We fit the aspect ratio of TextureView to the size of preview we picked.
+                        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                            config.callbacks.onResolvedPreviewSize(previewSize.getWidth(), previewSize.getHeight());
+                        } else {
+                            config.callbacks.onResolvedPreviewSize(previewSize.getHeight(), previewSize.getWidth());
+                        }
+
+                        // Check if the flash is supported.
+                        Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                        flashSupported = available == null ? false : available;
+
+                        this.cameraId = cameraId;
+                        return;
                     }
-
-                    android.util.Size[] outputSizes = map.getOutputSizes(SurfaceTexture.class);
-                    List<Size> internalOutputSizes = new ArrayList<>(outputSizes.length);
-                    convertUtilSizeArrayToInternalSizeArray(outputSizes, internalOutputSizes);
-
-                    // filter sizes per aspect ratio only if
-                    camDelegate.filterAspect(internalOutputSizes);
-
-                    // For still image captures, we use the largest available size.
-                    Size largest = Collections.max(internalOutputSizes, new CompareSizesByArea());
-                    imageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, MAX_IMAGES);
-                    imageReader.setOnImageAvailableListener(onImageAvailableListener, backgroundHandler);
-
-                    // Find out if we need to swap dimension to get the preview size relative to sensor coordinate.
-                    // If sensor orientation and screen orientation are not aligned, properly align them.
-                    final int sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                    boolean swappedDimensions = false;
-                    switch (displayRotation) {
-                        case Surface.ROTATION_0:
-                        case Surface.ROTATION_180:
-                            if (sensorOrientation == ROTATION_90 || sensorOrientation == ROTATION_270) {
-                                swappedDimensions = true;
-                            }
-                            break;
-                        case Surface.ROTATION_90:
-                        case Surface.ROTATION_270:
-                            if (sensorOrientation == ROTATION_0 || sensorOrientation == ROTATION_180) {
-                                swappedDimensions = true;
-                            }
-                            break;
-                        default:
-                            Log.e(TAG, String.format("Display rotation is invalid: %d", displayRotation));
-                    }
-
-                    // depending on the orientation check, define sizes
-                    int rotatedPreviewWidth = width;
-                    int rotatedPreviewHeight = height;
-                    int maxPreviewWidth = displaySize.x;
-                    int maxPreviewHeight = displaySize.y;
-
-                    if (swappedDimensions) {
-                        rotatedPreviewWidth = height;
-                        rotatedPreviewHeight = width;
-                        maxPreviewWidth = displaySize.y;
-                        maxPreviewHeight = displaySize.x;
-                    }
-
-                    if (maxPreviewWidth > MAX_PREVIEW_WIDTH) {
-                        maxPreviewWidth = MAX_PREVIEW_WIDTH;
-                    }
-
-                    if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) {
-                        maxPreviewHeight = MAX_PREVIEW_HEIGHT;
-                    }
-
-                    // Attempting to use too large a preview size could  exceed the camera
-                    // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
-                    // garbage capture data.
-                    previewSize = chooseOptimalSize(internalOutputSizes,
-                            rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                            maxPreviewHeight, largest);
-
-                    // We fit the aspect ratio of TextureView to the size of preview we picked.
-                    if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                        config.callbacks.onResolvedPreviewSize(previewSize.getWidth(), previewSize.getHeight());
-                    } else {
-                        config.callbacks.onResolvedPreviewSize(previewSize.getHeight(), previewSize.getWidth());
-                    }
-
-                    // Check if the flash is supported.
-                    Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                    flashSupported = available == null ? false : available;
-
-                    this.cameraId = cameraId;
-                    return;
                 }
             }
         } catch (CameraAccessException e) {

@@ -4,6 +4,8 @@ import android.support.annotation.FloatRange;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import static co.infinum.easycamera.CameraApi.CAMERA_FACING_BACK;
+
 /**
  * Used as a config object for {@link CameraApi}.
  */
@@ -14,11 +16,16 @@ public class Config {
     final String filePath;
     final CameraApiCallbacks callbacks;
 
-    private Config(CameraApiCallbacks callbacks, double aspectRatio, double aspectRatioOffset, String filePath) {
+    @CameraApi.CameraFacingDef
+    final int cameraFacing;
+
+    private Config(CameraApiCallbacks callbacks, double aspectRatio, double aspectRatioOffset, String filePath,
+            @CameraApi.CameraFacingDef int cameraFacing) {
         this.aspectRatio = aspectRatio;
         this.aspectRatioOffset = aspectRatioOffset;
         this.filePath = filePath;
         this.callbacks = callbacks;
+        this.cameraFacing = cameraFacing;
     }
 
     public static class Builder {
@@ -27,6 +34,9 @@ public class Config {
         private double aspectRatio;
         private double aspectRatioOffset;
         private String imagePath;
+
+        @CameraApi.CameraFacingDef
+        private int cameraFacing = CAMERA_FACING_BACK;
 
         public Builder(CameraApiCallbacks callbacks) {
             this.callbacks = callbacks;
@@ -78,8 +88,13 @@ public class Config {
             return this;
         }
 
+        public Builder cameraFacing(@CameraApi.CameraFacingDef int cameraFacing) {
+            this.cameraFacing = cameraFacing;
+            return this;
+        }
+
         public Config build() {
-            return new Config(callbacks, aspectRatio, aspectRatioOffset, imagePath);
+            return new Config(callbacks, aspectRatio, aspectRatioOffset, imagePath, cameraFacing);
         }
     }
 }
