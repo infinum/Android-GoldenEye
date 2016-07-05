@@ -564,6 +564,10 @@ class Camera2Api implements CameraApi {
 
     @Override
     public void switchCameraFacing() {
+        if (surfaceTexture == null) {
+            throw new RuntimeException("TextureView hasn't been set yet.");
+        }
+
         // Create a new copy of the Config with a different camera facing.
         @CameraFacingDef int cameraFacing = config.cameraFacing == CAMERA_FACING_BACK ? CAMERA_FACING_FRONT : CAMERA_FACING_BACK;
         this.config = new Config.Builder(config)
