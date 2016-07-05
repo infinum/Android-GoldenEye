@@ -210,7 +210,7 @@ class Camera1Api implements CameraApi {
             } else {
                 imageFile = new File(config.filePath);
             }
-            backgroundHandler.post(new ByteImageSaver(data, imageFile, imageSavedListener));
+            backgroundHandler.post(new ByteImageSaver(data, imageFile, imageSavedListener, config.cameraFacing));
         }
     };
 
@@ -562,6 +562,7 @@ class Camera1Api implements CameraApi {
         } else {  // back-facing
             result = (info.orientation - degrees + DEGREES_FULL_CIRCLE) % DEGREES_FULL_CIRCLE;
         }
+
         return result;
     }
 
