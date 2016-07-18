@@ -148,8 +148,4 @@ public interface CameraApi {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FLASH_MODE_OFF, FLASH_MODE_ON, FLASH_MODE_AUTOMATIC})
     @interface FlashDef { }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({CAMERA_FACING_BACK, CAMERA_FACING_FRONT})
-    @interface CameraFacingDef { }
 }

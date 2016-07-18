@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import co.infinum.easycamera.CameraApi;
+import co.infinum.easycamera.CameraFacingDef;
 
 /**
  * Saves a JPEG expressed as {@code byte} array into the specified {@link File}.
@@ -32,7 +33,8 @@ public class ByteImageSaver implements Runnable {
      */
     private OnImageSavedListener listener;
 
-    private @CameraApi.CameraFacingDef int cameraFacing;
+    private @CameraFacingDef
+    int cameraFacing;
 
     public ByteImageSaver(byte[] imageBytes, File imageFile) {
         this.imageBytes = imageBytes;

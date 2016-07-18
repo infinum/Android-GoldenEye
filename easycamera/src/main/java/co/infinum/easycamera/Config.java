@@ -16,11 +16,11 @@ public class Config {
     final String filePath;
     final CameraApiCallbacks callbacks;
 
-    @CameraApi.CameraFacingDef
+    @CameraFacingDef
     final int cameraFacing;
 
     private Config(CameraApiCallbacks callbacks, double aspectRatio, double aspectRatioOffset, String filePath,
-            @CameraApi.CameraFacingDef int cameraFacing) {
+            @CameraFacingDef int cameraFacing) {
         this.aspectRatio = aspectRatio;
         this.aspectRatioOffset = aspectRatioOffset;
         this.filePath = filePath;
@@ -35,7 +35,7 @@ public class Config {
         private double aspectRatioOffset;
         private String imagePath;
 
-        @CameraApi.CameraFacingDef
+        @CameraFacingDef
         private int cameraFacing = CAMERA_FACING_BACK;
 
         public Builder(CameraApiCallbacks callbacks) {
@@ -96,7 +96,7 @@ public class Config {
             return this;
         }
 
-        public Builder cameraFacing(@CameraApi.CameraFacingDef int cameraFacing) {
+        public Builder cameraFacing(@CameraFacingDef int cameraFacing) {
             this.cameraFacing = cameraFacing;
             return this;
         }
