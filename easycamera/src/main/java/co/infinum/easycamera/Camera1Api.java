@@ -413,6 +413,11 @@ class Camera1Api implements CameraApi {
     }
 
     @Override
+    public int getCurrentCameraFacing() {
+        return config.cameraFacing;
+    }
+
+    @Override
     public void setSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
         this.surfaceTexture = surfaceTexture;
     }

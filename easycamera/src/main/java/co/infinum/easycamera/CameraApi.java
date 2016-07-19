@@ -145,6 +145,12 @@ public interface CameraApi {
      */
     boolean hasCameraFacing(@CameraFacingDef int cameraFacing);
 
+    /**
+     * Returns the currently active camera facing.
+     * @return {@link CameraFacingDef} value
+     */
+    @CameraFacingDef int getCurrentCameraFacing();
+
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FLASH_MODE_OFF, FLASH_MODE_ON, FLASH_MODE_AUTOMATIC})
     @interface FlashDef { }
