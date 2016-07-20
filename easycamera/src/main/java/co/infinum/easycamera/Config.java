@@ -96,6 +96,10 @@ public class Config {
             return this;
         }
 
+        /**
+         * Set the {@code cameraFacing} which defines which camera will be opened.
+         * @param cameraFacing one of the {@link CameraFacingDef} values
+         */
         public Builder cameraFacing(@CameraFacingDef int cameraFacing) {
             this.cameraFacing = cameraFacing;
             return this;

@@ -135,6 +135,9 @@ public interface CameraApi {
     @RequiresPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
     void takePicture();
 
+    /**
+     * Reopens the camera with a different facing, either CAMERA_FACING_BACK or CAMERA_FACING_FRONT depending on which is currently active.
+     */
     @RequiresPermission(Manifest.permission.CAMERA)
     void switchCameraFacing();
 
