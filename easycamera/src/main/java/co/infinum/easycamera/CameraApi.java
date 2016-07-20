@@ -4,13 +4,9 @@ import android.Manifest;
 import android.app.Activity;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresPermission;
 import android.view.TextureView;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 
 /**
  * Created by jmarkovic on 26/01/16.
@@ -154,7 +150,4 @@ public interface CameraApi {
      */
     @CameraFacingDef int getCurrentCameraFacing();
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FLASH_MODE_OFF, FLASH_MODE_ON, FLASH_MODE_AUTOMATIC})
-    @interface FlashDef { }
 }
