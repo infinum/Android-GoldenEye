@@ -4,13 +4,9 @@ import android.Manifest;
 import android.app.Activity;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresPermission;
 import android.view.TextureView;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 
 /**
  * Created by jmarkovic on 26/01/16.
@@ -31,6 +27,16 @@ public interface CameraApi {
      * When set, flash will automatically turn on if the scene is too dark.
      */
     int FLASH_MODE_AUTOMATIC = 0x0012;
+
+    /**
+     * The facing of the camera is opposite to that of the screen.
+     */
+    int CAMERA_FACING_BACK = 0x0013;
+
+    /**
+     * The facing of the camera is the same as that of the screen.
+     */
+    int CAMERA_FACING_FRONT = 0x0014;
 
     /**
      * Initializes all fields required for using camera API.
@@ -125,8 +131,23 @@ public interface CameraApi {
     @RequiresPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
     void takePicture();
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FLASH_MODE_OFF, FLASH_MODE_ON, FLASH_MODE_AUTOMATIC})
-    @interface FlashDef { }
+    /**
+     * Reopens the camera with a different facing, either CAMERA_FACING_BACK or CAMERA_FACING_FRONT depending on which is currently active.
+     */
+    @RequiresPermission(Manifest.permission.CAMERA)
+    void switchCameraFacing();
+
+    /**
+     * Checks whether the device has the specified camera.
+     * @param cameraFacing
+     * @return true if the cameraFacing has the specified camera.
+     */
+    boolean hasCameraFacing(@CameraFacingDef int cameraFacing);
+
+    /**
+     * Returns the currently active camera facing.
+     * @return {@link CameraFacingDef} value
+     */
+    @CameraFacingDef int getCurrentCameraFacing();
 
 }

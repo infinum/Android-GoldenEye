@@ -55,6 +55,9 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @Bind(R.id.iv_take_picture)
     protected ImageView ivTakePicture;
 
+    @Bind(R.id.ll_camera_control_pre_take_image)
+    protected LinearLayout llCameraControlPreTakeImage;
+
     @Bind(R.id.ll_camera_control_post_take_image)
     protected LinearLayout llCameraControlPostTakeImage;
 
@@ -91,6 +94,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
 
         // create a configuration for CameraApi
         Config config = new Config.Builder(this)
+                .cameraFacing(CameraApi.CAMERA_FACING_BACK)
                 .aspectRatio(1.333)
                 .aspectRatioOffset(0.01) // gives 0.01 negative and positive offset to aspectRatio
                 .build();
@@ -181,6 +185,18 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         if (EasyPermissions.hasPermissions(this, permissions)) {
             // noinspection ResourceType
             cameraApi.takePicture();
+        } else {
+            Timber.w("Sneaky user removed %s permissions after initial request has been granted.",
+                    Arrays.toString(permissions));
+        }
+    }
+
+    @OnClick(R.id.iv_switch_camera)
+    protected void onSwitchCameraClick() {
+        String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
+        if (EasyPermissions.hasPermissions(this, permissions)) {
+            // noinspection ResourceType
+            cameraApi.switchCameraFacing();
         } else {
             Timber.w("Sneaky user removed %s permissions after initial request has been granted.",
                     Arrays.toString(permissions));
@@ -304,12 +320,12 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
 
     private void displayPostImageTakenCameraControls() {
         llCameraControlPostTakeImage.setVisibility(View.VISIBLE);
-        ivTakePicture.setVisibility(View.GONE);
+        llCameraControlPreTakeImage.setVisibility(View.GONE);
     }
 
     private void displayCameraControls() {
         llCameraControlPostTakeImage.setVisibility(View.GONE);
-        ivTakePicture.setVisibility(View.VISIBLE);
+        llCameraControlPreTakeImage.setVisibility(View.VISIBLE);
     }
 
     @Override

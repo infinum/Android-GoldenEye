@@ -27,11 +27,11 @@ import java.util.Locale;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import co.infinum.easycamera.internal.ByteImageSaver;
+import co.infinum.easycamera.internal.CameraInitializer;
 import co.infinum.easycamera.internal.CompareSizesByArea;
 import co.infinum.easycamera.internal.OnImageSavedListener;
 import co.infinum.easycamera.internal.Size;
-import co.infinum.easycamera.internal.ByteImageSaver;
-import co.infinum.easycamera.internal.CameraInitializer;
 
 /**
  * Created by jmarkovic on 26/01/16.
@@ -56,6 +56,8 @@ class Camera1Api implements CameraApi {
     private static final int ROTATION_180 = 180;
 
     private static final int ROTATION_270 = 270;
+
+    private static final int UNDEFINED_CAMERA_ID = -1;
 
     /**
      * Logic is in preview state, displaying camera input on surface.
@@ -208,7 +210,7 @@ class Camera1Api implements CameraApi {
             } else {
                 imageFile = new File(config.filePath);
             }
-            backgroundHandler.post(new ByteImageSaver(data, imageFile, imageSavedListener));
+            backgroundHandler.post(new ByteImageSaver(data, imageFile, imageSavedListener, config.cameraFacing));
         }
     };
 
@@ -235,6 +237,7 @@ class Camera1Api implements CameraApi {
             orientation = activity.getResources().getConfiguration().orientation;
             storageDirectory = activity.getExternalFilesDir(null);
             activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
+
         } else {
             config.callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
         }
@@ -261,7 +264,7 @@ class Camera1Api implements CameraApi {
                 throw new UnsupportedOperationException("No camera hardware available.");
             }
             // 0 is the first camera and that should always be rear facing one
-            cameraId = 0; // todo make this configurable
+            cameraId = getCameraId(config.cameraFacing);
             backgroundHandler.post(new CameraInitializer(cameraId,
                     new Size(desiredWidth, desiredHeight), mainHandler, cameraInitializerCallback));
         } catch (InterruptedException e) {
@@ -358,6 +361,49 @@ class Camera1Api implements CameraApi {
     }
 
     @Override
+    public boolean hasCameraFacing(@CameraFacingDef int cameraFacing) {
+        final int cameraCount = Camera.getNumberOfCameras();
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        for (int i = 0; i < cameraCount; i++) {
+            Camera.getCameraInfo(i, info);
+            if (cameraFacing == CAMERA_FACING_BACK && info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                return true;
+            } else if (cameraFacing == CAMERA_FACING_FRONT && info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void switchCameraFacing() {
+        if (surfaceTexture == null) {
+            throw new RuntimeException("TextureView hasn't been set yet.");
+        }
+
+        // Create a new copy of the Config with a different camera facing.
+        @CameraFacingDef int cameraFacing = config.cameraFacing == CAMERA_FACING_BACK ? CAMERA_FACING_FRONT : CAMERA_FACING_BACK;
+        this.config = new Config.Builder(config)
+                .cameraFacing(cameraFacing)
+                .build();
+
+        SurfaceTexture surfTexture = this.surfaceTexture;
+        int desiredWidth = camera.getParameters().getPreviewSize().width;
+        int desiredHeight = camera.getParameters().getPreviewSize().height;
+
+        closeCamera();
+
+        setSurfaceTexture(surfTexture);
+        // noinspection ResourceType
+        openCamera(desiredWidth, desiredHeight);
+    }
+
+    @Override
+    public int getCurrentCameraFacing() {
+        return config.cameraFacing;
+    }
+
+    @Override
     public void setSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
         this.surfaceTexture = surfaceTexture;
     }
@@ -417,7 +463,10 @@ class Camera1Api implements CameraApi {
             // image needs to know screen orientation to properly rotate when saved
             params.setRotation(resolveCameraOrientation(info));
 
-            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            List<String> focusModes = params.getSupportedFocusModes();
+            if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            }
 
             // apply parameters
             camera.setParameters(params);
@@ -508,6 +557,7 @@ class Camera1Api implements CameraApi {
         } else {  // back-facing
             result = (info.orientation - degrees + DEGREES_FULL_CIRCLE) % DEGREES_FULL_CIRCLE;
         }
+
         return result;
     }
 
@@ -597,5 +647,19 @@ class Camera1Api implements CameraApi {
         for (Camera.Size cameraSize : cameraSizes) {
             internalSizes.add(convertCameraSizeToInternalSize(cameraSize));
         }
+    }
+
+    private int getCameraId(@CameraFacingDef int cameraFacing) {
+        final int cameraCount = Camera.getNumberOfCameras();
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        for (int i = 0; i < cameraCount; i++) {
+            Camera.getCameraInfo(i, info);
+            if (cameraFacing == CAMERA_FACING_BACK && info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                return i;
+            } else if (cameraFacing == CAMERA_FACING_FRONT && info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                return i;
+            }
+        }
+        return UNDEFINED_CAMERA_ID;
     }
 }

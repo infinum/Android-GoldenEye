@@ -4,6 +4,8 @@ import android.support.annotation.FloatRange;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import static co.infinum.easycamera.CameraApi.CAMERA_FACING_BACK;
+
 /**
  * Used as a config object for {@link CameraApi}.
  */
@@ -14,11 +16,16 @@ public class Config {
     final String filePath;
     final CameraApiCallbacks callbacks;
 
-    private Config(CameraApiCallbacks callbacks, double aspectRatio, double aspectRatioOffset, String filePath) {
+    @CameraFacingDef
+    final int cameraFacing;
+
+    private Config(CameraApiCallbacks callbacks, double aspectRatio, double aspectRatioOffset, String filePath,
+            @CameraFacingDef int cameraFacing) {
         this.aspectRatio = aspectRatio;
         this.aspectRatioOffset = aspectRatioOffset;
         this.filePath = filePath;
         this.callbacks = callbacks;
+        this.cameraFacing = cameraFacing;
     }
 
     public static class Builder {
@@ -28,8 +35,19 @@ public class Config {
         private double aspectRatioOffset;
         private String imagePath;
 
+        @CameraFacingDef
+        private int cameraFacing = CAMERA_FACING_BACK;
+
         public Builder(CameraApiCallbacks callbacks) {
             this.callbacks = callbacks;
+        }
+
+        public Builder(Config config) {
+            this.aspectRatio = config.aspectRatio;
+            this.aspectRatioOffset = config.aspectRatioOffset;
+            this.imagePath = config.filePath;
+            this.callbacks = config.callbacks;
+            this.cameraFacing = config.cameraFacing;
         }
 
         /**
@@ -78,8 +96,17 @@ public class Config {
             return this;
         }
 
+        /**
+         * Set the {@code cameraFacing} which defines which camera will be opened.
+         * @param cameraFacing one of the {@link CameraFacingDef} values
+         */
+        public Builder cameraFacing(@CameraFacingDef int cameraFacing) {
+            this.cameraFacing = cameraFacing;
+            return this;
+        }
+
         public Config build() {
-            return new Config(callbacks, aspectRatio, aspectRatioOffset, imagePath);
+            return new Config(callbacks, aspectRatio, aspectRatioOffset, imagePath, cameraFacing);
         }
     }
 }
