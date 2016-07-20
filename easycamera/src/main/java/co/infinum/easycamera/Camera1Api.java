@@ -375,20 +375,6 @@ class Camera1Api implements CameraApi {
         return false;
     }
 
-    private int getCameraId(@CameraFacingDef int cameraFacing) {
-        final int cameraCount = Camera.getNumberOfCameras();
-        Camera.CameraInfo info = new Camera.CameraInfo();
-        for (int i = 0; i < cameraCount; i++) {
-            Camera.getCameraInfo(i, info);
-            if (cameraFacing == CAMERA_FACING_BACK && info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                return i;
-            } else if (cameraFacing == CAMERA_FACING_FRONT && info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                return i;
-            }
-        }
-        return UNDEFINED_CAMERA_ID;
-    }
-
     @Override
     public void switchCameraFacing() {
         if (surfaceTexture == null) {
@@ -661,5 +647,19 @@ class Camera1Api implements CameraApi {
         for (Camera.Size cameraSize : cameraSizes) {
             internalSizes.add(convertCameraSizeToInternalSize(cameraSize));
         }
+    }
+
+    private int getCameraId(@CameraFacingDef int cameraFacing) {
+        final int cameraCount = Camera.getNumberOfCameras();
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        for (int i = 0; i < cameraCount; i++) {
+            Camera.getCameraInfo(i, info);
+            if (cameraFacing == CAMERA_FACING_BACK && info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                return i;
+            } else if (cameraFacing == CAMERA_FACING_FRONT && info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                return i;
+            }
+        }
+        return UNDEFINED_CAMERA_ID;
     }
 }
