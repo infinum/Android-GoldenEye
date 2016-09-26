@@ -13,18 +13,21 @@ public class Config {
 
     final double aspectRatio;
     final double aspectRatioOffset;
-    final String filePath;
+    final String imagePath;
+    final String videoPath;
     final CameraApiCallbacks callbacks;
+    @CameraFacingDef final int cameraFacing;
 
-    @CameraFacingDef
-    final int cameraFacing;
 
-    private Config(CameraApiCallbacks callbacks, double aspectRatio, double aspectRatioOffset, String filePath,
-            @CameraFacingDef int cameraFacing) {
+
+    private Config(CameraApiCallbacks callbacks, double aspectRatio, double aspectRatioOffset,
+            String imagePath, String videoPath, @CameraFacingDef int cameraFacing) {
+
         this.aspectRatio = aspectRatio;
         this.aspectRatioOffset = aspectRatioOffset;
-        this.filePath = filePath;
+        this.imagePath = imagePath;
         this.callbacks = callbacks;
+        this.videoPath = videoPath;
         this.cameraFacing = cameraFacing;
     }
 
@@ -34,6 +37,7 @@ public class Config {
         private double aspectRatio;
         private double aspectRatioOffset;
         private String imagePath;
+        private String videoPath;
 
         @CameraFacingDef
         private int cameraFacing = CAMERA_FACING_BACK;
@@ -45,7 +49,7 @@ public class Config {
         public Builder(Config config) {
             this.aspectRatio = config.aspectRatio;
             this.aspectRatioOffset = config.aspectRatioOffset;
-            this.imagePath = config.filePath;
+            this.imagePath = config.imagePath;
             this.callbacks = config.callbacks;
             this.cameraFacing = config.cameraFacing;
         }
@@ -97,6 +101,22 @@ public class Config {
         }
 
         /**
+         * Set fully qualified {@code videoPath} and directory. The path
+         * needs a file name and {@code .mp4} extension at the end.
+         * Be careful you have full permission to write to the given path.
+         * Path should not be null. By default, video is saved
+         * to external storage that belongs to the app.
+         */
+        public Builder videoPath(@NonNull String videoPath) {
+            if (TextUtils.isEmpty(videoPath)) {
+                throw new NullPointerException("Video path cannot be null or empty String");
+            }
+
+            this.videoPath = videoPath;
+            return this;
+        }
+
+        /**
          * Set the {@code cameraFacing} which defines which camera will be opened.
          * @param cameraFacing one of the {@link CameraFacingDef} values
          */
@@ -106,7 +126,7 @@ public class Config {
         }
 
         public Config build() {
-            return new Config(callbacks, aspectRatio, aspectRatioOffset, imagePath, cameraFacing);
+            return new Config(callbacks, aspectRatio, aspectRatioOffset, imagePath, videoPath, cameraFacing);
         }
     }
 }

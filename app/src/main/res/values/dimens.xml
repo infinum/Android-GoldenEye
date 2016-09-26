@@ -3,7 +3,8 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
 
-    <dimen name="camera_transparent_bar_height">120dp</dimen>
+    <dimen name="camera_transparent_bar_height">140dp</dimen>
     <dimen name="camera_control_panel_height">84dp</dimen>
     <dimen name="camera_post_control_size">42dp</dimen>
+    <dimen name="navigation_bar_height">0dp</dimen>
 </resources>

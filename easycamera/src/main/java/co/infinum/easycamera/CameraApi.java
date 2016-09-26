@@ -137,6 +137,10 @@ public interface CameraApi {
     @RequiresPermission(Manifest.permission.CAMERA)
     void switchCameraFacing();
 
+    void startRecording(SurfaceTexture surfaceTexture);
+
+    void stopRecording();
+
     /**
      * Checks whether the device has the specified camera.
      * @param cameraFacing

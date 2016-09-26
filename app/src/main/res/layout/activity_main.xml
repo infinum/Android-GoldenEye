@@ -4,7 +4,6 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fitsSystemWindows="true"
         android:background="@color/background_dark"
         tools:background="@android:color/white">
 
@@ -12,14 +11,24 @@
             android:id="@+id/texture_view_camera"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fitsSystemWindows="true"
             tools:visibility="invisible"/>
+
+    <TextureView
+            android:id="@+id/texture_view_player"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+
+    <TextureView
+            android:id="@+id/texture_view_recorder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
 
     <ImageView
             android:id="@+id/iv_image_taken_preview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fitsSystemWindows="true"
             android:visibility="invisible"/>
 
     <View
@@ -33,7 +42,6 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/camera_transparent_bar_height"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="@dimen/camera_control_panel_height"
             android:background="@color/transparent_dark"/>
 
     <FrameLayout
@@ -42,7 +50,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:minHeight="@dimen/camera_control_panel_height"
-            android:background="@color/background_dark">
+            android:layout_marginBottom="@dimen/navigation_bar_height">
 
         <LinearLayout
                 android:id="@+id/ll_camera_control_pre_take_image"
@@ -55,8 +63,8 @@
             <ImageView
                     android:id="@+id/iv_take_picture"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:src="@drawable/ic_camera"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:tint="?attr/colorAccent"
@@ -65,9 +73,19 @@
             <ImageView
                     android:id="@+id/iv_switch_camera"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:src="@drawable/ic_switch_camera"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:tint="?attr/colorAccent"
+                    android:clickable="true"/>
+
+            <ImageView
+                    android:id="@+id/iv_record_video"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_video"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:tint="?attr/colorAccent"
                     android:clickable="true"/>
@@ -109,6 +127,26 @@
                     android:clickable="true"
                     android:tint="?attr/colorAccent"
                     android:src="@drawable/ic_close"
+                    android:background="?attr/selectableItemBackgroundBorderless"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:id="@+id/ll_camera_control_video"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+            <ImageView
+                    android:id="@+id/iv_stop_recording"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/camera_post_control_size"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:tint="?attr/colorAccent"
+                    android:src="@drawable/ic_stop"
                     android:background="?attr/selectableItemBackgroundBorderless"/>
 
         </LinearLayout>

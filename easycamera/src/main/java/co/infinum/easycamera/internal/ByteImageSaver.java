@@ -31,7 +31,7 @@ public class ByteImageSaver implements Runnable {
     /**
      * Save callback listener.
      */
-    private OnImageSavedListener listener;
+    private OnFileSavedListener listener;
 
     private @CameraFacingDef
     int cameraFacing;
@@ -41,7 +41,7 @@ public class ByteImageSaver implements Runnable {
         this.imageFile = imageFile;
     }
 
-    public ByteImageSaver(byte[] imageBytes, File imageFile, OnImageSavedListener listener, int cameraFacing) {
+    public ByteImageSaver(byte[] imageBytes, File imageFile, OnFileSavedListener listener, int cameraFacing) {
         this(imageBytes, imageFile);
         this.listener = listener;
         this.cameraFacing = cameraFacing;
@@ -85,7 +85,7 @@ public class ByteImageSaver implements Runnable {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        listener.onImageSaved(imageFile);
+                        listener.onFileSaved(imageFile);
                     }
                 });
             }

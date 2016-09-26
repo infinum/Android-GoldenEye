@@ -22,6 +22,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -43,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 
 import co.infinum.easycamera.internal.CompareSizesByArea;
 import co.infinum.easycamera.internal.ImageSaver;
-import co.infinum.easycamera.internal.OnImageSavedListener;
+import co.infinum.easycamera.internal.OnFileSavedListener;
 import co.infinum.easycamera.internal.Size;
 
 /**
@@ -186,6 +187,11 @@ class Camera2Api implements CameraApi {
     private CameraCaptureSession captureSession;
 
     /**
+     * MediaRecorder
+     */
+    private MediaRecorder mediaRecorder;
+
+    /**
      * Surface where the actual preview will be drawn.
      */
     private SurfaceTexture surfaceTexture;
@@ -247,10 +253,10 @@ class Camera2Api implements CameraApi {
         public void onImageAvailable(ImageReader reader) {
             // This is the output file for our picture.
             File imageFile;
-            if (TextUtils.isEmpty(config.filePath)) {
+            if (TextUtils.isEmpty(config.imagePath)) {
                 imageFile = new File(storageDirectory, String.format(Locale.getDefault(), "%d.jpg", System.currentTimeMillis()));
             } else {
-                imageFile = new File(config.filePath);
+                imageFile = new File(config.imagePath);
             }
 
             backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), imageFile, imageSavedListener));
@@ -259,12 +265,12 @@ class Camera2Api implements CameraApi {
 
     /**
      * This is a callback object for the {@link ImageSaver}.
-     * {@link OnImageSavedListener#onImageSaved(File)}
+     * {@link OnFileSavedListener#onFileSaved(File)}
      * will be called once the image has been successfully saved to a file.
      */
-    private final OnImageSavedListener imageSavedListener = new OnImageSavedListener() {
+    private final OnFileSavedListener imageSavedListener = new OnFileSavedListener() {
         @Override
-        public void onImageSaved(@NonNull File imageFile) {
+        public void onFileSaved(@NonNull File imageFile) {
             config.callbacks.onImageTaken(imageFile);
         }
     };
@@ -413,6 +419,8 @@ class Camera2Api implements CameraApi {
 
     };
 
+    private Activity activity;
+
     Camera2Api(Config config) {
         this.config = config;
         this.camDelegate = new CamDelegate(config);
@@ -420,12 +428,17 @@ class Camera2Api implements CameraApi {
 
     @Override
     public CameraApi init(Activity activity) {
+        this.activity = activity;
         if (activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
             cameraManager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
             displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
             orientation = activity.getResources().getConfiguration().orientation;
             storageDirectory = activity.getExternalFilesDir(null);
-            activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                activity.getWindowManager().getDefaultDisplay().getRealSize(displaySize);
+            } else {
+                activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
+            }
         } else {
             // feature is unavailable, quit everything
             config.callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
@@ -445,6 +458,7 @@ class Camera2Api implements CameraApi {
 
         setUpCameraOutputs(desiredWidth, desiredHeight);
         configureTransform(desiredWidth, desiredHeight);
+        mediaRecorder = new MediaRecorder();
 
         try {
             if (!cameraOpenCloseLock.tryAcquire(LOCK_ACQUIRE_TIMEOUT, TimeUnit.MILLISECONDS)) {
@@ -487,6 +501,10 @@ class Camera2Api implements CameraApi {
                 }
                 if (null != meteringRectangle) {
                     meteringRectangle = null;
+                }
+                if (null != mediaRecorder) {
+                    mediaRecorder.release();
+                    mediaRecorder = null;
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
@@ -600,12 +618,111 @@ class Camera2Api implements CameraApi {
         lockFocus();
     }
 
+    @Override
+    public void startRecording(SurfaceTexture surfaceTexture) {
+        if (null == cameraDevice || surfaceTexture == null || null == previewSize) {
+            return;
+        }
+        try {
+            closePreviewSession();
+            setUpMediaRecorder();
+            surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
+            previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            List<Surface> surfaces = new ArrayList<>();
+
+            // Set up Surface for the camera preview
+            Surface previewSurface = new Surface(surfaceTexture);
+            surfaces.add(previewSurface);
+            previewRequestBuilder.addTarget(previewSurface);
+
+            // Set up Surface for the MediaRecorder
+            Surface recorderSurface = mediaRecorder.getSurface();
+            surfaces.add(recorderSurface);
+            previewRequestBuilder.addTarget(recorderSurface);
+
+            // Start a capture session
+            // Once the session starts, we can update the UI and start recording
+            cameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
+
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    captureSession = cameraCaptureSession;
+                    updatePreview();
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mediaRecorder.start();
+                        }
+                    });
+                }
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    Log.e(TAG, "onConfigureFailed");
+                }
+            }, backgroundHandler);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start video recording.");
+        }
+
+    }
+
+    @Override
+    public void stopRecording() {
+        closeCamera();
+        File file = new File(config.videoPath);
+        config.callbacks.onVideoRecorded(file);
+    }
+
+    private void setUpMediaRecorder() throws Exception {
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setOutputFile(config.videoPath);
+        //TODO make configurable?
+        mediaRecorder.setVideoEncodingBitRate(10000000);
+        mediaRecorder.setVideoFrameRate(60);
+        mediaRecorder.setVideoSize(previewSize.getWidth(), previewSize.getHeight());
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.setOrientationHint(getJpegOrientation(cameraManager.getCameraCharacteristics(cameraId), displayRotation));
+        mediaRecorder.prepare();
+    }
+
+    private void closePreviewSession() {
+        if (captureSession != null) {
+            captureSession.close();
+            captureSession = null;
+        }
+    }
+
+    /**
+     * Update the camera preview.
+     */
+    private void updatePreview() {
+        if (null == cameraDevice) {
+            return;
+        }
+        try {
+            setUpCaptureRequestBuilder(previewRequestBuilder);
+            HandlerThread thread = new HandlerThread("CameraPreview");
+            thread.start();
+            captureSession.setRepeatingRequest(previewRequestBuilder.build(), null, backgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder) {
+        builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+    }
+
     /**
      * Sets up member variables related to camera.
      *
      * @param width  The width of available size for camera preview
      * @param height The height of available size for camera preview
      */
+    @SuppressWarnings("SuspiciousNameCombination")
     private void setUpCameraOutputs(int width, int height) {
 
         try {
@@ -636,6 +753,7 @@ class Camera2Api implements CameraApi {
 
                         // Find out if we need to swap dimension to get the preview size relative to sensor coordinate.
                         // If sensor orientation and screen orientation are not aligned, properly align them.
+                        //noinspection ConstantConditions
                         final int sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
                         boolean swappedDimensions = false;
                         switch (displayRotation) {
@@ -946,6 +1064,7 @@ class Camera2Api implements CameraApi {
      * to the camera, that the JPEG picture needs to be rotated by, to be viewed
      * upright. See {@link CaptureRequest#JPEG_ORIENTATION}.
      */
+    @SuppressWarnings("ConstantConditions")
     private int getJpegOrientation(CameraCharacteristics cameraCharacteristics, int deviceOrientation) {
         if (deviceOrientation == android.view.OrientationEventListener.ORIENTATION_UNKNOWN) {
             return 0;
@@ -963,9 +1082,7 @@ class Camera2Api implements CameraApi {
 
         // Calculate desired JPEG orientation relative to camera orientation to make
         // the image upright relative to the device orientation
-        int jpegOrientation = (sensorOrientation + deviceOrientation + 360) % 360;
-
-        return jpegOrientation;
+        return (sensorOrientation + deviceOrientation + 360) % 360;
     }
 
     /**
@@ -1052,8 +1169,9 @@ class Camera2Api implements CameraApi {
      */
     private void convertUtilSizeArrayToInternalSizeArray(android.util.Size[] utilSize,
             List<co.infinum.easycamera.internal.Size> internalSize) {
-        for (int i = 0; i < utilSize.length; i++) {
-            internalSize.add(convertUtilSizeToInternalSize(utilSize[i]));
+
+        for (android.util.Size size : utilSize) {
+            internalSize.add(convertUtilSizeToInternalSize(size));
         }
     }
 

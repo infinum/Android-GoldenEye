@@ -10,6 +10,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -20,6 +21,7 @@ import android.view.Surface;
 import android.view.TextureView;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import co.infinum.easycamera.internal.ByteImageSaver;
 import co.infinum.easycamera.internal.CameraInitializer;
 import co.infinum.easycamera.internal.CompareSizesByArea;
-import co.infinum.easycamera.internal.OnImageSavedListener;
+import co.infinum.easycamera.internal.OnFileSavedListener;
 import co.infinum.easycamera.internal.Size;
 
 /**
@@ -205,18 +207,18 @@ class Camera1Api implements CameraApi {
         public void onPictureTaken(byte[] data, Camera camera) {
             // This is the output file for our picture.
             File imageFile;
-            if (TextUtils.isEmpty(config.filePath)) {
+            if (TextUtils.isEmpty(config.imagePath)) {
                 imageFile = new File(storageDirectory, String.format(Locale.getDefault(), "%d.jpg", System.currentTimeMillis()));
             } else {
-                imageFile = new File(config.filePath);
+                imageFile = new File(config.imagePath);
             }
             backgroundHandler.post(new ByteImageSaver(data, imageFile, imageSavedListener, config.cameraFacing));
         }
     };
 
-    private OnImageSavedListener imageSavedListener = new OnImageSavedListener() {
+    private OnFileSavedListener imageSavedListener = new OnFileSavedListener() {
         @Override
-        public void onImageSaved(@NonNull File imageFile) {
+        public void onFileSaved(@NonNull File imageFile) {
             config.callbacks.onImageTaken(imageFile);
             // restart preview
             state = STATE_PREVIEW;
@@ -224,6 +226,12 @@ class Camera1Api implements CameraApi {
 //            camera.startPreview();
         }
     };
+
+    private MediaRecorder mediaRecorder;
+
+    private Size videoSize;
+
+    private int cameraRotation;
 
     Camera1Api(Config config) {
         this.config = config;
@@ -414,6 +422,53 @@ class Camera1Api implements CameraApi {
         camera.autoFocus(autoFocusCallback);
     }
 
+    @Override
+    public void startRecording(SurfaceTexture surfaceTexture) {
+        if (null == camera || surfaceTexture == null || null == previewSize) {
+            return;
+        }
+        try {
+            setUpMediaRecorder(surfaceTexture);
+            surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
+            mediaRecorder.start();
+        } catch (Exception e) {
+            Log.e(TAG, "Video recording failed to start.");
+        }
+
+    }
+
+    private void setUpMediaRecorder(SurfaceTexture surfaceTexture) throws IOException {
+        mediaRecorder = new MediaRecorder();
+        camera.unlock();
+        mediaRecorder.setCamera(camera);
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setOutputFile(config.videoPath);
+        mediaRecorder.setVideoSize(videoSize.getWidth(), videoSize.getHeight());
+        //TODO make configurable?
+        mediaRecorder.setVideoEncodingBitRate(10000000);
+        mediaRecorder.setVideoFrameRate(30);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.setPreviewDisplay(new Surface(surfaceTexture));
+        mediaRecorder.setOrientationHint(cameraRotation);
+        mediaRecorder.prepare();
+    }
+
+    @Override
+    public void stopRecording() {
+        try {
+            mediaRecorder.stop();
+            mediaRecorder.release();
+            camera.reconnect();
+            File file = new File(config.videoPath);
+            config.callbacks.onVideoRecorded(file);
+        } catch (IOException e) {
+            Log.e(TAG, "Video recording failed to start.");
+        }
+    }
+
     private void setUpCameraParameters(int width, int height) {
         try {
 
@@ -450,15 +505,14 @@ class Camera1Api implements CameraApi {
             params.setJpegQuality(JPEG_QUALITY);
             params.setPictureFormat(ImageFormat.JPEG);
 
-            List<Camera.Size> cameraSizes = params.getSupportedPictureSizes();
-            List<Size> convertedCameraSizes = new ArrayList<>(cameraSizes.size());
-            convertCameraSizeListToInternalSizeList(cameraSizes, convertedCameraSizes);
+            List<Size> convertedPreviewSizes = convertSizes(params.getSupportedPreviewSizes());
+            List<Size> convertedVideoSizes = convertSizes(params.getSupportedVideoSizes());
+            List<Size> convertedPictureSizes = convertSizes(params.getSupportedPictureSizes());
 
-            // filter sizes per aspect ratio only if
-            camDelegate.filterAspect(convertedCameraSizes);
-
-            Size largest = Collections.max(convertedCameraSizes, new CompareSizesByArea());
+            Size largest = Collections.max(convertedPictureSizes, new CompareSizesByArea());
             params.setPictureSize(largest.getWidth(), largest.getHeight());
+
+            videoSize = Collections.max(convertedVideoSizes, new CompareSizesByArea());
 
             // image needs to know screen orientation to properly rotate when saved
             params.setRotation(resolveCameraOrientation(info));
@@ -467,16 +521,17 @@ class Camera1Api implements CameraApi {
             if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                 params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             }
+            // Attempting to use too large a preview size could  exceed the camera
+            // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
+            // garbage capture data.
+            previewSize = chooseOptimalSize(convertedPreviewSizes,
+                    rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
+                    maxPreviewHeight, largest);
+            params.setPreviewSize(previewSize.getWidth(), previewSize.getHeight());
 
             // apply parameters
             camera.setParameters(params);
 
-            // Attempting to use too large a preview size could  exceed the camera
-            // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
-            // garbage capture data.
-            previewSize = chooseOptimalSize(convertedCameraSizes,
-                    rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                    maxPreviewHeight, largest);
 
             // We fit the aspect ratio of TextureView to the size of preview we picked.
             if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -484,7 +539,6 @@ class Camera1Api implements CameraApi {
             } else {
                 config.callbacks.onResolvedPreviewSize(previewSize.getHeight(), previewSize.getWidth());
             }
-
             configureTransform(width, height);
 
             camera.setPreviewTexture(this.surfaceTexture);
@@ -492,6 +546,13 @@ class Camera1Api implements CameraApi {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private List<Size> convertSizes(List<Camera.Size> supportedSizes) {
+        List<Size> convertedSizes = new ArrayList<>(supportedSizes.size());
+        convertCameraSizeListToInternalSizeList(supportedSizes, convertedSizes);
+        camDelegate.filterAspect(convertedSizes);
+        return convertedSizes;
     }
 
     /**
@@ -526,39 +587,36 @@ class Camera1Api implements CameraApi {
     }
 
     private int resolveCameraOrientation(Camera.CameraInfo info) {
-        int degrees;
         switch (displayRotation) {
             case Surface.ROTATION_0:
-                degrees = ROTATION_0;
+                cameraRotation = ROTATION_0;
                 break;
 
             case Surface.ROTATION_90:
-                degrees = ROTATION_90;
+                cameraRotation = ROTATION_90;
                 break;
 
             case Surface.ROTATION_180:
-                degrees = ROTATION_180;
+                cameraRotation = ROTATION_180;
                 break;
 
             case Surface.ROTATION_270:
-                degrees = ROTATION_270;
+                cameraRotation = ROTATION_270;
                 break;
 
             default:
                 Log.w(TAG, String.format("Unknown display rotation [displayRotation -> %d]", displayRotation));
-                degrees = ROTATION_0;
+                cameraRotation = ROTATION_0;
                 break;
         }
 
-        int result;
         if (Camera.CameraInfo.CAMERA_FACING_FRONT == info.facing) {
-            result = (info.orientation + degrees) % DEGREES_FULL_CIRCLE;
-            result = (DEGREES_FULL_CIRCLE - result) % DEGREES_FULL_CIRCLE;  // compensate the mirror
+            cameraRotation = (info.orientation + cameraRotation) % DEGREES_FULL_CIRCLE;
+            cameraRotation = (DEGREES_FULL_CIRCLE - cameraRotation) % DEGREES_FULL_CIRCLE;  // compensate the mirror
         } else {  // back-facing
-            result = (info.orientation - degrees + DEGREES_FULL_CIRCLE) % DEGREES_FULL_CIRCLE;
+            cameraRotation = (info.orientation - cameraRotation + DEGREES_FULL_CIRCLE) % DEGREES_FULL_CIRCLE;
         }
-
-        return result;
+        return cameraRotation;
     }
 
     // todo copy of CameraApi2, think of elegant way to share code
@@ -588,17 +646,19 @@ class Camera1Api implements CameraApi {
         List<Size> notBigEnough = new ArrayList<>();
         final int width = aspectRatio.getWidth();
         final int height = aspectRatio.getHeight();
+        final int largerValue = width > height ? width : height;
+        final int largerTextureViewValue = textureViewWidth > textureViewHeight ? textureViewWidth : textureViewHeight;
 
         for (Size option : choices) {
+            final int largerOptionValue = option.getWidth() > option.getHeight() ? option.getWidth() : option.getHeight();
             final int aspectResult = camDelegate.isAspectWithinBounds((double) width / (double) height);
             final boolean correctAspect = aspectResult == CamDelegate.ASPECT_UNKNOWN
                     ? option.getHeight() == option.getWidth() * height / width
                     : aspectResult == CamDelegate.ASPECT_WITHIN_BOUNDS;
 
-            if (option.getWidth() <= maxWidth && option.getHeight() <= maxHeight
+            if (largerOptionValue <= largerValue
                     && correctAspect) {
-                if (option.getWidth() >= textureViewWidth
-                        && option.getHeight() >= textureViewHeight) {
+                if (largerOptionValue >= largerTextureViewValue) {
                     bigEnough.add(option);
                 } else {
                     notBigEnough.add(option);

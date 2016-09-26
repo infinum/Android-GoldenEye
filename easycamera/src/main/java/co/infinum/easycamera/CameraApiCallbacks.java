@@ -44,4 +44,5 @@ public interface CameraApiCallbacks {
      */
     void onImageTaken(@NonNull File imageFile);
 
+    void onVideoRecorded(@NonNull File videoFile);
 }

@@ -31,14 +31,14 @@ public class ImageSaver implements Runnable {
     /**
      * Save callback listener.
      */
-    private OnImageSavedListener listener;
+    private OnFileSavedListener listener;
 
     public ImageSaver(Image image, File file) {
         this.image = image;
         imageFile = file;
     }
 
-    public ImageSaver(Image image, File file, OnImageSavedListener listener) {
+    public ImageSaver(Image image, File file, OnFileSavedListener listener) {
         this(image, file);
         this.listener = listener;
     }
@@ -71,7 +71,7 @@ public class ImageSaver implements Runnable {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        listener.onImageSaved(imageFile);
+                        listener.onFileSaved(imageFile);
                     }
                 });
             }
