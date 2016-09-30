@@ -526,7 +526,7 @@ class Camera1Api implements CameraApi {
             }
 
             Size largest = Collections.max(convertedPictureSizes, new CompareSizesByArea());
-//            params.setPictureSize(largest.getWidth(), largest.getHeight());
+            params.setPictureSize(largest.getWidth(), largest.getHeight());
 
             videoSize = Collections.max(convertedVideoSizes, new CompareSizesByArea());
 

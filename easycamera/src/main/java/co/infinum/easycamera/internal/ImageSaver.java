@@ -71,7 +71,7 @@ public class ImageSaver implements Runnable {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        listener.onFileSaved(imageFile);
+                        listener.onImageSaved(imageFile);
                     }
                 });
             }
