@@ -3,9 +3,11 @@ package co.infinum.easycam;
 import android.Manifest;
 import android.content.DialogInterface;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.media.ExifInterface;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
@@ -113,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         // create a configuration for CameraApi
         Config config = new Config.Builder(this)
                 .cameraFacing(CameraApi.CAMERA_FACING_BACK)
-                .aspectRatio(ASPECT_RATIO_16_9)
+                .aspectRatio(getAspectRatio())
                 .aspectRatioOffset(0.01) // gives 0.01 negative and positive offset to aspectRatio
                 .imagePath(getExternalFilesDir(Environment.DIRECTORY_PICTURES) + "/image.jpg")
                 .videoPath(getExternalFilesDir(Environment.DIRECTORY_MOVIES) + "/video.mp4")
@@ -160,6 +162,16 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
                 ivImageTakenPreview.setLayoutParams(params);
             }
         };
+    }
+
+    private double getAspectRatio() {
+        Point size = new Point();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            getWindowManager().getDefaultDisplay().getRealSize(size);
+        } else {
+            getWindowManager().getDefaultDisplay().getSize(size);
+        }
+        return (double) size.y / size.x;
     }
 
     @Override

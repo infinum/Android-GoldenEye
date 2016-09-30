@@ -506,8 +506,19 @@ class Camera1Api implements CameraApi {
             params.setPictureFormat(ImageFormat.JPEG);
 
             List<Size> convertedPreviewSizes = convertSizes(params.getSupportedPreviewSizes());
-            List<Size> convertedVideoSizes = convertSizes(params.getSupportedVideoSizes());
-            List<Size> convertedPictureSizes = convertSizes(params.getSupportedPictureSizes());
+            //The returned list can be null if video sizes are not different than preview sizes.
+            List<Size> convertedVideoSizes;
+            if (params.getSupportedVideoSizes() == null || params.getSupportedVideoSizes().size() > 0) {
+                convertedVideoSizes = convertedPreviewSizes;
+            } else {
+                convertedVideoSizes = convertSizes(params.getSupportedVideoSizes());
+            }
+            List<Size> convertedPictureSizes;
+            if (params.getSupportedPictureSizes() == null || params.getSupportedPictureSizes().size() > 0) {
+                convertedPictureSizes = convertedPreviewSizes;
+            } else {
+                convertedPictureSizes = convertSizes(params.getSupportedPictureSizes());
+            }
 
             Size largest = Collections.max(convertedPictureSizes, new CompareSizesByArea());
             params.setPictureSize(largest.getWidth(), largest.getHeight());
@@ -531,7 +542,6 @@ class Camera1Api implements CameraApi {
 
             // apply parameters
             camera.setParameters(params);
-
 
             // We fit the aspect ratio of TextureView to the size of preview we picked.
             if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
