@@ -212,18 +212,23 @@ class Camera1Api implements CameraApi {
             } else {
                 imageFile = new File(config.imagePath);
             }
-            backgroundHandler.post(new ByteImageSaver(data, imageFile, imageSavedListener, config.cameraFacing));
+            backgroundHandler.post(new ByteImageSaver(data, imageFile, fileSavedListener, config.cameraFacing));
         }
     };
 
-    private OnFileSavedListener imageSavedListener = new OnFileSavedListener() {
+    private OnFileSavedListener fileSavedListener = new OnFileSavedListener() {
         @Override
-        public void onFileSaved(@NonNull File imageFile) {
-            config.callbacks.onImageTaken(imageFile);
+        public void onImageSaved(@NonNull File file) {
+            config.callbacks.onImageTaken(file);
             // restart preview
             state = STATE_PREVIEW;
             // todo make start and stop preview configurable
 //            camera.startPreview();
+        }
+
+        @Override
+        public void onVideoSaved(@NonNull File file) {
+            config.callbacks.onVideoRecorded(file);
         }
     };
 
@@ -463,7 +468,7 @@ class Camera1Api implements CameraApi {
             mediaRecorder.release();
             camera.reconnect();
             File file = new File(config.videoPath);
-            config.callbacks.onVideoRecorded(file);
+            fileSavedListener.onVideoSaved(file);
         } catch (IOException e) {
             Log.e(TAG, "Video recording failed to start.");
         }

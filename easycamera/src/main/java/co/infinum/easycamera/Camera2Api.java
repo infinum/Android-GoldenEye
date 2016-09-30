@@ -259,19 +259,23 @@ class Camera2Api implements CameraApi {
                 imageFile = new File(config.imagePath);
             }
 
-            backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), imageFile, imageSavedListener));
+            backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), imageFile, fileSavedListener));
         }
     };
 
     /**
      * This is a callback object for the {@link ImageSaver}.
-     * {@link OnFileSavedListener#onFileSaved(File)}
-     * will be called once the image has been successfully saved to a file.
+     * will be called once the file has been successfully saved.
      */
-    private final OnFileSavedListener imageSavedListener = new OnFileSavedListener() {
+    private final OnFileSavedListener fileSavedListener = new OnFileSavedListener() {
         @Override
-        public void onFileSaved(@NonNull File imageFile) {
-            config.callbacks.onImageTaken(imageFile);
+        public void onImageSaved(@NonNull File file) {
+            config.callbacks.onImageTaken(file);
+        }
+
+        @Override
+        public void onVideoSaved(@NonNull File file) {
+            config.callbacks.onVideoRecorded(file);
         }
     };
 
@@ -670,7 +674,7 @@ class Camera2Api implements CameraApi {
     public void stopRecording() {
         closeCamera();
         File file = new File(config.videoPath);
-        config.callbacks.onVideoRecorded(file);
+        fileSavedListener.onVideoSaved(file);
     }
 
     private void setUpMediaRecorder() throws Exception {
