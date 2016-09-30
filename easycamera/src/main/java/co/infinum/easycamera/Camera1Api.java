@@ -508,20 +508,20 @@ class Camera1Api implements CameraApi {
             List<Size> convertedPreviewSizes = convertSizes(params.getSupportedPreviewSizes());
             //The returned list can be null if video sizes are not different than preview sizes.
             List<Size> convertedVideoSizes;
-            if (params.getSupportedVideoSizes() == null || params.getSupportedVideoSizes().size() > 0) {
-                convertedVideoSizes = convertedPreviewSizes;
-            } else {
+            if (params.getSupportedVideoSizes() != null && params.getSupportedVideoSizes().size() > 0) {
                 convertedVideoSizes = convertSizes(params.getSupportedVideoSizes());
+            } else {
+                convertedVideoSizes = convertedPreviewSizes;
             }
             List<Size> convertedPictureSizes;
-            if (params.getSupportedPictureSizes() == null || params.getSupportedPictureSizes().size() > 0) {
-                convertedPictureSizes = convertedPreviewSizes;
-            } else {
+            if (params.getSupportedPictureSizes() != null && params.getSupportedPictureSizes().size() > 0) {
                 convertedPictureSizes = convertSizes(params.getSupportedPictureSizes());
+            } else {
+                convertedPictureSizes = convertedPreviewSizes;
             }
 
             Size largest = Collections.max(convertedPictureSizes, new CompareSizesByArea());
-            params.setPictureSize(largest.getWidth(), largest.getHeight());
+//            params.setPictureSize(largest.getWidth(), largest.getHeight());
 
             videoSize = Collections.max(convertedVideoSizes, new CompareSizesByArea());
 
