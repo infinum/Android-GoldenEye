@@ -629,7 +629,7 @@ class Camera2Api implements CameraApi {
         }
         try {
             closePreviewSession();
-            setUpMediaRecorder();
+            setUpMediaRecorder(surfaceTexture);
             surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
             previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
             List<Surface> surfaces = new ArrayList<>();
@@ -677,14 +677,15 @@ class Camera2Api implements CameraApi {
         fileSavedListener.onVideoSaved(file);
     }
 
-    private void setUpMediaRecorder() throws Exception {
+    private void setUpMediaRecorder(SurfaceTexture surfaceTexture) throws Exception {
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         mediaRecorder.setOutputFile(config.videoPath);
         //TODO make configurable?
         mediaRecorder.setVideoEncodingBitRate(10000000);
-        mediaRecorder.setVideoFrameRate(60);
+        mediaRecorder.setVideoFrameRate(30);
+        mediaRecorder.setPreviewDisplay(new Surface(surfaceTexture));
         mediaRecorder.setVideoSize(previewSize.getWidth(), previewSize.getHeight());
         mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
