@@ -247,25 +247,10 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         if (textureViewRecorder.isAvailable()) {
             recordVideo(textureViewRecorder.getSurfaceTexture());
         } else {
-            textureViewRecorder.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+            textureViewRecorder.setSurfaceTextureListener(new SimpleSurfaceTextureListener(cameraApi) {
                 @Override
                 public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
                     recordVideo(surface);
-                }
-
-                @Override
-                public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-
-                }
-
-                @Override
-                public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-                    return false;
-                }
-
-                @Override
-                public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-
                 }
             });
         }
@@ -398,25 +383,10 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         if (textureViewRecorder.isAvailable()) {
             playVideo(textureViewRecorder.getSurfaceTexture(), videoFile);
         } else {
-            textureViewRecorder.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+            textureViewRecorder.setSurfaceTextureListener(new SimpleSurfaceTextureListener(cameraApi) {
                 @Override
                 public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
                     playVideo(surface, videoFile);
-                }
-
-                @Override
-                public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-
-                }
-
-                @Override
-                public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-                    return false;
-                }
-
-                @Override
-                public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-
                 }
             });
         }

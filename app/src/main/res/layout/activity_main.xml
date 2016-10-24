@@ -48,9 +48,10 @@
             android:id="@+id/fl_camera_control_panel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
+            android:layout_marginBottom="16dp"
             android:layout_gravity="bottom"
-            android:minHeight="@dimen/camera_control_panel_height"
-            android:layout_marginBottom="@dimen/navigation_bar_height">
+            android:minHeight="@dimen/camera_control_panel_height">
 
         <LinearLayout
                 android:id="@+id/ll_camera_control_pre_take_image"
