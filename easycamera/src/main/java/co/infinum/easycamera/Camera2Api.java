@@ -188,7 +188,7 @@ class Camera2Api implements CameraApi {
     private CameraCaptureSession captureSession;
 
     /**
-     * MediaRecorder
+     * MediaRecorder used to record video.
      */
     private MediaRecorder mediaRecorder;
 
@@ -1178,6 +1178,7 @@ class Camera2Api implements CameraApi {
     private void convertUtilSizeArrayToInternalSizeArray(android.util.Size[] utilSize,
             List<co.infinum.easycamera.internal.Size> internalSize) {
 
+        //utilSize.map { it.convertToInternal() } QQ
         for (android.util.Size size : utilSize) {
             internalSize.add(convertUtilSizeToInternalSize(size));
         }
