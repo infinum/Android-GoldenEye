@@ -234,8 +234,6 @@ class Camera1Api implements CameraApi {
 
     private MediaRecorder mediaRecorder;
 
-    private Size videoSize;
-
     private int cameraRotation;
 
     Camera1Api(Config config) {
@@ -434,7 +432,6 @@ class Camera1Api implements CameraApi {
         }
         try {
             setUpMediaRecorder(surfaceTexture);
-            surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
             mediaRecorder.start();
         } catch (Exception e) {
             Log.e(TAG, "Video recording failed to start.");
@@ -443,14 +440,15 @@ class Camera1Api implements CameraApi {
     }
 
     private void setUpMediaRecorder(SurfaceTexture surfaceTexture) throws IOException {
-        mediaRecorder = new MediaRecorder();
+        camera.stopPreview();
         camera.unlock();
+        mediaRecorder = new MediaRecorder();
         mediaRecorder.setCamera(camera);
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         mediaRecorder.setOutputFile(config.videoPath);
-        mediaRecorder.setVideoSize(videoSize.getWidth(), videoSize.getHeight());
+        mediaRecorder.setVideoSize(previewSize.getWidth(), previewSize.getHeight());
         //TODO make configurable?
         mediaRecorder.setVideoEncodingBitRate(10000000);
         mediaRecorder.setVideoFrameRate(30);
@@ -469,7 +467,7 @@ class Camera1Api implements CameraApi {
             camera.reconnect();
             File file = new File(config.videoPath);
             fileSavedListener.onVideoSaved(file);
-        } catch (IOException e) {
+        } catch (Exception e) {
             Log.e(TAG, "Video recording failed to start.");
         }
     }
@@ -527,8 +525,6 @@ class Camera1Api implements CameraApi {
 
             Size largest = Collections.max(convertedPictureSizes, new CompareSizesByArea());
             params.setPictureSize(largest.getWidth(), largest.getHeight());
-
-            videoSize = Collections.max(convertedVideoSizes, new CompareSizesByArea());
 
             // image needs to know screen orientation to properly rotate when saved
             params.setRotation(resolveCameraOrientation(info));

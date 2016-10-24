@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -831,6 +832,8 @@ class Camera2Api implements CameraApi {
                     "NPE thrown when trying to setup Camera2 API. Current device probably does not have the API. SDK_INT -> %d",
                     Build.VERSION.SDK_INT));
             config.callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
+        } catch (NoSuchElementException e) {
+            Log.e(TAG, "NPE thrown when trying to setup Camera2 API. Current device does not have valid camera.");
         }
     }
 

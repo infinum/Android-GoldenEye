@@ -55,9 +55,6 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @Bind(R.id.texture_view_camera)
     protected AutoFitTextureView textureViewCamera;
 
-    @Bind(R.id.texture_view_player)
-    protected TextureView textureViewPlayer;
-
     @Bind(R.id.texture_view_recorder)
     protected TextureView textureViewRecorder;
 
@@ -208,14 +205,13 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
             // back button handled by turning camera back on
             return;
         }
-
         super.onBackPressed();
     }
 
     private void clearVideo() {
         if (mediaPlayer != null) {
             mediaPlayer.release();
-            textureViewPlayer.setVisibility(View.GONE);
+            textureViewRecorder.setVisibility(View.GONE);
         }
     }
 
@@ -397,14 +393,12 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @Override
     public void onVideoRecorded(@NonNull final File videoFile) {
         closeCamera();
-        textureViewRecorder.setVisibility(View.GONE);
         this.currentImageFile = videoFile;
         mediaPlayer = new MediaPlayer();
-        textureViewPlayer.setVisibility(View.VISIBLE);
-        if (textureViewPlayer.isAvailable()) {
-            playVideo(textureViewPlayer.getSurfaceTexture(), videoFile);
+        if (textureViewRecorder.isAvailable()) {
+            playVideo(textureViewRecorder.getSurfaceTexture(), videoFile);
         } else {
-            textureViewPlayer.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+            textureViewRecorder.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
                 @Override
                 public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
                     playVideo(surface, videoFile);
