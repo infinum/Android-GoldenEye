@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     /**
      * Image received from successful call of <code>onImageTaken</code> callback method.
      */
-    private File currentImageFile;
+    private File currentFile;
 
     /**
      * SurfaceTextureListener which will adapt UI when there are dimensional differences to TextureView.
@@ -193,8 +193,8 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @OnClick(R.id.iv_retake_picture)
     @Override
     public void onBackPressed() {
-        if (this.currentImageFile != null) {
-            this.currentImageFile.delete();
+        if (this.currentFile != null) {
+            this.currentFile.delete();
         }
         clearVideo();
 
@@ -211,14 +211,14 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     private void clearVideo() {
         if (mediaPlayer != null) {
             mediaPlayer.release();
+            mediaPlayer = null;
             textureViewRecorder.setVisibility(View.GONE);
         }
     }
 
     @OnClick(R.id.iv_take_picture)
     protected void onTakePictureClick() {
-        String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO};
+        String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
         if (EasyPermissions.hasPermissions(this, permissions)) {
             // noinspection ResourceType
             cameraApi.takePicture();
@@ -230,8 +230,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
 
     @OnClick(R.id.iv_switch_camera)
     protected void onSwitchCameraClick() {
-        String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO};
+        String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
         if (EasyPermissions.hasPermissions(this, permissions)) {
             // noinspection ResourceType
             cameraApi.switchCameraFacing();
@@ -243,6 +242,17 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
 
     @OnClick(R.id.iv_record_video)
     protected void onRecordVideoClick() {
+        String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO};
+        if (EasyPermissions.hasPermissions(this, permissions)) {
+            initRecorder();
+        } else {
+            Timber.w("Sneaky user removed %s permissions after initial request has been granted.",
+                    Arrays.toString(permissions));
+        }
+    }
+
+    private void initRecorder() {
         textureViewRecorder.setVisibility(View.VISIBLE);
         if (textureViewRecorder.isAvailable()) {
             recordVideo(textureViewRecorder.getSurfaceTexture());
@@ -353,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @Override
     public void onImageTaken(@NonNull File imageFile) {
         // store image for further manipulation
-        this.currentImageFile = imageFile;
+        this.currentFile = imageFile;
         // close camera, as preview will be shown
         closeCamera();
         // change UI, add image controls
@@ -378,7 +388,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @Override
     public void onVideoRecorded(@NonNull final File videoFile) {
         closeCamera();
-        this.currentImageFile = videoFile;
+        this.currentFile = videoFile;
         mediaPlayer = new MediaPlayer();
         if (textureViewRecorder.isAvailable()) {
             playVideo(textureViewRecorder.getSurfaceTexture(), videoFile);

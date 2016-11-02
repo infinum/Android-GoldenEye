@@ -427,7 +427,7 @@ class Camera1Api implements CameraApi {
 
     @Override
     public void startRecording(SurfaceTexture surfaceTexture) {
-        if (null == camera || surfaceTexture == null || null == previewSize) {
+        if (camera == null || surfaceTexture == null || previewSize == null) {
             return;
         }
         try {
@@ -510,12 +510,6 @@ class Camera1Api implements CameraApi {
 
             List<Size> convertedPreviewSizes = convertSizes(params.getSupportedPreviewSizes());
             //The returned list can be null if video sizes are not different than preview sizes.
-            List<Size> convertedVideoSizes;
-            if (params.getSupportedVideoSizes() != null && params.getSupportedVideoSizes().size() > 0) {
-                convertedVideoSizes = convertSizes(params.getSupportedVideoSizes());
-            } else {
-                convertedVideoSizes = convertedPreviewSizes;
-            }
             List<Size> convertedPictureSizes;
             if (params.getSupportedPictureSizes() != null && params.getSupportedPictureSizes().size() > 0) {
                 convertedPictureSizes = convertSizes(params.getSupportedPictureSizes());

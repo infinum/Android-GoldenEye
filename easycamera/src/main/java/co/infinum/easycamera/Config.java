@@ -42,7 +42,10 @@ public class Config {
         @CameraFacingDef
         private int cameraFacing = CAMERA_FACING_BACK;
 
-        public Builder(CameraApiCallbacks callbacks) {
+        public Builder (CameraApiCallbacks callbacks) {
+            if (callbacks == null) {
+                throw new IllegalStateException("Callback provided to Config.Builder cannot be null!");
+            }
             this.callbacks = callbacks;
         }
 

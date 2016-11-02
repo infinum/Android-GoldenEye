@@ -625,7 +625,7 @@ class Camera2Api implements CameraApi {
 
     @Override
     public void startRecording(SurfaceTexture surfaceTexture) {
-        if (null == cameraDevice || surfaceTexture == null || null == previewSize) {
+        if (cameraDevice == null || surfaceTexture == null || previewSize == null) {
             return;
         }
         try {
