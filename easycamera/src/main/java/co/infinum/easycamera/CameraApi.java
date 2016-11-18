@@ -114,6 +114,10 @@ public interface CameraApi {
      */
     void setFlashMode(@FlashDef int flashMode);
 
+    @FlashDef int getFlashMode();
+
+    void changeFlashMode();
+
     /**
      * Starts an AutoFocus process which will try to lock focus on
      * a most dominant object in a visible screen.

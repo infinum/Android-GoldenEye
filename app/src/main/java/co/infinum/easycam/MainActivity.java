@@ -55,6 +55,9 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @Bind(R.id.iv_take_picture)
     protected ImageView ivTakePicture;
 
+    @Bind(R.id.iv_flash)
+    protected ImageView ivFlash;
+
     @Bind(R.id.ll_camera_control_pre_take_image)
     protected LinearLayout llCameraControlPreTakeImage;
 
@@ -200,6 +203,24 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         } else {
             Timber.w("Sneaky user removed %s permissions after initial request has been granted.",
                     Arrays.toString(permissions));
+        }
+    }
+
+    @OnClick(R.id.iv_flash)
+    protected void onFlashIconClick() {
+        cameraApi.changeFlashMode();
+        switch (cameraApi.getFlashMode()) {
+            case CameraApi.FLASH_MODE_AUTOMATIC:
+                ivFlash.setImageResource(R.drawable.ic_flash_auto);
+                break;
+            case CameraApi.FLASH_MODE_ON:
+                ivFlash.setImageResource(R.drawable.ic_flash_on);
+                break;
+            case CameraApi.FLASH_MODE_OFF:
+                ivFlash.setImageResource(R.drawable.ic_flash_off);
+                break;
+            default:
+                break;
         }
     }
 

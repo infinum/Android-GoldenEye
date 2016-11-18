@@ -325,6 +325,17 @@ class Camera1Api implements CameraApi {
     }
 
     @Override
+    public int getFlashMode() {
+        Log.i(TAG, "getFlashMode(): STUB");
+        return FLASH_MODE_AUTOMATIC;
+    }
+
+    @Override
+    public void changeFlashMode() {
+        Log.i(TAG, "getFlashMode(): STUB");
+    }
+
+    @Override
     public void acquireFocus(final int x, final int y) {
         state = STATE_TAKING_FOCUS;
         camera.cancelAutoFocus();
