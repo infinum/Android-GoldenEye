@@ -110,12 +110,23 @@ public interface CameraApi {
     void updatePreviewDimensions(final int width, final int height);
 
     /**
-     * <b>Currently not implemented</b>
+     * Sets camera flash mode.
+     *
+     * @param flashMode Type of a flash mode {@link FlashDef}.
      */
     void setFlashMode(@FlashDef int flashMode);
 
+    /**
+     * Returns current flash mode or the one most recently set.
+     *
+     * @return {@link FlashDef} mode.
+     */
     @FlashDef int getFlashMode();
 
+    /**
+     * Changes current flash mode to the next one. It should go in a circle and sequence should be defined with
+     * the implementation of the method.
+     */
     void changeFlashMode();
 
     /**

@@ -167,6 +167,11 @@ class Camera1Api implements CameraApi {
      */
     private boolean isCameraActive;
 
+    private boolean flashSupported;
+
+    @FlashDef
+    private int currentFlashMode = FLASH_MODE_AUTOMATIC;
+
     /**
      * This callback is called once the camera has been opened.
      */
@@ -237,7 +242,6 @@ class Camera1Api implements CameraApi {
             orientation = activity.getResources().getConfiguration().orientation;
             storageDirectory = activity.getExternalFilesDir(null);
             activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
-
         } else {
             config.callbacks.onCameraError(new CameraError(CameraError.ERROR_MISSING_SYSTEM_FEATURE));
         }
@@ -320,19 +324,32 @@ class Camera1Api implements CameraApi {
 
     @Override
     public void setFlashMode(@FlashDef int flashMode) {
-        Log.i(TAG, "setFlashMode(): STUB");
-        // todo set to camera somehow
+        Camera.Parameters params = camera.getParameters();
+        setFlashModeForCameraParams(params, flashMode);
+        camera.setParameters(params);
     }
 
     @Override
     public int getFlashMode() {
-        Log.i(TAG, "getFlashMode(): STUB");
-        return FLASH_MODE_AUTOMATIC;
+        return currentFlashMode;
     }
 
     @Override
     public void changeFlashMode() {
-        Log.i(TAG, "getFlashMode(): STUB");
+        switch(currentFlashMode) {
+            case FLASH_MODE_AUTOMATIC:
+                currentFlashMode = FLASH_MODE_ON;
+                break;
+            case FLASH_MODE_ON:
+                currentFlashMode = FLASH_MODE_OFF;
+                break;
+            case FLASH_MODE_OFF:
+                currentFlashMode = FLASH_MODE_AUTOMATIC;
+                break;
+            default:
+                break;
+        }
+        setFlashMode(currentFlashMode);
     }
 
     @Override
@@ -479,6 +496,9 @@ class Camera1Api implements CameraApi {
                 params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             }
 
+            flashSupported = getFlashSupportedInfo();
+            setFlashModeForCameraParams(params, currentFlashMode);
+
             // apply parameters
             camera.setParameters(params);
 
@@ -503,6 +523,65 @@ class Camera1Api implements CameraApi {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Updates current camera parameters {@link android.hardware.Camera.Parameters} and current flash mode
+     * with the new flash mode {@link FlashDef}.
+     */
+    private void setFlashModeForCameraParams(Camera.Parameters params, @FlashDef int flashMode) {
+        if (flashSupported) {
+            String controlAeMode;
+            switch (flashMode) {
+                case FLASH_MODE_AUTOMATIC:
+                    controlAeMode = Camera.Parameters.FLASH_MODE_AUTO;
+                    break;
+
+                case FLASH_MODE_OFF:
+                    controlAeMode = Camera.Parameters.FLASH_MODE_OFF;
+                    break;
+
+                case FLASH_MODE_ON:
+                    controlAeMode = Camera.Parameters.FLASH_MODE_ON;
+                    break;
+
+                default:
+                    Log.e(TAG,
+                            String.format("Unrecognized flash mode set, skipping this option and using default. [mode -> %d]", flashMode));
+                    controlAeMode = Camera.Parameters.FLASH_MODE_AUTO;
+                    break;
+            }
+
+            currentFlashMode = flashMode;
+            params.setFlashMode(controlAeMode);
+        }
+    }
+
+    /**
+     * Improved version of flash check that should work on all devices (http://stackoverflow.com/a/19599365).
+     *
+     * @return is flash supported
+     */
+    private boolean getFlashSupportedInfo() {
+        if (camera == null) {
+            return false;
+        }
+
+        Camera.Parameters cameraParams = camera.getParameters();
+        if (cameraParams.getFlashMode() == null) {
+            return false;
+        }
+
+        List<String> supportedFlashModes = cameraParams.getSupportedFlashModes();
+        //noinspection RedundantIfStatement
+        if (supportedFlashModes == null || supportedFlashModes.isEmpty() || isOnlyOffMode(supportedFlashModes)) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isOnlyOffMode(List<String> supportedFlashModes) {
+        return supportedFlashModes.size() == 1 && supportedFlashModes.get(0).equals(Camera.Parameters.FLASH_MODE_OFF);
     }
 
     /**

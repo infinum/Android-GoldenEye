@@ -238,6 +238,10 @@ class Camera2Api implements CameraApi {
      */
     private boolean isCameraActive;
 
+    /**
+     * Current flash mode or most recently selected (e.g. after one picture is taken and camera has to be setup for the new shot,
+     * flash mode will be the same as for last taken image instead of being reset to default value).
+     */
     @FlashDef
     private int currentFlashMode = FLASH_MODE_AUTOMATIC;
 
@@ -514,7 +518,6 @@ class Camera2Api implements CameraApi {
     @Override
     public void setFlashMode(@FlashDef int flashMode) {
         setFlashModeToRequestBuilder(previewRequestBuilder, flashMode);
-        // todo set to camera somehow
     }
 
     @Override
@@ -560,7 +563,6 @@ class Camera2Api implements CameraApi {
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
             // Tell #mCaptureCallback to wait for the lock.
             state = STATE_WAITING_LOCK;
-            Log.d("hereherehere", "acquireFocus: " + previewRequestBuilder.get(CaptureRequest.CONTROL_AE_MODE));
             captureSession.capture(previewRequestBuilder.build(), captureCallback, backgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -717,9 +719,7 @@ class Camera2Api implements CameraApi {
                             config.callbacks.onResolvedPreviewSize(previewSize.getHeight(), previewSize.getWidth());
                         }
 
-                        // Check if the flash is supported.
-                        Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                        flashSupported = available == null ? false : available;
+                        flashSupported = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) != null;
 
                         this.cameraId = cameraId;
                         return;
@@ -879,21 +879,17 @@ class Camera2Api implements CameraApi {
     private void setFlashModeToRequestBuilder(CaptureRequest.Builder requestBuilder, @FlashDef int flashMode) {
         if (flashSupported) {
             int controlAeMode;
-            Log.d("herehere", "changing flash mode from " + requestBuilder.get(CaptureRequest.CONTROL_AE_MODE) + " to... ");
             switch (flashMode) {
                 case FLASH_MODE_AUTOMATIC:
                     controlAeMode = CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH;
-                    Log.d("herehere", String.valueOf(controlAeMode));
                     break;
 
                 case FLASH_MODE_OFF:
                     controlAeMode = CaptureRequest.CONTROL_AE_MODE_ON;
-                    Log.d("herehere", String.valueOf(controlAeMode));
                     break;
 
                 case FLASH_MODE_ON:
                     controlAeMode = CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH;
-                    Log.d("herehere", String.valueOf(controlAeMode));
                     break;
 
                 default:
@@ -922,7 +918,6 @@ class Camera2Api implements CameraApi {
                         CameraMetadata.CONTROL_AF_TRIGGER_START);
                 // Tell #mCaptureCallback to wait for the lock.
                 state = STATE_WAITING_LOCK_PIC;
-                Log.d("hereherehere", "lockFocus: " + previewRequestBuilder.get(CaptureRequest.CONTROL_AE_MODE));
                 captureSession.capture(previewRequestBuilder.build(), captureCallback, backgroundHandler);
             } else {
                 runPreCaptureSequence();
@@ -944,8 +939,6 @@ class Camera2Api implements CameraApi {
                     CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
             previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                     CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-////            setFlashModeToRequestBuilder(previewRequestBuilder, FLASH_MODE_AUTOMATIC); // todo make flash mode configurable
-            Log.d("hereherehere", "unlockFocus: " + previewRequestBuilder.get(CaptureRequest.CONTROL_AE_MODE));
             captureSession.capture(previewRequestBuilder.build(), captureCallback, backgroundHandler);
             // After this, the camera will go back to the normal state of preview.
             state = STATE_PREVIEW;
@@ -966,7 +959,6 @@ class Camera2Api implements CameraApi {
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
             // Tell captureCallback to wait for the pre-capture sequence to be set.
             state = STATE_WAITING_PRE_CAPTURE;
-            Log.d("hereherehere", "runPreCaptureSequence: " + previewRequestBuilder.get(CaptureRequest.CONTROL_AE_MODE));
             captureSession.capture(previewRequestBuilder.build(), captureCallback, backgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -1017,9 +1009,8 @@ class Camera2Api implements CameraApi {
             captureBuilder.addTarget(imageReader.getSurface());
 
             // Use the same AE and AF modes as the preview.
-            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, previewRequestBuilder.get(CaptureRequest.CONTROL_AF_MODE));
             captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, previewRequestBuilder.get(CaptureRequest.CONTROL_AE_MODE));
-////            setFlashModeToRequestBuilder(captureBuilder, FLASH_MODE_AUTOMATIC); // todo make flash mode configurable
 
             // Orientation
             int jpegOrientation;
@@ -1056,7 +1047,6 @@ class Camera2Api implements CameraApi {
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, jpegOrientation);
 
             captureSession.stopRepeating();
-            Log.d("hereherehere", "captureStillPicture: " + captureBuilder.get(CaptureRequest.CONTROL_AE_MODE));
             captureSession.capture(captureBuilder.build(), captureCallback, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
