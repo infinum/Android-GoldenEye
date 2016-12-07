@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 25
+    buildToolsVersion "25.0.1"
 
     defaultConfig {
         applicationId "co.infinum.easycamera.example"
         minSdkVersion 15
-        targetSdkVersion 23
+        targetSdkVersion 25
         versionCode 1
         versionName "1.0"
     }
@@ -19,19 +19,20 @@ android {
     }
 
     lintOptions {
-        abortOnError false
+        warning 'MissingPermission'
+        abortOnError true
     }
 
 }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile project(':easycamera')
 
-    compile 'com.android.support:appcompat-v7:23.2.1'
+    compile 'com.android.support:appcompat-v7:25.0.1'
     compile 'com.jakewharton:butterknife:7.0.1'
     compile 'pub.devrel:easypermissions:0.1.5'
     compile 'com.jakewharton.timber:timber:4.0.1'
-    compile 'co.infinum.easycamera:easy-camera:0.2.0'
 
 
     testCompile 'junit:junit:4.12'
