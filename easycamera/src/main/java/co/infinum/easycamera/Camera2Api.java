@@ -685,7 +685,7 @@ class Camera2Api implements CameraApi {
         mediaRecorder.setOutputFile(config.videoPath);
         //TODO make configurable?
         mediaRecorder.setVideoEncodingBitRate(10000000);
-        mediaRecorder.setVideoFrameRate(30);
+        mediaRecorder.setVideoFrameRate(config.frameRate);
         mediaRecorder.setPreviewDisplay(new Surface(surfaceTexture));
         mediaRecorder.setVideoSize(previewSize.getWidth(), previewSize.getHeight());
         mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);

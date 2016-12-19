@@ -1,8 +1,12 @@
 package co.infinum.easycamera;
 
 import android.support.annotation.FloatRange;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 import static co.infinum.easycamera.CameraApi.CAMERA_FACING_BACK;
 
@@ -11,17 +15,24 @@ import static co.infinum.easycamera.CameraApi.CAMERA_FACING_BACK;
  */
 public class Config {
 
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({FRAME_RATE_30, FRAME_RATE_60})
+    @interface FrameRate{}
+    public static final int FRAME_RATE_30 = 30;
+    public static final int FRAME_RATE_60 = 60;
+
+
     final double aspectRatio;
     final double aspectRatioOffset;
     final String imagePath;
     final String videoPath;
     final CameraApiCallbacks callbacks;
     @CameraFacingDef final int cameraFacing;
-
+    @FrameRate final int frameRate;
 
 
     private Config(CameraApiCallbacks callbacks, double aspectRatio, double aspectRatioOffset,
-            String imagePath, String videoPath, @CameraFacingDef int cameraFacing) {
+            String imagePath, String videoPath, @CameraFacingDef int cameraFacing, @FrameRate int frameRate) {
 
         this.aspectRatio = aspectRatio;
         this.aspectRatioOffset = aspectRatioOffset;
@@ -29,6 +40,7 @@ public class Config {
         this.callbacks = callbacks;
         this.videoPath = videoPath;
         this.cameraFacing = cameraFacing;
+        this.frameRate = frameRate;
     }
 
     public static class Builder {
@@ -38,6 +50,7 @@ public class Config {
         private double aspectRatioOffset;
         private String imagePath;
         private String videoPath;
+        private @FrameRate int frameRate = FRAME_RATE_30;
 
         @CameraFacingDef
         private int cameraFacing = CAMERA_FACING_BACK;
@@ -55,6 +68,7 @@ public class Config {
             this.imagePath = config.imagePath;
             this.callbacks = config.callbacks;
             this.cameraFacing = config.cameraFacing;
+            this.frameRate = config.frameRate;
         }
 
         /**
@@ -128,8 +142,13 @@ public class Config {
             return this;
         }
 
+        public Builder videoFrameRate(@FrameRate int frameRate) {
+            this.frameRate = frameRate;
+            return this;
+        }
+
         public Config build() {
-            return new Config(callbacks, aspectRatio, aspectRatioOffset, imagePath, videoPath, cameraFacing);
+            return new Config(callbacks, aspectRatio, aspectRatioOffset, imagePath, videoPath, cameraFacing, frameRate);
         }
     }
 }
