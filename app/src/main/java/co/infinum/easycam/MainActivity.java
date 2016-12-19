@@ -3,14 +3,19 @@ package co.infinum.easycam;
 import android.Manifest;
 import android.content.DialogInterface;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.media.ExifInterface;
+import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -43,8 +48,15 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
 
     private static final int RC_REQUEST_CAMERA_AND_WRITE_STORAGE = 100;
 
+    private static final double ASPECT_RATIO_16_9 = 16.0 / 9.0;
+
+    private static final double ASPECT_RATIO_4_3 = 4.0 / 3.0;
+
     @Bind(R.id.texture_view_camera)
     protected AutoFitTextureView textureViewCamera;
+
+    @Bind(R.id.texture_view_recorder)
+    protected TextureView textureViewRecorder;
 
     @Bind(R.id.iv_image_taken_preview)
     protected ImageView ivImageTakenPreview;
@@ -60,6 +72,9 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
 
     @Bind(R.id.ll_camera_control_post_take_image)
     protected LinearLayout llCameraControlPostTakeImage;
+
+    @Bind(R.id.ll_camera_control_video)
+    protected LinearLayout llCameraControlVideo;
 
     @Bind(R.id.fl_camera_control_panel)
     protected FrameLayout flCameraControlPanel;
@@ -77,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     /**
      * Image received from successful call of <code>onImageTaken</code> callback method.
      */
-    private File currentImageFile;
+    private File currentFile;
 
     /**
      * SurfaceTextureListener which will adapt UI when there are dimensional differences to TextureView.
@@ -85,6 +100,8 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     private TextureView.SurfaceTextureListener surfaceTextureListener;
 
     private int minControlPanelHeight = 0;
+
+    private MediaPlayer mediaPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,8 +112,10 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         // create a configuration for CameraApi
         Config config = new Config.Builder(this)
                 .cameraFacing(CameraApi.CAMERA_FACING_BACK)
-                .aspectRatio(1.333)
+                .aspectRatio(getAspectRatio())
                 .aspectRatioOffset(0.01) // gives 0.01 negative and positive offset to aspectRatio
+                .imagePath(getExternalFilesDir(Environment.DIRECTORY_PICTURES) + "/image.jpg")
+                .videoPath(getExternalFilesDir(Environment.DIRECTORY_MOVIES) + "/video.mp4")
                 .build();
         // initialize camera interface and camera api
         this.cameraApi = CameraApiManager.newInstance(config).init(this);
@@ -142,6 +161,16 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
         };
     }
 
+    private double getAspectRatio() {
+        Point size = new Point();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            getWindowManager().getDefaultDisplay().getRealSize(size);
+        } else {
+            getWindowManager().getDefaultDisplay().getSize(size);
+        }
+        return (double) size.y / size.x;
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -164,9 +193,10 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @OnClick(R.id.iv_retake_picture)
     @Override
     public void onBackPressed() {
-        if (this.currentImageFile != null) {
-            this.currentImageFile.delete();
+        if (this.currentFile != null) {
+            this.currentFile.delete();
         }
+        clearVideo();
 
         // if camera is closed, then it should be reopened
         if (!cameraApi.isCameraActive()) {
@@ -175,8 +205,15 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
             // back button handled by turning camera back on
             return;
         }
-
         super.onBackPressed();
+    }
+
+    private void clearVideo() {
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+            textureViewRecorder.setVisibility(View.GONE);
+        }
     }
 
     @OnClick(R.id.iv_take_picture)
@@ -201,6 +238,42 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
             Timber.w("Sneaky user removed %s permissions after initial request has been granted.",
                     Arrays.toString(permissions));
         }
+    }
+
+    @OnClick(R.id.iv_record_video)
+    protected void onRecordVideoClick() {
+        String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO};
+        if (EasyPermissions.hasPermissions(this, permissions)) {
+            initRecorder();
+        } else {
+            Timber.w("Sneaky user removed %s permissions after initial request has been granted.",
+                    Arrays.toString(permissions));
+        }
+    }
+
+    private void initRecorder() {
+        textureViewRecorder.setVisibility(View.VISIBLE);
+        if (textureViewRecorder.isAvailable()) {
+            recordVideo(textureViewRecorder.getSurfaceTexture());
+        } else {
+            textureViewRecorder.setSurfaceTextureListener(new SimpleSurfaceTextureListener(cameraApi) {
+                @Override
+                public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+                    recordVideo(surface);
+                }
+            });
+        }
+    }
+
+    private void recordVideo(SurfaceTexture surface) {
+        displayVideoControls();
+        cameraApi.startRecording(surface);
+    }
+
+    @OnClick(R.id.iv_stop_recording)
+    protected void onStopRecordingClick() {
+        cameraApi.stopRecording();
     }
 
     @OnClick(R.id.iv_close)
@@ -236,7 +309,8 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
 
         String[] permissions = new String[]{
                 Manifest.permission.CAMERA,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.RECORD_AUDIO
         };
 
         if (EasyPermissions.hasPermissions(this, permissions)) {
@@ -289,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     @Override
     public void onImageTaken(@NonNull File imageFile) {
         // store image for further manipulation
-        this.currentImageFile = imageFile;
+        this.currentFile = imageFile;
         // close camera, as preview will be shown
         closeCamera();
         // change UI, add image controls
@@ -311,6 +385,48 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
                 ivImageTakenPreview.getHeight()), orientation));
     }
 
+    @Override
+    public void onVideoRecorded(@NonNull final File videoFile) {
+        closeCamera();
+        this.currentFile = videoFile;
+        mediaPlayer = new MediaPlayer();
+        if (textureViewRecorder.isAvailable()) {
+            playVideo(textureViewRecorder.getSurfaceTexture(), videoFile);
+        } else {
+            textureViewRecorder.setSurfaceTextureListener(new SimpleSurfaceTextureListener(cameraApi) {
+                @Override
+                public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+                    playVideo(surface, videoFile);
+                }
+            });
+        }
+    }
+
+    private void playVideo(SurfaceTexture surface, @NonNull File videoFile) {
+        try {
+            Surface s = new Surface(surface);
+            mediaPlayer.setDataSource(videoFile.getPath());
+            mediaPlayer.setScreenOnWhilePlaying(true);
+            mediaPlayer.setSurface(s);
+            mediaPlayer.prepare();
+            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    mp.start();
+                }
+            });
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    mp.stop();
+                }
+            });
+            displayPostImageTakenCameraControls();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void closeCamera() {
         // check if camera is active and close it if it is
         if (cameraApi.isCameraActive()) {
@@ -321,11 +437,19 @@ public class MainActivity extends AppCompatActivity implements CameraApiCallback
     private void displayPostImageTakenCameraControls() {
         llCameraControlPostTakeImage.setVisibility(View.VISIBLE);
         llCameraControlPreTakeImage.setVisibility(View.GONE);
+        llCameraControlVideo.setVisibility(View.GONE);
     }
 
     private void displayCameraControls() {
         llCameraControlPostTakeImage.setVisibility(View.GONE);
         llCameraControlPreTakeImage.setVisibility(View.VISIBLE);
+        llCameraControlVideo.setVisibility(View.GONE);
+    }
+
+    private void displayVideoControls() {
+        llCameraControlPostTakeImage.setVisibility(View.GONE);
+        llCameraControlPreTakeImage.setVisibility(View.GONE);
+        llCameraControlVideo.setVisibility(View.VISIBLE);
     }
 
     @Override

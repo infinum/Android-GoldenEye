@@ -10,7 +10,7 @@
             android:theme="@style/AppTheme">
         <activity
                 android:name=".MainActivity"
-                android:theme="@style/AppTheme.Camera"
+                android:theme="@style/AppTheme"
                 android:screenOrientation="fullSensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
