@@ -573,11 +573,7 @@ class Camera1Api implements CameraApi {
         }
 
         List<String> supportedFlashModes = cameraParams.getSupportedFlashModes();
-        //noinspection RedundantIfStatement
-        if (supportedFlashModes == null || supportedFlashModes.isEmpty() || isOnlyOffMode(supportedFlashModes)) {
-            return false;
-        }
-        return true;
+        return !(supportedFlashModes == null || supportedFlashModes.isEmpty() || isOnlyOffMode(supportedFlashModes));
     }
 
     private boolean isOnlyOffMode(List<String> supportedFlashModes) {
