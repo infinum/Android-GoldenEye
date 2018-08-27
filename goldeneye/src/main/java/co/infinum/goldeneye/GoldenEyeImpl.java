@@ -18,7 +18,6 @@ import co.infinum.goldeneye.configurations.ConfigDelegateImpl;
 import co.infinum.goldeneye.configurations.PreviewConfig;
 import co.infinum.goldeneye.exceptions.CameraNotAvailableException;
 import co.infinum.goldeneye.models.Facing;
-import co.infinum.goldeneye.models.Info;
 import co.infinum.goldeneye.models.PreviewType;
 import co.infinum.goldeneye.models.Size;
 import co.infinum.goldeneye.utils.CameraUtils;
@@ -26,6 +25,7 @@ import co.infinum.goldeneye.utils.CollectionUtils;
 import co.infinum.goldeneye.utils.Intrinsics;
 
 import static co.infinum.goldeneye.utils.Intrinsics.checkCameraOpened;
+import static co.infinum.goldeneye.utils.LoggingUtils.log;
 
 public class GoldenEyeImpl implements GoldenEye {
 
@@ -34,14 +34,14 @@ public class GoldenEyeImpl implements GoldenEye {
     private List<CameraConfigImpl> availableCameras;
     private Camera camera;
     private ConfigDelegateImpl configDelegate;
-    private Logger logger;
     private TextureView textureView;
 
-    public GoldenEyeImpl(Activity activity) {
+    GoldenEyeImpl(Activity activity) {
         this.activity = activity;
         this.configDelegate = new ConfigDelegateImpl();
     }
 
+    @NonNull
     @Override
     public CameraConfig getConfig() {
         return configDelegate;
@@ -49,15 +49,16 @@ public class GoldenEyeImpl implements GoldenEye {
 
     @SuppressWarnings("ConstantConditions")
     @Override
-    public void init(Facing facing, InitializationCallback initializationCallback) {
+    public void initialize(Facing facing, InitializationCallback initializationCallback) {
         try {
+            Intrinsics.checkCameraPermission(activity);
             initAvailableCameras();
 
             CameraConfigImpl currentCameraConfig;
             if (CameraUtils.hasFacing(availableCameras, facing)) {
                 currentCameraConfig = CameraUtils.findCamera(availableCameras, facing);
             } else {
-                logger.info(Info.FACING_NOT_AVAILABLE, facing.toString());
+                log("Facing [%s] not available! Using first available camera", facing);
                 currentCameraConfig = availableCameras.get(0);
             }
 
@@ -76,12 +77,12 @@ public class GoldenEyeImpl implements GoldenEye {
     @Override
     public void startPreview(@NonNull final TextureView textureView, PreviewConfig previewConfig) {
         if (isPreviewStarted()) {
-            logger.info(Info.PREVIEW_ALREADY_STARTED);
+            log("Start preview ignored! Preview already active.");
             return;
         }
 
         if (configDelegate.getCurrentCameraConfig() == null) {
-            logger.info(Info.CAMERA_NOT_INITIALIZED);
+            log("Camera not initialized! Did you call initialize()?");
             return;
         }
 
@@ -99,7 +100,7 @@ public class GoldenEyeImpl implements GoldenEye {
 
                 @Override
                 public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-                    //apply matrix
+                    applyConfig();
                 }
             });
         }
@@ -111,13 +112,13 @@ public class GoldenEyeImpl implements GoldenEye {
     }
 
     @Override
-    public void startRecording(File file, VideoCallback callback) {
+    public void startRecording(@NonNull File file, @NonNull VideoCallback callback) {
     }
 
     @Override
     public void stopPreview() {
         if (!isPreviewStarted()) {
-            logger.info(Info.PREVIEW_ALREADY_STARTED);
+            log("Preview not started! stopPreview() ignored.");
         }
 
         releaseCamera();
@@ -130,7 +131,7 @@ public class GoldenEyeImpl implements GoldenEye {
     }
 
     @Override
-    public void takeImage(ImageCallback callback) {
+    public void takeImage(@NonNull ImageCallback callback) {
 
     }
 
@@ -148,16 +149,8 @@ public class GoldenEyeImpl implements GoldenEye {
         if (previewSize != null) {
             params.setPreviewSize(previewSize.getWidth(), previewSize.getHeight());
             params.setPictureSize(imageSize.getWidth(), imageSize.getHeight());
-
-            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-
-            //            if (cameraOptions.focusModes.contains(currentCameraConfiguration().focusMode)) {
-            //                params.focusMode = currentCameraConfiguration().focusMode.camera1Key
-            //            }
-            //            if (cameraOptions.flashModes.contains(currentCameraConfiguration().flashMode)) {
-            //                params.flashMode = currentCameraConfiguration().flashMode.camera1Key
-            //            }
-
+            params.setFocusMode(configDelegate.getFocusMode().getKey());
+            params.setFlashMode(configDelegate.getFlashMode().getKey());
             camera.setParameters(params);
             textureView.setTransform(
                 CameraUtils.calculateTextureMatrix(
@@ -168,7 +161,7 @@ public class GoldenEyeImpl implements GoldenEye {
                 )
             );
         } else {
-            Log.e("Goldeneye", "Test");
+            log("PreviewSize is [NULL]!");
         }
     }
 
@@ -180,7 +173,7 @@ public class GoldenEyeImpl implements GoldenEye {
             applyConfig();
             camera.startPreview();
         } catch (IOException e) {
-            logger.info(Info.PREVIEW_FAILED_TO_START);
+            log(e);
         }
     }
 

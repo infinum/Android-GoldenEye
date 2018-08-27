@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import co.infinum.goldeneye.models.FlashMode;
+import co.infinum.goldeneye.models.FocusMode;
 import co.infinum.goldeneye.models.Size;
 
 public class CollectionUtils {
@@ -27,30 +28,61 @@ public class CollectionUtils {
 
     @NonNull
     public static List<FlashMode> toInternalFlashModeList(@Nullable List<String> flashModeList) {
-        if (flashModeList == null) {
-            return new ArrayList<>();
-        }
+        return toInternalDistinctList(flashModeList, new Function<String, FlashMode>() {
+            @Override
+            public FlashMode invoke(String arg) {
+                return FlashMode.fromString(arg);
+            }
+        });
+    }
 
-        Set<FlashMode> internalFlashModeSet = new ArraySet<>(flashModeList.size());
-        for (String flashMode : flashModeList) {
-            internalFlashModeSet.add(FlashMode.fromString(flashMode));
-        }
-
-        return new ArrayList<>(internalFlashModeSet);
+    @NonNull
+    public static List<FocusMode> toInternalFocusModeList(@Nullable List<String> focusModeList) {
+        return toInternalDistinctList(focusModeList, new Function<String, FocusMode>() {
+            @Override
+            public FocusMode invoke(String arg) {
+                return FocusMode.fromString(arg);
+            }
+        });
     }
 
     @NonNull
     public static List<Size> toSortedInternalSizeList(@Nullable List<Camera.Size> sizeList) {
-        if (sizeList == null) {
-            return new ArrayList<>();
-        }
-
-        List<Size> internalSizeList = new ArrayList<>(sizeList.size());
-        for (Camera.Size size : sizeList) {
-            internalSizeList.add(new Size(size));
-        }
+        List<Size> internalSizeList = toInternalList(sizeList, new Function<Camera.Size, Size>() {
+            @Override
+            public Size invoke(Camera.Size arg) {
+                return new Size(arg);
+            }
+        });
 
         Collections.sort(internalSizeList);
         return internalSizeList;
+    }
+
+    @NonNull
+    private static <In, Out> List<Out> toInternalDistinctList(List<In> inList, Function<In, Out> convert) {
+        if (inList == null) {
+            return new ArrayList<>();
+        }
+
+        Set<Out> outSet = new ArraySet<>(inList.size());
+        for (In in : inList) {
+            outSet.add(convert.invoke(in));
+        }
+        return new ArrayList<>(outSet);
+    }
+
+    @NonNull
+    private static <In, Out> List<Out> toInternalList(@Nullable List<In> inList, Function<In, Out> convert) {
+        if (inList == null) {
+            return new ArrayList<>();
+        }
+
+        List<Out> outList = new ArrayList<>(inList.size());
+        for (In in : inList) {
+            outList.add(convert.invoke(in));
+        }
+
+        return outList;
     }
 }

@@ -1,6 +1,7 @@
 package co.infinum.goldeneye.models;
 
 import android.hardware.Camera;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 public enum FlashMode {
@@ -16,9 +17,10 @@ public enum FlashMode {
         this.key = key;
     }
 
+    @NonNull
     public static FlashMode fromString(@Nullable String key) {
         for (FlashMode flashMode : values()) {
-            if (flashMode.key.equals(key)) {
+            if (flashMode.getKey().equals(key)) {
                 return flashMode;
             }
         }

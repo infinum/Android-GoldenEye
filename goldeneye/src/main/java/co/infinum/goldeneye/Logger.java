@@ -1,16 +1,9 @@
 package co.infinum.goldeneye;
 
-import android.util.Log;
+import android.support.annotation.NonNull;
 
-import java.util.Locale;
+public interface Logger {
 
-import co.infinum.goldeneye.models.Info;
-
-public class Logger {
-
-    private static final String TAG = "GoldenEye";
-
-    void info(Info info, String... args) {
-        Log.i(TAG, String.format(Locale.US, info.getMessage(), args));
-    }
+    void log(@NonNull String message);
+    void log(@NonNull Throwable throwable);
 }

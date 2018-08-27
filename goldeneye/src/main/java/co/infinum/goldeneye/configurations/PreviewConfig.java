@@ -1,13 +1,17 @@
 package co.infinum.goldeneye.configurations;
 
+import android.support.annotation.NonNull;
+
 import co.infinum.goldeneye.models.PreviewScale;
 import co.infinum.goldeneye.models.PreviewType;
 
 public interface PreviewConfig {
 
-    void setPreviewScale(PreviewScale previewScale);
-    void setPreviewType(PreviewType previewType);
+    void setPreviewScale(@NonNull PreviewScale previewScale);
+    void setPreviewType(@NonNull PreviewType previewType);
+    @NonNull
     PreviewType getPreviewType();
+    @NonNull
     PreviewScale getPreviewScale();
 
     class Builder {
@@ -22,12 +26,14 @@ public interface PreviewConfig {
             );
         }
 
-        public void setPreviewScale(PreviewScale previewScale) {
+        public Builder setPreviewScale(PreviewScale previewScale) {
             this.previewScale = previewScale;
+            return this;
         }
 
-        public void setPreviewType(PreviewType previewType) {
+        public Builder setPreviewType(PreviewType previewType) {
             this.previewType = previewType;
+            return this;
         }
     }
 }

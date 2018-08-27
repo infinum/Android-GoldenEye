@@ -21,7 +21,7 @@ public class CameraUtils {
         throw new RuntimeException("Utility class should never be instantiated.");
     }
 
-    public static <T extends CameraConfig> int calculateDisplayOrientation(Activity activity, T cameraConfig) {
+    public static <T extends CameraConfig> int calculateDisplayOrientation(@NonNull Activity activity, @NonNull T cameraConfig) {
         int deviceOrientation = getDeviceOrientation(activity);
         int cameraOrientation = cameraConfig.getCameraOrientation();
 
@@ -47,26 +47,12 @@ public class CameraUtils {
         Matrix matrix = new Matrix();
         float viewWidth = ((float) textureView.getWidth());
         float viewHeight = ((float) textureView.getHeight());
+        float scaleX = cameraDisplayOrientation % 180 == 0 ? viewWidth / previewSize.getWidth() : viewWidth / previewSize.getHeight();
+        float scaleY = cameraDisplayOrientation % 180 == 0 ? viewHeight / previewSize.getHeight() : viewHeight / previewSize.getWidth();
 
-        float scaleX;
-        float scaleY;
-        if (previewConfig.getPreviewScale() == PreviewScale.FILL) {
-            scaleX = cameraDisplayOrientation % 180 == 0 ? viewHeight / previewSize.getHeight() : viewHeight / previewSize.getWidth();
-            scaleY = cameraDisplayOrientation % 180 == 0 ? viewWidth / previewSize.getWidth() : viewWidth / previewSize.getHeight();
-            if (scaleX < 1) {
-                scaleY *= 1 / scaleX;
-                scaleX = 1f;
-            }
-            if (scaleY < 1) {
-                scaleX *= 1 / scaleY;
-                scaleY = 1f;
-            }
-        } else {
-            scaleX = cameraDisplayOrientation % 180 == 0 ? previewSize.getWidth() / viewWidth : previewSize.getHeight() / viewWidth;
-            scaleY = cameraDisplayOrientation % 180 == 0 ? previewSize.getHeight() / viewHeight : previewSize.getWidth() / viewHeight;
-        }
+        float scale = previewConfig.getPreviewScale() == PreviewScale.FIT ? Math.max(scaleX, scaleY) : Math.min(scaleX, scaleY);
+        matrix.setScale(1 / scaleX * scale, 1 / scaleY * scale, viewWidth / 2, viewHeight / 2);
 
-        matrix.setScale(scaleX, scaleY, viewWidth / 2f, viewHeight / 2f);
         return matrix;
     }
 
@@ -90,7 +76,7 @@ public class CameraUtils {
         return currentIndex != -1 ? availableCameras.get((currentIndex + 1) % availableCameras.size()) : null;
     }
 
-    private static int getDeviceOrientation(Activity activity) {
+    private static int getDeviceOrientation(@NonNull Activity activity) {
         switch (activity.getWindowManager().getDefaultDisplay().getRotation()) {
             case Surface.ROTATION_90:
                 return 90;

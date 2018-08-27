@@ -6,6 +6,7 @@ import java.util.List;
 
 import co.infinum.goldeneye.models.Facing;
 import co.infinum.goldeneye.models.FlashMode;
+import co.infinum.goldeneye.models.FocusMode;
 import co.infinum.goldeneye.models.Size;
 
 public interface CameraConfig {
@@ -23,9 +24,9 @@ public interface CameraConfig {
     @NonNull
     Size getVideoSize();
 
-    void setVideoSize(Size size);
+    void setVideoSize(@NonNull Size size);
 
-    void setImageSize(Size size);
+    void setImageSize(@NonNull Size size);
 
     @NonNull
     List<Size> getSupportedImageSizes();
@@ -40,4 +41,12 @@ public interface CameraConfig {
 
     @NonNull
     FlashMode getFlashMode();
+
+    @NonNull
+    FocusMode getFocusMode();
+
+    void setFocusMode(@NonNull FocusMode focusMode);
+
+    @NonNull
+    List<FocusMode> getSupportedFocusModes();
 }

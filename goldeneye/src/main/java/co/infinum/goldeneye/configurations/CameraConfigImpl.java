@@ -7,14 +7,18 @@ import java.util.List;
 
 import co.infinum.goldeneye.models.Facing;
 import co.infinum.goldeneye.models.FlashMode;
+import co.infinum.goldeneye.models.FocusMode;
 import co.infinum.goldeneye.models.Size;
 import co.infinum.goldeneye.utils.CollectionUtils;
+
+import static co.infinum.goldeneye.utils.LoggingUtils.log;
 
 public class CameraConfigImpl implements CameraConfig {
 
     private Camera.Parameters cameraParameters;
     private final Facing facing;
     private FlashMode flashMode;
+    private FocusMode focusMode;
     private final int id;
     private Size imageSize;
     private final int orientation;
@@ -50,6 +54,12 @@ public class CameraConfigImpl implements CameraConfig {
 
     @NonNull
     @Override
+    public FocusMode getFocusMode() {
+        return focusMode != null ? focusMode : FocusMode.AUTO;
+    }
+
+    @NonNull
+    @Override
     public Size getImageSize() {
         return imageSize != null ? imageSize : Size.UNKNOWN;
     }
@@ -58,6 +68,12 @@ public class CameraConfigImpl implements CameraConfig {
     @Override
     public List<FlashMode> getSupportedFlashModes() {
         return CollectionUtils.toInternalFlashModeList(cameraParameters.getSupportedFlashModes());
+    }
+
+    @NonNull
+    @Override
+    public List<FocusMode> getSupportedFocusModes() {
+        return CollectionUtils.toInternalFocusModeList(cameraParameters.getSupportedFocusModes());
     }
 
     @NonNull
@@ -84,19 +100,37 @@ public class CameraConfigImpl implements CameraConfig {
 
     @Override
     public void setFlashMode(FlashMode flashMode) {
-        //todo check if supported
-        this.flashMode = flashMode;
+        if (getSupportedFlashModes().contains(flashMode)) {
+            this.flashMode = flashMode;
+        } else {
+            log("Unsupported FlashMode [%s]", flashMode);
+        }
     }
 
     @Override
-    public void setImageSize(Size size) {
-        //todo check if supported
-        this.imageSize = size;
+    public void setFocusMode(@NonNull FocusMode focusMode) {
+        if (getSupportedFocusModes().contains(focusMode)) {
+            this.focusMode = focusMode;
+        } else {
+            log("Unsupported FocusMode [%s]", focusMode);
+        }
     }
 
     @Override
-    public void setVideoSize(Size size) {
-        //todo check if supported
-        this.videoSize = size;
+    public void setImageSize(@NonNull Size size) {
+        if (getSupportedImageSizes().contains(size)) {
+            this.imageSize = size;
+        } else {
+            log("Unsupported ImageSize [%s]", size.toString());
+        }
+    }
+
+    @Override
+    public void setVideoSize(@NonNull Size size) {
+        if (getSupportedVideoSizes().contains(size)) {
+            this.videoSize = size;
+        } else {
+            log("Unsupported VideoSize [%s]", size.toString());
+        }
     }
 }
