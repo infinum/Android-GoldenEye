@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package co.infinum.goldeneye
 
 import android.hardware.Camera
@@ -9,8 +11,6 @@ data class Size internal constructor(
     companion object {
         val UNKNOWN = Size(0, 0)
     }
-
-    val aspectRatio = width.toFloat() / height.toFloat()
 
     override fun compareTo(other: Size): Int {
         return other.height * other.width - width * height
@@ -24,11 +24,7 @@ data class CameraInfo internal constructor(
 )
 
 enum class PreviewScale {
-    FIT, FILL
-}
-
-enum class PreviewType {
-    PICTURE, VIDEO
+    FIT, SCALE_TO_FILL, SCALE_TO_FIT
 }
 
 enum class Facing {
@@ -38,6 +34,7 @@ enum class Facing {
 enum class FlashMode constructor(
     val key: String
 ) {
+    UNKNOWN("unknown"),
     OFF(Camera.Parameters.FLASH_MODE_OFF),
     ON(Camera.Parameters.FLASH_MODE_ON),
     AUTO(Camera.Parameters.FLASH_MODE_AUTO),
@@ -45,13 +42,14 @@ enum class FlashMode constructor(
     RED_EYE(Camera.Parameters.FLASH_MODE_RED_EYE);
 
     companion object {
-        fun fromString(key: String?) = values().find { it.key == key } ?: OFF
+        fun fromString(key: String?) = values().find { it.key == key } ?: UNKNOWN
     }
 }
 
 enum class FocusMode(
     val key: String
 ) {
+    UNKNOWN("unknown"),
     AUTO(Camera.Parameters.FOCUS_MODE_AUTO),
     INFINITY(Camera.Parameters.FOCUS_MODE_INFINITY),
     MACRO(Camera.Parameters.FOCUS_MODE_MACRO),
@@ -61,6 +59,6 @@ enum class FocusMode(
     CONTINUOUS_PICTURE(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
 
     companion object {
-        fun fromString(key: String?) = values().find { it.key == key } ?: AUTO
+        fun fromString(key: String?) = values().find { it.key == key } ?: UNKNOWN
     }
 }

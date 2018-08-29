@@ -1,21 +1,22 @@
+@file:Suppress("DEPRECATION")
+
 package co.infinum.goldeneye
 
 import android.hardware.Camera
 import co.infinum.goldeneye.LogDelegate.log
 
-
 interface CameraConfig {
     val id: Int
     val orientation: Int
     val facing: Facing
-    val previewSize: Size
+    var previewSize: Size
     var pictureSize: Size
     var videoSize: Size
     var flashMode: FlashMode
     var focusMode: FocusMode
-    var previewType: PreviewType
     var previewScale: PreviewScale
 
+    val supportedPreviewSizes: List<Size>
     val supportedPictureSizes: List<Size>
     val supportedVideoSizes: List<Size>
     val supportedFlashModes: List<FlashMode>
@@ -25,27 +26,50 @@ interface CameraConfig {
 internal class CameraConfigImpl(
     override val id: Int,
     override val orientation: Int,
-    override val facing: Facing
+    override val facing: Facing,
+    private val onUpdateListener: (CameraProperty) -> Unit
 ) : CameraConfig {
 
+    private var initialized = false
+
     internal var cameraParameters: Camera.Parameters? = null
+        set(value) {
+            field = value
+            if (value != null && initialized.not()) {
+                initialized = true
+                setInitialValues(value)
+            }
+        }
+
+    private fun setInitialValues(params: Camera.Parameters) {
+        this.previewSize = params.previewSize?.toInternalSize() ?: Size.UNKNOWN
+        this.pictureSize = params.pictureSize?.toInternalSize() ?: Size.UNKNOWN
+        this.flashMode = FlashMode.fromString(params.flashMode)
+        this.focusMode = FocusMode.fromString(params.focusMode)
+    }
 
     internal fun toCameraInfo() = CameraInfo(id, orientation, facing)
 
-    override val previewSize: Size
-        get() {
-            val referenceSize = if (previewType == PreviewType.PICTURE) pictureSize else videoSize
-            return cameraParameters?.supportedPreviewSizes
-                ?.map { it.toInternalSize() }
-                ?.sorted()
-                ?.find { it.aspectRatio == referenceSize.aspectRatio }
-                ?: Size.UNKNOWN
+    override var previewSize: Size = Size.UNKNOWN
+        get() = when {
+            field != Size.UNKNOWN -> field
+            supportedPreviewSizes.isEmpty() -> Size.UNKNOWN
+            else -> supportedPreviewSizes[0]
+        }
+        set(value) {
+            if (supportedPreviewSizes.contains(value)) {
+                field = value
+                onUpdateListener(CameraProperty.PREVIEW_SIZE)
+            } else {
+                log("Unsupported PreviewSize [$value]")
+            }
         }
 
-    override var flashMode: FlashMode = FlashMode.OFF
+    override var flashMode: FlashMode = FlashMode.UNKNOWN
         set(value) {
             if (supportedFlashModes.contains(value)) {
                 field = value
+                onUpdateListener(CameraProperty.FLASH)
             } else {
                 log("Unsupported FlashMode [$value]")
             }
@@ -55,52 +79,68 @@ internal class CameraConfigImpl(
         set(value) {
             if (supportedFocusModes.contains(value)) {
                 field = value
+                onUpdateListener(CameraProperty.FOCUS)
             } else {
                 log("Unsupported FocusMode [$value]")
             }
         }
 
     override var pictureSize: Size = Size.UNKNOWN
-        get() = if (field == Size.UNKNOWN) supportedPictureSizes[0] else field
+        get() = when {
+            field != Size.UNKNOWN -> field
+            supportedPictureSizes.isEmpty() -> Size.UNKNOWN
+            else -> supportedPictureSizes[0]
+        }
         set(value) {
             if (supportedPictureSizes.contains(value)) {
                 field = value
+                onUpdateListener(CameraProperty.PICTURE_SIZE)
             } else {
                 log("Unsupported ImageSize [$value]")
             }
         }
 
     override var videoSize: Size = Size.UNKNOWN
-        get() = if (field == Size.UNKNOWN) supportedVideoSizes[0] else field
+        get() = when {
+            field != Size.UNKNOWN -> field
+            supportedVideoSizes.isEmpty() -> Size.UNKNOWN
+            else -> supportedVideoSizes[0]
+        }
         set(value) {
             if (supportedVideoSizes.contains(value)) {
                 field = value
+                onUpdateListener(CameraProperty.VIDEO_SIZE)
             } else {
                 log("Unsupported VideoSize [$value]")
             }
         }
 
-    override var previewType = PreviewType.PICTURE
-        set(value) {
-            field = value
-            //todo react
-        }
-
     override var previewScale = PreviewScale.FIT
         set(value) {
             field = value
-            //todo react
+            onUpdateListener(CameraProperty.SCALE)
         }
 
     override val supportedFlashModes
-        get() = cameraParameters?.supportedFlashModes?.map { FlashMode.fromString(it) }?.distinct() ?: listOf()
+        get() = cameraParameters?.supportedFlashModes
+            ?.map { FlashMode.fromString(it) }
+            ?.distinct()
+            ?.filter { it != FlashMode.UNKNOWN }
+            ?: listOf()
 
     override val supportedFocusModes
-        get() = cameraParameters?.supportedFocusModes?.map { FocusMode.fromString(it) }?.distinct() ?: listOf()
+        get() = cameraParameters?.supportedFocusModes
+            ?.map { FocusMode.fromString(it) }
+            ?.distinct()
+            ?.filter { it != FocusMode.UNKNOWN }
+            ?: listOf()
 
     override val supportedPictureSizes
         get() = cameraParameters?.supportedPictureSizes?.map { it.toInternalSize() }?.sorted() ?: listOf()
 
     override val supportedVideoSizes
         get() = cameraParameters?.supportedVideoSizes?.map { it.toInternalSize() }?.sorted() ?: listOf()
+
+    override val supportedPreviewSizes: List<Size>
+        get() = cameraParameters?.supportedPreviewSizes?.map { it.toInternalSize() }?.sorted() ?: listOf()
 }

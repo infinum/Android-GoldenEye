@@ -34,3 +34,7 @@ internal fun <T1, T2> ifNotNull(p1: T1?, p2: T2?, action: (T1, T2) -> Unit) {
         action(p1, p2)
     }
 }
+
+internal fun Camera.updateParams(update: Camera.Parameters.() -> Unit) {
+    parameters = parameters?.apply(update)
+}

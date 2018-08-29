@@ -55,7 +55,7 @@
                     tools:text="Auto"/>
 
                 <TextView
-                    android:id="@+id/previewTypeView"
+                    android:id="@+id/previewScaleView"
                     style="@style/SettingsText"
                     tools:text="Auto"/>
 
@@ -65,7 +65,7 @@
                 style="@style/SettingsRow">
 
                 <TextView
-                    android:id="@+id/previewScaleView"
+                    android:id="@+id/previewSizeView"
                     style="@style/SettingsText"
                     tools:text="Auto"/>
 
@@ -85,17 +85,15 @@
                 style="@style/SettingsRow">
 
                 <TextView
-                    android:id="@+id/frontFacingView"
+                    android:id="@+id/nextCameraView"
                     style="@style/SettingsText"
                     tools:text="Auto"/>
 
                 <TextView
-                    android:id="@+id/backFacingView"
                     style="@style/SettingsText"
                     tools:text="Auto"/>
 
                 <TextView
-                    android:id="@+id/nextFacingView"
                     style="@style/SettingsText"
                     tools:text="Auto"/>
 

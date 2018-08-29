@@ -16,11 +16,29 @@ class GoldenEyeImpl @JvmOverloads constructor(
     private var camera: Camera? = null
     private var textureView: TextureView? = null
 
+    private val onUpdateListener: (CameraProperty) -> Unit = {
+        when (it) {
+            CameraProperty.FOCUS -> camera?.updateParams { focusMode = currentConfig.focusMode.key }
+            CameraProperty.FLASH -> camera?.updateParams { flashMode = currentConfig.flashMode.key }
+            CameraProperty.SCALE -> applyMatrixTransformation(textureView)
+            CameraProperty.PICTURE_SIZE -> {
+                val pictureSize = currentConfig.pictureSize
+                camera?.updateParams { setPictureSize(pictureSize.width, pictureSize.height) }
+            }
+            CameraProperty.VIDEO_SIZE -> log("Ignoring video size for now")
+            CameraProperty.PREVIEW_SIZE -> {
+                val previewSize = currentConfig.previewSize
+                camera?.updateParams { setPreviewSize(previewSize.width, previewSize.height) }
+                applyMatrixTransformation(textureView)
+            }
+        }
+    }
+
     private val _availableCameras = mutableListOf<CameraConfigImpl>()
     override val availableCameras: List<CameraInfo>
         get() = _availableCameras.map { it.toCameraInfo() }
 
-    private var _currentConfig: CameraConfigImpl = CameraConfigImpl(-1, -1, Facing.BACK)
+    private var _currentConfig: CameraConfigImpl = CameraConfigImpl(-1, -1, Facing.BACK, onUpdateListener)
     override val currentConfig: CameraConfig
         get() = _currentConfig
     override val currentCamera: CameraInfo
@@ -96,8 +114,12 @@ class GoldenEyeImpl @JvmOverloads constructor(
                 setPreviewSize(previewSize.width, previewSize.height)
                 val pictureSize = currentConfig.pictureSize
                 setPictureSize(pictureSize.width, pictureSize.height)
-                focusMode = currentConfig.focusMode.key
-                flashMode = currentConfig.flashMode.key
+                if (currentConfig.supportedFocusModes.contains(currentConfig.focusMode)) {
+                    focusMode = currentConfig.focusMode.key
+                }
+                if (currentConfig.supportedFlashModes.contains(currentConfig.flashMode)) {
+                    flashMode = currentConfig.flashMode.key
+                }
             }
         }
     }
@@ -111,7 +133,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
             val cameraInfo = Camera.CameraInfo()
             Camera.getCameraInfo(id, cameraInfo)
             val facing = if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) Facing.BACK else Facing.FRONT
-            _availableCameras.add(CameraConfigImpl(id, cameraInfo.orientation, facing))
+            _availableCameras.add(CameraConfigImpl(id, cameraInfo.orientation, facing, onUpdateListener))
         }
     }
 }

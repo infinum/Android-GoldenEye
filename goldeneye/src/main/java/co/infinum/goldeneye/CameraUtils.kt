@@ -42,10 +42,10 @@ internal object CameraUtils {
             }
 
         val scale =
-            if (config.previewScale == PreviewScale.FIT) {
-                Math.max(scaleX, scaleY)
-            } else {
-                Math.min(scaleX, scaleY)
+            when (config.previewScale) {
+                PreviewScale.SCALE_TO_FILL -> Math.max(scaleX, scaleY)
+                PreviewScale.SCALE_TO_FIT -> Math.min(scaleX, scaleY)
+                PreviewScale.FIT -> if (Math.min(scaleX, scaleY) < 1) Math.min(scaleX, scaleY) else 1f
             }
 
         matrix.setScale(1 / scaleX * scale, 1 / scaleY * scale, textureView.width / 2f, textureView.height / 2f)
