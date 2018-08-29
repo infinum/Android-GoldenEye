@@ -1,11 +1,16 @@
+@file:Suppress("DEPRECATION")
+
 package co.infinum.goldeneye
 
 import android.app.Activity
 import android.graphics.Matrix
+import android.graphics.Rect
+import android.hardware.Camera
 import android.view.Surface
 import android.view.TextureView
 
 internal object CameraUtils {
+    private const val FOCUS_AREA_SIZE = 200
 
     fun calculateDisplayOrientation(activity: Activity, config: CameraConfig): Int {
         val deviceOrientation = getDeviceOrientation(activity)
@@ -50,6 +55,27 @@ internal object CameraUtils {
 
         matrix.setScale(1 / scaleX * scale, 1 / scaleY * scale, textureView.width / 2f, textureView.height / 2f)
         return matrix
+    }
+
+    fun calculateFocusArea(config: CameraConfig, x: Float, y: Float): Camera.Area {
+        val cameraWidthRatio = 2000f / config.previewSize.width
+        val cameraHeightRatio = 2000f / config.previewSize.height
+
+        val cameraX = if (config.orientation % 180 == 0) x else y
+        val cameraY = if (config.orientation % 180 == 0) y else x
+
+        val cameraFocusX = cameraWidthRatio * cameraX - 1000
+        val cameraFocusY = cameraHeightRatio * cameraY - 1000
+        val left = Math.max(-1000f, cameraFocusX).toInt()
+        val top = Math.max(-1000f, cameraFocusY).toInt()
+
+        val rect = Rect(
+            Math.min(left, 1000 - FOCUS_AREA_SIZE),
+            Math.min(top, 1000 - FOCUS_AREA_SIZE),
+            Math.min(left + FOCUS_AREA_SIZE, 1000),
+            Math.min(top + FOCUS_AREA_SIZE, 1000)
+        )
+        return Camera.Area(rect, 1000)
     }
 
     private fun getDeviceOrientation(activity: Activity) =

@@ -2,9 +2,10 @@
 
 package co.infinum.goldeneye
 
+import android.annotation.SuppressLint
 import android.app.Activity
-import android.arch.lifecycle.Lifecycle
 import android.hardware.Camera
+import android.view.MotionEvent
 import android.view.TextureView
 import co.infinum.goldeneye.LogDelegate.log
 import java.io.IOException
@@ -63,6 +64,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun start(textureView: TextureView) {
         if (camera == null) {
             log("Camera is not initialized. Did you call init() method?")
@@ -70,8 +72,33 @@ class GoldenEyeImpl @JvmOverloads constructor(
         }
 
         this.textureView = textureView
+        textureView.setOnTouchListener { _, event ->
+            if (event.actionMasked != MotionEvent.ACTION_DOWN) {
+                return@setOnTouchListener false
+            }
+            camera?.apply {
+                updateParams {
+                    val areas = listOf(CameraUtils.calculateFocusArea(currentConfig, event.x, event.y))
+                    if (maxNumFocusAreas > 0) {
+                        focusAreas = areas
+                    }
+                    if (maxNumMeteringAreas > 0) {
+                        meteringAreas = areas
+                    }
+                }
+
+                autoFocus { success, camera ->
+                    if (success) {
+                        camera.cancelAutoFocus()
+                    }
+                }
+            }
+            true
+        }
         textureView.onSurfaceUpdate(
-            onAvailable = { startPreview() },
+            onAvailable = {
+                startPreview()
+            },
             onSizeChanged = { applyMatrixTransformation(it) }
         )
     }
