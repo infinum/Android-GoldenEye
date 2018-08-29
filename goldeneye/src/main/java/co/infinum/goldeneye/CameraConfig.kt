@@ -31,6 +31,7 @@ internal class CameraConfigImpl(
 ) : CameraConfig {
 
     private var initialized = false
+    internal var locked = false
 
     internal var cameraParameters: Camera.Parameters? = null
         set(value) {

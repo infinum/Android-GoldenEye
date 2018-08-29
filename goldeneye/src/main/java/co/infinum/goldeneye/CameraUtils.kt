@@ -52,24 +52,6 @@ internal object CameraUtils {
         return matrix
     }
 
-    fun <T : CameraConfig> findCamera(availableCameras: List<T>, facing: Facing): T? {
-        for (cameraConfig in availableCameras) {
-            if (cameraConfig.facing == facing) {
-                return cameraConfig
-            }
-        }
-        return null
-    }
-
-    fun <T : CameraConfig> hasFacing(availableCameras: List<T>, facing: Facing): Boolean {
-        return findCamera(availableCameras, facing) != null
-    }
-
-    fun <T : CameraConfig> nextCamera(availableCameras: List<T>, currentCameraConfig: T): T? {
-        val currentIndex = availableCameras.indexOf(currentCameraConfig)
-        return if (currentIndex != -1) availableCameras[(currentIndex + 1) % availableCameras.size] else null
-    }
-
     private fun getDeviceOrientation(activity: Activity) =
         when (activity.windowManager.defaultDisplay.rotation) {
             Surface.ROTATION_90 -> 90

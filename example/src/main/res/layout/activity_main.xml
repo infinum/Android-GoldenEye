@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#000"
     android:orientation="vertical">
 
     <TextureView
@@ -90,6 +91,7 @@
                     tools:text="Auto"/>
 
                 <TextView
+                    android:id="@+id/takePictureView"
                     style="@style/SettingsText"
                     tools:text="Auto"/>
 
@@ -102,5 +104,12 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/previewPictureView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000"
+        android:visibility="gone"/>
 
 </FrameLayout>

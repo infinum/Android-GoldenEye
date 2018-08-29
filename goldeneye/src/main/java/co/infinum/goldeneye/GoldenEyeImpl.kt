@@ -3,6 +3,7 @@
 package co.infinum.goldeneye
 
 import android.app.Activity
+import android.arch.lifecycle.Lifecycle
 import android.hardware.Camera
 import android.view.TextureView
 import co.infinum.goldeneye.LogDelegate.log
@@ -51,6 +52,8 @@ class GoldenEyeImpl @JvmOverloads constructor(
 
     override fun init(cameraInfo: CameraInfo, callback: InitCallback) {
         try {
+            Intrinsics.checkCameraPermission(activity)
+
             stop()
             _currentConfig = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_currentConfig)
@@ -79,6 +82,41 @@ class GoldenEyeImpl @JvmOverloads constructor(
             it.release()
         }
         camera = null
+    }
+
+    override fun takePicture(callback: PictureCallback) {
+        if (camera == null) {
+            log("Camera is not initialized. Did you call init() method?")
+            return
+        }
+
+        if (textureView == null) {
+            log("Preview not active. Did you call start() method?")
+            return
+        }
+
+        if (_currentConfig.locked) {
+            log("Camera is currently locked.")
+            return
+        }
+
+        try {
+            _currentConfig.locked = true
+            camera?.takePicture(
+                onShutter = { callback.onShutter() },
+                onPicture = {
+                    _currentConfig.locked = false
+                    callback.onPictureTaken(it)
+                },
+                onError = {
+                    _currentConfig.locked = false
+                    callback.onError(it)
+                }
+            )
+        } catch (t: Throwable) {
+            _currentConfig.locked = false
+            callback.onError(t)
+        }
     }
 
     @Throws(Throwable::class)

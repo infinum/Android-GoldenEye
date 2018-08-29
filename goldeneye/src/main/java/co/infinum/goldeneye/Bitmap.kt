@@ -2,6 +2,7 @@
 
 package co.infinum.goldeneye
 
+import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Matrix
 
@@ -23,6 +24,11 @@ fun Bitmap.rotate(degrees: Int): Bitmap {
     }
 
     return applyMatrix(matrix)
+}
+
+fun Bitmap.reverseCameraRotation(activity: Activity, config: CameraConfig): Bitmap {
+    val cameraRotation = CameraUtils.calculateDisplayOrientation(activity, config)
+    return if (config.facing == Facing.BACK) rotate(cameraRotation) else rotate(-cameraRotation)
 }
 
 fun Bitmap.mirror(): Bitmap {

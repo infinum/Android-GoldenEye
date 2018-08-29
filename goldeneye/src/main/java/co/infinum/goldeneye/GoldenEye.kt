@@ -13,7 +13,7 @@ interface GoldenEye {
     fun start(textureView: TextureView)
     fun stop()
 
-    fun takePicture(bitmap: Bitmap)
+    fun takePicture(callback: PictureCallback)
 
     interface Logger {
         fun log(message: String)

@@ -1,29 +1,33 @@
 package co.infinum.example
 
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.Handler
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
-import co.infinum.goldeneye.GoldenEye
-import co.infinum.goldeneye.GoldenEyeImpl
-import co.infinum.goldeneye.InitCallback
-import co.infinum.goldeneye.PreviewScale
+import co.infinum.goldeneye.*
 
 class MainActivity : AppCompatActivity() {
 
     lateinit var goldenEye: GoldenEye
-    lateinit var focusModeView: TextView
-    lateinit var flashModeView: TextView
-    lateinit var previewScaleView: TextView
-    lateinit var videoSizeView: TextView
-    lateinit var pictureSizeView: TextView
-    lateinit var previewSizeView: TextView
-    lateinit var nextCameraView: TextView
-    lateinit var settingsContainer: View
-    lateinit var settingsToggleButton: View
+    private lateinit var focusModeView: TextView
+    private lateinit var flashModeView: TextView
+    private lateinit var previewScaleView: TextView
+    private lateinit var videoSizeView: TextView
+    private lateinit var pictureSizeView: TextView
+    private lateinit var previewSizeView: TextView
+    private lateinit var nextCameraView: TextView
+    private lateinit var settingsContainer: View
+    private lateinit var settingsToggleButton: View
+    private lateinit var takePictureView: TextView
+    private lateinit var previewPictureView: ImageView
+
     private val initCallback = object : InitCallback {
         override fun onSuccess() {
             goldenEye.start(findViewById(R.id.textureView))
@@ -55,6 +59,8 @@ class MainActivity : AppCompatActivity() {
         nextCameraView = findViewById(R.id.nextCameraView)
         settingsContainer = findViewById(R.id.settingsContainer)
         settingsToggleButton = findViewById(R.id.settingsToggleButton)
+        takePictureView = findViewById(R.id.takePictureView)
+        previewPictureView = findViewById(R.id.previewPictureView)
         updateViews()
         settingsToggleButton.setOnClickListener {
             if (settingsContainer.visibility == View.GONE) {
@@ -129,6 +135,20 @@ class MainActivity : AppCompatActivity() {
                 onClick = { goldenEye.currentConfig.pictureSize = it }
             )
         }
+
+        takePictureView.setOnClickListener {
+            goldenEye.takePicture(object: PictureCallback() {
+                override fun onPictureTaken(picture: Bitmap) {
+                    previewPictureView.visibility = View.VISIBLE
+                    previewPictureView.setImageBitmap(picture.reverseCameraRotation(this@MainActivity, goldenEye.currentConfig))
+                    Handler().postDelayed({ previewPictureView.visibility = View.GONE }, 3000)
+                }
+
+                override fun onError(t: Throwable) {
+                    t.printStackTrace()
+                }
+            })
+        }
     }
 
     private fun <T> displayDialog(title: String, listItems: List<ListItem<T>>, onClick: (T) -> Unit) {
@@ -156,6 +176,8 @@ class MainActivity : AppCompatActivity() {
             pictureSizeView.text = "Picture:\n${pictureSize.convertToString()}"
             previewSizeView.text = "Preview:\n${previewSize.convertToString()}"
             nextCameraView.text = "Cycle camera"
+            takePictureView.text = "Take picture"
+
         }
     }
 }

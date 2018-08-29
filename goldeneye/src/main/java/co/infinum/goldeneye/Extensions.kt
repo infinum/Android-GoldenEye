@@ -1,5 +1,6 @@
 package co.infinum.goldeneye
 
+import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.view.TextureView
@@ -37,4 +38,18 @@ internal fun <T1, T2> ifNotNull(p1: T1?, p2: T2?, action: (T1, T2) -> Unit) {
 
 internal fun Camera.updateParams(update: Camera.Parameters.() -> Unit) {
     parameters = parameters?.apply(update)
+}
+
+internal fun Camera.takePicture(onShutter: () -> Unit, onPicture: (Bitmap) -> Unit, onError: (Throwable) -> Unit) {
+    val shutterCallback = Camera.ShutterCallback { onShutter() }
+    val pictureCallback = Camera.PictureCallback { data, _ ->
+        PictureFactory.createBitmap(data) {
+            if (it != null) {
+                onPicture(it)
+            } else {
+                onError(PictureConversionException)
+            }
+        }
+    }
+    takePicture(shutterCallback, null, pictureCallback)
 }

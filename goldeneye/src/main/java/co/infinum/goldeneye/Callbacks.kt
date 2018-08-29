@@ -3,9 +3,11 @@ package co.infinum.goldeneye
 import android.graphics.Bitmap
 import java.io.File
 
-interface PictureCallback {
-    fun onPictureTaken(picture: Bitmap)
-    fun onError(t: Throwable)
+abstract class PictureCallback {
+    abstract fun onPictureTaken(picture: Bitmap)
+    abstract fun onError(t: Throwable)
+    fun onShutter() {
+    }
 }
 
 interface VideoCallback {
