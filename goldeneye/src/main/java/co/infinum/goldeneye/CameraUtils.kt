@@ -64,11 +64,11 @@ internal object CameraUtils {
             return emptyList()
         }
 
-        val translatedPreviewX = rotatedX - (rotatedTextureViewX - scaledPreviewX) / 2
-        val translatedPreviewY = rotatedY - (rotatedTextureViewY - scaledPreviewY) / 2
+        val translatedPreviewX = rotatedX - Math.max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
+        val translatedPreviewY = rotatedY - Math.max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
 
-        val cameraWidthRatio = 2000f / config.previewSize.width
-        val cameraHeightRatio = 2000f / config.previewSize.height
+        val cameraWidthRatio = 2000f / scaledPreviewX
+        val cameraHeightRatio = 2000f / scaledPreviewY
 
         val cameraFocusX = cameraWidthRatio * translatedPreviewX - 1000
         val cameraFocusY = cameraHeightRatio * translatedPreviewY - 1000
@@ -93,8 +93,8 @@ internal object CameraUtils {
         x: Float, y: Float
     ): Boolean {
 
-        val diffX = (rotatedTextureViewX - scaledPreviewX) / 2
-        val diffY = (rotatedTextureViewY - scaledPreviewY) / 2
+        val diffX = Math.max(0f,(rotatedTextureViewX - scaledPreviewX) / 2)
+        val diffY = Math.max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
         return x < diffX || x > diffX + scaledPreviewX || y < diffY || y > diffY + scaledPreviewY
     }
 
