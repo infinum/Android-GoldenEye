@@ -78,7 +78,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
             }
             camera?.apply {
                 updateParams {
-                    val areas = listOf(CameraUtils.calculateFocusArea(currentConfig, event.x, event.y))
+                    val areas = CameraUtils.calculateFocusArea(activity, textureView, currentConfig, event.x, event.y)
                     if (maxNumFocusAreas > 0) {
                         focusAreas = areas
                     }

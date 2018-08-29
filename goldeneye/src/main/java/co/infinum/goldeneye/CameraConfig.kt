@@ -127,21 +127,21 @@ internal class CameraConfigImpl(
             ?.map { FlashMode.fromString(it) }
             ?.distinct()
             ?.filter { it != FlashMode.UNKNOWN }
-            ?: listOf()
+            ?: emptyList()
 
     override val supportedFocusModes
         get() = cameraParameters?.supportedFocusModes
             ?.map { FocusMode.fromString(it) }
             ?.distinct()
             ?.filter { it != FocusMode.UNKNOWN }
-            ?: listOf()
+            ?: emptyList()
 
     override val supportedPictureSizes
-        get() = cameraParameters?.supportedPictureSizes?.map { it.toInternalSize() }?.sorted() ?: listOf()
+        get() = cameraParameters?.supportedPictureSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
 
     override val supportedVideoSizes
-        get() = cameraParameters?.supportedVideoSizes?.map { it.toInternalSize() }?.sorted() ?: listOf()
+        get() = cameraParameters?.supportedVideoSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
 
     override val supportedPreviewSizes: List<Size>
-        get() = cameraParameters?.supportedPreviewSizes?.map { it.toInternalSize() }?.sorted() ?: listOf()
+        get() = cameraParameters?.supportedPreviewSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
 }
