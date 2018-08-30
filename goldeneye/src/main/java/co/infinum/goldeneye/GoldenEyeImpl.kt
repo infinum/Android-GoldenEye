@@ -23,7 +23,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
     private var camera: Camera? = null
     private var textureView: TextureView? = null
     private var mainHandler = Handler(Looper.getMainLooper())
-    private var pictureFactory = PictureFactoryImpl
+    private val pictureFactory: PictureFactory = PictureFactory
 
     private val onUpdateListener: (CameraProperty) -> Unit = {
         when (it) {
@@ -60,7 +60,6 @@ class GoldenEyeImpl @JvmOverloads constructor(
         try {
             mainHandler.removeCallbacksAndMessages(null)
             Intrinsics.checkCameraPermission(activity)
-
             stopPreview()
             _currentConfig = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_currentConfig)
@@ -80,9 +79,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
         initTapToFocus()
 
         textureView.onSurfaceUpdate(
-            onAvailable = {
-                startPreview()
-            },
+            onAvailable = { startPreview() },
             onSizeChanged = { applyMatrixTransformation(it) }
         )
     }
@@ -115,9 +112,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
             _currentConfig.locked = true
             camera?.takePicture(
                 pictureFactory = pictureFactory,
-                onShutter = {
-                    callback.onShutter()
-                },
+                onShutter = { callback.onShutter() },
                 onPicture = {
                     _currentConfig.locked = false
                     callback.onPictureTaken(it)
@@ -271,6 +266,12 @@ class GoldenEyeImpl @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Possible use case is that current focus mode is continuous and user
+     * wants to tap to focus. If he taps, we have to switch focusMode to AUTO
+     * and focus on tapped area. After 10 seconds, focusMode is reset in
+     * case user had continuous mode.
+     */
     private fun resetFocusWithDelay() {
         mainHandler.removeCallbacksAndMessages(null)
         mainHandler.postDelayed({ camera?.updateParams { focusMode = currentConfig.focusMode.key } }, DELAY_FOCUS_RESET)

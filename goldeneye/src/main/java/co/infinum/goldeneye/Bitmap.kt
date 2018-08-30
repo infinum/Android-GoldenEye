@@ -6,6 +6,11 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Matrix
 
+/**
+ * Crops original bitmap to reduce it to given size from center.
+ *
+ * @throws TaskOnMainThreadException if this method is called from Main thread.
+ */
 fun Bitmap.crop(size: Size): Bitmap {
     Intrinsics.checkMainThread()
     val x = if (size.width < width) (width - size.width) / 2 else 0
@@ -17,6 +22,11 @@ fun Bitmap.crop(size: Size): Bitmap {
     return Bitmap.createBitmap(this, x, y, size.width, size.height)
 }
 
+/**
+ * Rotates original bitmap for given degrees.
+ *
+ * @throws TaskOnMainThreadException if this method is called from Main thread.
+ */
 fun Bitmap.rotate(degrees: Int): Bitmap {
     Intrinsics.checkMainThread()
     val matrix = Matrix().apply {
@@ -26,11 +36,25 @@ fun Bitmap.rotate(degrees: Int): Bitmap {
     return applyMatrix(matrix)
 }
 
+/**
+ * Every Camera has its own rotation that is not the same as
+ * device orientation. For that reason, Images returned in
+ * ImageCallback can be rotated. This method will reverse
+ * that rotation and returned Bitmap will have same orientation
+ * as device.
+ *
+ * @throws TaskOnMainThreadException if this method is called from Main thread.
+ */
 fun Bitmap.reverseCameraRotation(activity: Activity, config: CameraConfig): Bitmap {
     val cameraRotation = CameraUtils.calculateDisplayOrientation(activity, config)
     return if (config.facing == Facing.BACK) rotate(cameraRotation) else rotate(-cameraRotation)
 }
 
+/**
+ * Mirror original bitmap vertically. Can be useful for front camera images.
+ *
+ * @throws TaskOnMainThreadException if this method is called from Main thread.
+ */
 fun Bitmap.mirror(): Bitmap {
     Intrinsics.checkMainThread()
     val matrix = Matrix().apply {

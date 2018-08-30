@@ -198,9 +198,10 @@ class MainActivity : AppCompatActivity() {
     private fun <T> executeOnBackground(task: () -> T, onSuccess: (T) -> Unit, onError: ((Throwable) -> Unit)? = null) {
         Executors.newSingleThreadExecutor().execute {
             try {
-                onSuccess(task())
+                val result = task()
+                mainHandler.post { onSuccess(result) }
             } catch (t: Throwable) {
-                onError?.invoke(t)
+                mainHandler.post { onError?.invoke(t) }
             }
         }
     }

@@ -6,16 +6,12 @@ import android.os.Handler
 import android.os.Looper
 import java.util.concurrent.Executors
 
-internal interface PictureFactory {
-    fun byteArrayToBitmap(byteArray: ByteArray, onBitmapCreated: (Bitmap?) -> Unit)
-}
-
-internal object PictureFactoryImpl : PictureFactory {
+internal object PictureFactory {
 
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    override fun byteArrayToBitmap(byteArray: ByteArray, onBitmapCreated: (Bitmap?) -> Unit) {
+    fun byteArrayToBitmap(byteArray: ByteArray, onBitmapCreated: (Bitmap?) -> Unit) {
         executor.submit {
             val bitmap =
                 try {

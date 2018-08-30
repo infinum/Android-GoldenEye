@@ -10,10 +10,7 @@ import android.view.View
 
 internal fun Camera.Size.toInternalSize() = Size(width, height)
 
-internal fun TextureView.onSurfaceUpdate(
-    onAvailable: (TextureView) -> Unit,
-    onSizeChanged: (TextureView) -> Unit
-) {
+internal fun TextureView.onSurfaceUpdate(onAvailable: (TextureView) -> Unit, onSizeChanged: (TextureView) -> Unit) {
     if (isAvailable) {
         onAvailable(this)
     }
@@ -39,7 +36,11 @@ internal fun <T1, T2> ifNotNull(p1: T1?, p2: T2?, action: (T1, T2) -> Unit) {
 }
 
 internal fun Camera.updateParams(update: Camera.Parameters.() -> Unit) {
-    parameters = parameters?.apply(update)
+    try {
+        parameters = parameters?.apply(update)
+    } catch (e: Exception) {
+        LogDelegate.log(e)
+    }
 }
 
 internal fun Camera.takePicture(
