@@ -1,4 +1,5 @@
 task javadocs(type: Javadoc) {
+    excludes = ['**/*.kt']
     source = android.sourceSets.main.java.source
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
 }
