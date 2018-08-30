@@ -1,6 +1,6 @@
 @file:Suppress("DEPRECATION")
 
-package co.infinum.goldeneye
+package co.infinum.goldeneye.utils
 
 import android.app.Activity
 import android.graphics.Matrix
@@ -8,6 +8,11 @@ import android.graphics.Rect
 import android.hardware.Camera
 import android.view.Surface
 import android.view.TextureView
+import co.infinum.goldeneye.CameraConfig
+import co.infinum.goldeneye.extensions.isNotMeasured
+import co.infinum.goldeneye.models.Facing
+import co.infinum.goldeneye.models.PreviewScale
+import co.infinum.goldeneye.models.Size
 
 internal object CameraUtils {
     private const val FOCUS_AREA_SIZE = 300
@@ -92,7 +97,10 @@ internal object CameraUtils {
             else -> y
         }
 
-        if (touchNotInPreview(rotatedTextureViewX, rotatedTextureViewY, scaledPreviewX, scaledPreviewY, rotatedX, rotatedY)) {
+        if (touchNotInPreview(rotatedTextureViewX, rotatedTextureViewY, scaledPreviewX,
+                scaledPreviewY, rotatedX, rotatedY
+            )
+        ) {
             return null
         }
 
@@ -130,7 +138,7 @@ internal object CameraUtils {
         x: Float, y: Float
     ): Boolean {
 
-        val diffX = Math.max(0f,(rotatedTextureViewX - scaledPreviewX) / 2)
+        val diffX = Math.max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
         val diffY = Math.max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
         return x < diffX || x > diffX + scaledPreviewX || y < diffY || y > diffY + scaledPreviewY
     }

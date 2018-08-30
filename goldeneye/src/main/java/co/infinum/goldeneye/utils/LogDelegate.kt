@@ -1,4 +1,6 @@
-package co.infinum.goldeneye
+package co.infinum.goldeneye.utils
+
+import co.infinum.goldeneye.GoldenEye
 
 internal object LogDelegate {
 

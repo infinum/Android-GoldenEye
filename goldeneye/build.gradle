@@ -7,6 +7,10 @@ android {
         minSdkVersion 14
         targetSdkVersion 27
     }
+
+    lintOptions {
+        disable 'Deprecation'
+    }
 }
 
 dependencies {

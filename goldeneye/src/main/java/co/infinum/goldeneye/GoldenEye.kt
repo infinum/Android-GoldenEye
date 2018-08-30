@@ -1,6 +1,8 @@
 package co.infinum.goldeneye
 
+import android.app.Activity
 import android.view.TextureView
+import co.infinum.goldeneye.models.CameraInfo
 import java.io.File
 
 interface GoldenEye {
@@ -20,5 +22,13 @@ interface GoldenEye {
     interface Logger {
         fun log(message: String)
         fun log(t: Throwable)
+    }
+
+    class Builder(private val activity: Activity) {
+
+        private var logger: GoldenEye.Logger? = null
+
+        fun setLogger(logger: GoldenEye.Logger) = apply { this.logger = logger }
+        fun build(): GoldenEye = GoldenEyeImpl(activity, logger)
     }
 }

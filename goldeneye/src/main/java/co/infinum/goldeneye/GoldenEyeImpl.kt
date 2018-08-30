@@ -9,13 +9,24 @@ import android.os.Handler
 import android.os.Looper
 import android.view.MotionEvent
 import android.view.TextureView
-import co.infinum.goldeneye.LogDelegate.log
+import co.infinum.goldeneye.extensions.ifNotNull
+import co.infinum.goldeneye.extensions.onSurfaceUpdate
+import co.infinum.goldeneye.extensions.takePicture
+import co.infinum.goldeneye.extensions.updateParams
+import co.infinum.goldeneye.models.CameraInfo
+import co.infinum.goldeneye.models.CameraProperty
+import co.infinum.goldeneye.models.Facing
+import co.infinum.goldeneye.models.FocusMode
+import co.infinum.goldeneye.utils.CameraUtils
+import co.infinum.goldeneye.utils.Intrinsics
+import co.infinum.goldeneye.utils.LogDelegate
+import co.infinum.goldeneye.utils.LogDelegate.log
 import java.io.File
 import java.io.IOException
 
 private const val DELAY_FOCUS_RESET = 10_000L
 
-class GoldenEyeImpl @JvmOverloads constructor(
+internal class GoldenEyeImpl @JvmOverloads constructor(
     private val activity: Activity,
     logger: GoldenEye.Logger? = null
 ) : GoldenEye {
@@ -23,7 +34,6 @@ class GoldenEyeImpl @JvmOverloads constructor(
     private var camera: Camera? = null
     private var textureView: TextureView? = null
     private var mainHandler = Handler(Looper.getMainLooper())
-    private val pictureFactory: PictureFactory = PictureFactory
 
     private val onUpdateListener: (CameraProperty) -> Unit = {
         when (it) {
@@ -111,7 +121,6 @@ class GoldenEyeImpl @JvmOverloads constructor(
         try {
             _currentConfig.locked = true
             camera?.takePicture(
-                pictureFactory = pictureFactory,
                 onShutter = { callback.onShutter() },
                 onPicture = {
                     _currentConfig.locked = false
@@ -245,7 +254,8 @@ class GoldenEyeImpl @JvmOverloads constructor(
             ifNotNull(camera, textureView) { camera, textureView ->
                 camera.updateParams {
                     focusMode = FocusMode.AUTO.key
-                    val areas = CameraUtils.calculateFocusArea(activity, textureView, currentConfig, event.x, event.y)
+                    val areas = CameraUtils
+                        .calculateFocusArea(activity, textureView, currentConfig, event.x, event.y)
                     if (maxNumFocusAreas > 0) {
                         focusAreas = areas
                     }

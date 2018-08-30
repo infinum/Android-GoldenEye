@@ -1,10 +1,16 @@
 @file:JvmName("BitmapUtils")
 
-package co.infinum.goldeneye
+package co.infinum.goldeneye.extensions
 
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import co.infinum.goldeneye.CameraConfig
+import co.infinum.goldeneye.TaskOnMainThreadException
+import co.infinum.goldeneye.models.Facing
+import co.infinum.goldeneye.models.Size
+import co.infinum.goldeneye.utils.CameraUtils
+import co.infinum.goldeneye.utils.Intrinsics
 
 /**
  * Crops original bitmap to reduce it to given size from center.

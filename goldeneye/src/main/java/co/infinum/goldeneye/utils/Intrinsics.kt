@@ -1,11 +1,12 @@
-package co.infinum.goldeneye
+package co.infinum.goldeneye.utils
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Looper
 import android.support.v4.app.ActivityCompat
+import co.infinum.goldeneye.MissingCameraPermissionException
+import co.infinum.goldeneye.TaskOnMainThreadException
 
 internal object Intrinsics {
 

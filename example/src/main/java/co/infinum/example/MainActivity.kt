@@ -12,6 +12,10 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import co.infinum.goldeneye.*
+import co.infinum.goldeneye.extensions.reverseCameraRotation
+import co.infinum.goldeneye.InitCallback
+import co.infinum.goldeneye.PictureCallback
+import co.infinum.goldeneye.models.PreviewScale
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
@@ -47,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         initViews()
-        goldenEye = GoldenEyeImpl(this)
+        goldenEye = GoldenEye.Builder(this).build()
         goldenEye.init(goldenEye.availableCameras[0], initCallback)
     }
 

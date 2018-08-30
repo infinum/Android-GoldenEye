@@ -1,4 +1,4 @@
-package co.infinum.goldeneye
+package co.infinum.goldeneye.models
 
 internal enum class CameraProperty {
     FOCUS,
