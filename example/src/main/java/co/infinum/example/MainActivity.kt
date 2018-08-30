@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
 
     private val initCallback = object : InitCallback {
         override fun onSuccess() {
-            goldenEye.start(findViewById(R.id.textureView))
+            goldenEye.startPreview(findViewById(R.id.textureView))
             updateViews()
         }
 

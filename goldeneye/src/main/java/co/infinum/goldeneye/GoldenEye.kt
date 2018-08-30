@@ -1,6 +1,7 @@
 package co.infinum.goldeneye
 
 import android.view.TextureView
+import java.io.File
 
 interface GoldenEye {
 
@@ -8,10 +9,13 @@ interface GoldenEye {
     val currentConfig: CameraConfig
 
     fun init(cameraInfo: CameraInfo, callback: InitCallback)
-    fun start(textureView: TextureView)
-    fun stop()
+    fun startPreview(textureView: TextureView)
+    fun stopPreview()
 
     fun takePicture(callback: PictureCallback)
+
+    fun startRecording(file: File, callback: VideoCallback)
+    fun stopRecording()
 
     interface Logger {
         fun log(message: String)

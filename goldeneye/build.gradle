@@ -4,12 +4,17 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 27
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 14
         targetSdkVersion 27
     }
 }
 
 dependencies {
     implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${versions.kotlin}"
 }
+
+apply from: '../tasks.gradle'
+apply from: 'bintray.gradle'
+
+preBuild.dependsOn ':goldeneye:generateReadme'

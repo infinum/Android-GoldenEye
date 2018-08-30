@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package co.infinum.goldeneye
 
 import android.graphics.Bitmap
@@ -40,10 +42,15 @@ internal fun Camera.updateParams(update: Camera.Parameters.() -> Unit) {
     parameters = parameters?.apply(update)
 }
 
-internal fun Camera.takePicture(onShutter: () -> Unit, onPicture: (Bitmap) -> Unit, onError: (Throwable) -> Unit) {
+internal fun Camera.takePicture(
+    pictureFactory: PictureFactory,
+    onShutter: () -> Unit,
+    onPicture: (Bitmap) -> Unit,
+    onError: (Throwable) -> Unit
+) {
     val shutterCallback = Camera.ShutterCallback { onShutter() }
     val pictureCallback = Camera.PictureCallback { data, _ ->
-        PictureFactory.createBitmap(data) {
+        pictureFactory.byteArrayToBitmap(data) {
             if (it != null) {
                 onPicture(it)
             } else {

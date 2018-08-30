@@ -10,6 +10,7 @@ import android.os.Looper
 import android.view.MotionEvent
 import android.view.TextureView
 import co.infinum.goldeneye.LogDelegate.log
+import java.io.File
 import java.io.IOException
 
 private const val DELAY_FOCUS_RESET = 10_000L
@@ -22,6 +23,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
     private var camera: Camera? = null
     private var textureView: TextureView? = null
     private var mainHandler = Handler(Looper.getMainLooper())
+    private var pictureFactory = PictureFactoryImpl
 
     private val onUpdateListener: (CameraProperty) -> Unit = {
         when (it) {
@@ -59,7 +61,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
             mainHandler.removeCallbacksAndMessages(null)
             Intrinsics.checkCameraPermission(activity)
 
-            stop()
+            stopPreview()
             _currentConfig = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_currentConfig)
             callback.onSuccess()
@@ -68,7 +70,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
         }
     }
 
-    override fun start(textureView: TextureView) {
+    override fun startPreview(textureView: TextureView) {
         if (camera == null) {
             log("Camera is not initialized. Did you call init() method?")
             return
@@ -85,7 +87,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
         )
     }
 
-    override fun stop() {
+    override fun stopPreview() {
         camera?.let {
             it.stopPreview()
             it.release()
@@ -112,6 +114,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
         try {
             _currentConfig.locked = true
             camera?.takePicture(
+                pictureFactory = pictureFactory,
                 onShutter = {
                     callback.onShutter()
                 },
@@ -130,6 +133,65 @@ class GoldenEyeImpl @JvmOverloads constructor(
             _currentConfig.locked = false
             callback.onError(t)
         }
+    }
+
+    override fun startRecording(file: File, callback: VideoCallback) {
+        //        this.videoFile = file
+        //        this.videoCallback = callback
+        //        if (camera == null) {
+        //            errorCallback.onError()
+        //            return
+        //        }
+        //
+        //        if (cameraLocked) {
+        //            errorCallback.onError()
+        //            return
+        //        }
+        //
+        //        val videoSize = if (currentCameraConfiguration().videoSize != Size(0, 0)) currentCameraConfiguration().videoSize else cameraOptions.videoSizes[0]
+        //        textureView?.let { camera?.initAndStartPreview(it, PreviewType.VIDEO) }
+        //
+        //        camera?.unlock()
+        //        try {
+        //            videoRecorder = MediaRecorder().also {
+        //                it.setCamera(camera)
+        //                it.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
+        //                it.setVideoSource(MediaRecorder.VideoSource.CAMERA)
+        //                it.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        //                it.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        //                it.setVideoEncoder(MediaRecorder.VideoEncoder.H264)
+        //                it.setOutputFile(file.absolutePath)
+        //                it.setPreviewDisplay(Surface(textureView?.surfaceTexture))
+        //                it.setVideoSize(videoSize.width, videoSize.height)
+        //                it.setOrientationHint(calculateCameraDisplayOrientation())
+        //                it.setVideoEncodingBitRate(10000000)
+        //                it.prepare()
+        //                it.start()
+        //            }
+        //            cameraLocked = true
+        //        } catch (e: Exception) {
+        //            errorCallback.onError()
+        //        }
+    }
+
+    override fun stopRecording() {
+        //        try {
+        //            videoRecorder?.stop()
+        //            if (videoCallback != null && videoFile != null) {
+        //                videoCallback!!.onVideoRecorded(videoFile!!)
+        //                videoCallback = null
+        //                videoFile = null
+        //            }
+        //        } catch (e: Exception) {
+        //            errorCallback.onError()
+        //        } finally {
+        //            videoRecorder?.release()
+        //            videoRecorder = null
+        //
+        //            camera?.reconnect()
+        //            cameraLocked = false
+        //            textureView?.let { camera?.initAndStartPreview(it, previewType) }
+        //        }
     }
 
     @Throws(Throwable::class)
