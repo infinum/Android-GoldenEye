@@ -96,6 +96,7 @@
                     tools:text="Auto"/>
 
                 <TextView
+                    android:id="@+id/tapToFocusView"
                     style="@style/SettingsText"
                     tools:text="Auto"/>
 

@@ -7,18 +7,18 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 
 fun Bitmap.crop(size: Size): Bitmap {
+    Intrinsics.checkMainThread()
     val x = if (size.width < width) (width - size.width) / 2 else 0
     val y = if (size.height < height) (height - size.height) / 2 else 0
     if (x == 0 && y == 0) {
         return this
     }
 
-    val newBitmap = Bitmap.createBitmap(this, x, y, size.width, size.height)
-    recycle()
-    return newBitmap
+    return Bitmap.createBitmap(this, x, y, size.width, size.height)
 }
 
 fun Bitmap.rotate(degrees: Int): Bitmap {
+    Intrinsics.checkMainThread()
     val matrix = Matrix().apply {
         setRotate(degrees.toFloat(), width / 2f, height / 2f)
     }
@@ -32,6 +32,7 @@ fun Bitmap.reverseCameraRotation(activity: Activity, config: CameraConfig): Bitm
 }
 
 fun Bitmap.mirror(): Bitmap {
+    Intrinsics.checkMainThread()
     val matrix = Matrix().apply {
         setScale(-1f, 1f)
     }
@@ -39,8 +40,4 @@ fun Bitmap.mirror(): Bitmap {
     return applyMatrix(matrix)
 }
 
-private fun Bitmap.applyMatrix(matrix: Matrix): Bitmap {
-    val newBitmap = Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
-    recycle()
-    return newBitmap
-}
+private fun Bitmap.applyMatrix(matrix: Matrix) = Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)

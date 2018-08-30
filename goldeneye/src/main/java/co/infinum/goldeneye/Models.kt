@@ -24,7 +24,7 @@ data class CameraInfo internal constructor(
 )
 
 enum class PreviewScale {
-    FIT, SCALE_TO_FILL, SCALE_TO_FIT
+    NO_SCALE, SCALE_TO_FILL, SCALE_TO_FIT
 }
 
 enum class Facing {

@@ -5,10 +5,14 @@ package co.infinum.goldeneye
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.hardware.Camera
+import android.os.Handler
+import android.os.Looper
 import android.view.MotionEvent
 import android.view.TextureView
 import co.infinum.goldeneye.LogDelegate.log
 import java.io.IOException
+
+private const val DELAY_FOCUS_RESET = 10_000L
 
 class GoldenEyeImpl @JvmOverloads constructor(
     private val activity: Activity,
@@ -17,6 +21,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
 
     private var camera: Camera? = null
     private var textureView: TextureView? = null
+    private var mainHandler = Handler(Looper.getMainLooper())
 
     private val onUpdateListener: (CameraProperty) -> Unit = {
         when (it) {
@@ -43,8 +48,6 @@ class GoldenEyeImpl @JvmOverloads constructor(
     private var _currentConfig: CameraConfigImpl = CameraConfigImpl(-1, -1, Facing.BACK, onUpdateListener)
     override val currentConfig: CameraConfig
         get() = _currentConfig
-    override val currentCamera: CameraInfo
-        get() = _currentConfig.toCameraInfo()
 
     init {
         LogDelegate.logger = logger
@@ -53,6 +56,7 @@ class GoldenEyeImpl @JvmOverloads constructor(
 
     override fun init(cameraInfo: CameraInfo, callback: InitCallback) {
         try {
+            mainHandler.removeCallbacksAndMessages(null)
             Intrinsics.checkCameraPermission(activity)
 
             stop()
@@ -64,7 +68,6 @@ class GoldenEyeImpl @JvmOverloads constructor(
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     override fun start(textureView: TextureView) {
         if (camera == null) {
             log("Camera is not initialized. Did you call init() method?")
@@ -72,29 +75,8 @@ class GoldenEyeImpl @JvmOverloads constructor(
         }
 
         this.textureView = textureView
-        textureView.setOnTouchListener { _, event ->
-            if (event.actionMasked != MotionEvent.ACTION_DOWN) {
-                return@setOnTouchListener false
-            }
-            camera?.apply {
-                updateParams {
-                    val areas = CameraUtils.calculateFocusArea(activity, textureView, currentConfig, event.x, event.y)
-                    if (maxNumFocusAreas > 0) {
-                        focusAreas = areas
-                    }
-                    if (maxNumMeteringAreas > 0) {
-                        meteringAreas = areas
-                    }
-                }
+        initTapToFocus()
 
-                autoFocus { success, camera ->
-                    if (success) {
-                        camera.cancelAutoFocus()
-                    }
-                }
-            }
-            true
-        }
         textureView.onSurfaceUpdate(
             onAvailable = {
                 startPreview()
@@ -130,14 +112,18 @@ class GoldenEyeImpl @JvmOverloads constructor(
         try {
             _currentConfig.locked = true
             camera?.takePicture(
-                onShutter = { callback.onShutter() },
+                onShutter = {
+                    callback.onShutter()
+                },
                 onPicture = {
                     _currentConfig.locked = false
                     callback.onPictureTaken(it)
+                    camera?.startPreview()
                 },
                 onError = {
                     _currentConfig.locked = false
                     callback.onError(it)
+                    camera?.startPreview()
                 }
             )
         } catch (t: Throwable) {
@@ -187,6 +173,45 @@ class GoldenEyeImpl @JvmOverloads constructor(
                 }
             }
         }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun initTapToFocus() {
+        textureView?.setOnTouchListener { _, event ->
+            if (currentConfig.isTapToFocusEnabled.not()
+                || event.actionMasked != MotionEvent.ACTION_DOWN
+                || currentConfig.supportedFocusModes.contains(FocusMode.AUTO).not()
+            ) {
+                return@setOnTouchListener false
+            }
+
+            ifNotNull(camera, textureView) { camera, textureView ->
+                camera.updateParams {
+                    focusMode = FocusMode.AUTO.key
+                    val areas = CameraUtils.calculateFocusArea(activity, textureView, currentConfig, event.x, event.y)
+                    if (maxNumFocusAreas > 0) {
+                        focusAreas = areas
+                    }
+                    if (maxNumMeteringAreas > 0) {
+                        meteringAreas = areas
+                    }
+                }
+
+                camera.autoFocus { success, _ ->
+                    if (success) {
+                        camera.cancelAutoFocus()
+                        resetFocusWithDelay()
+                    }
+                }
+            }
+
+            return@setOnTouchListener true
+        }
+    }
+
+    private fun resetFocusWithDelay() {
+        mainHandler.removeCallbacksAndMessages(null)
+        mainHandler.postDelayed({ camera?.updateParams { focusMode = currentConfig.focusMode.key } }, DELAY_FOCUS_RESET)
     }
 
     private fun applyMatrixTransformation(textureView: TextureView?) {

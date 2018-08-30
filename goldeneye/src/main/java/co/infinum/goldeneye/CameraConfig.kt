@@ -15,6 +15,7 @@ interface CameraConfig {
     var flashMode: FlashMode
     var focusMode: FocusMode
     var previewScale: PreviewScale
+    var isTapToFocusEnabled: Boolean
 
     val supportedPreviewSizes: List<Size>
     val supportedPictureSizes: List<Size>
@@ -41,6 +42,8 @@ internal class CameraConfigImpl(
                 setInitialValues(value)
             }
         }
+
+    override var isTapToFocusEnabled = false
 
     private fun setInitialValues(params: Camera.Parameters) {
         this.previewSize = params.previewSize?.toInternalSize() ?: Size.UNKNOWN
@@ -116,7 +119,7 @@ internal class CameraConfigImpl(
             }
         }
 
-    override var previewScale = PreviewScale.FIT
+    override var previewScale = PreviewScale.NO_SCALE
         set(value) {
             field = value
             onUpdateListener(CameraProperty.SCALE)

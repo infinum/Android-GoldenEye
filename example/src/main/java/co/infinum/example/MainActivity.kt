@@ -3,18 +3,20 @@ package co.infinum.example
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import co.infinum.goldeneye.*
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
+    private val mainHandler = Handler(Looper.getMainLooper())
     lateinit var goldenEye: GoldenEye
     private lateinit var focusModeView: TextView
     private lateinit var flashModeView: TextView
@@ -27,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var settingsToggleButton: View
     private lateinit var takePictureView: TextView
     private lateinit var previewPictureView: ImageView
+    private lateinit var tapToFocusView: TextView
 
     private val initCallback = object : InitCallback {
         override fun onSuccess() {
@@ -43,9 +46,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        initViews()
         goldenEye = GoldenEyeImpl(this)
         goldenEye.init(goldenEye.availableCameras[0], initCallback)
-        initViews()
     }
 
     private fun initViews() {
@@ -61,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         settingsToggleButton = findViewById(R.id.settingsToggleButton)
         takePictureView = findViewById(R.id.takePictureView)
         previewPictureView = findViewById(R.id.previewPictureView)
-        updateViews()
+        tapToFocusView = findViewById(R.id.tapToFocusView)
         settingsToggleButton.setOnClickListener {
             if (settingsContainer.visibility == View.GONE) {
                 settingsContainer.visibility = View.VISIBLE
@@ -71,8 +74,8 @@ class MainActivity : AppCompatActivity() {
         }
         settingsContainer.visibility = View.GONE
 
-        nextCameraView.setOnClickListener {
-            val nextIndex = (goldenEye.availableCameras.indexOf(goldenEye.currentCamera) + 1) % goldenEye.availableCameras.size
+        nextCameraView.setOnClickListener { _ ->
+            val nextIndex = (goldenEye.availableCameras.indexOfFirst { it.id == goldenEye.currentConfig.id } + 1) % goldenEye.availableCameras.size
             goldenEye.init(goldenEye.availableCameras[nextIndex], initCallback)
         }
 
@@ -136,18 +139,29 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        takePictureView.setOnClickListener {
-            goldenEye.takePicture(object: PictureCallback() {
+        takePictureView.setOnClickListener { _ ->
+            goldenEye.takePicture(object : PictureCallback() {
                 override fun onPictureTaken(picture: Bitmap) {
                     previewPictureView.visibility = View.VISIBLE
-                    previewPictureView.setImageBitmap(picture.reverseCameraRotation(this@MainActivity, goldenEye.currentConfig))
-                    Handler().postDelayed({ previewPictureView.visibility = View.GONE }, 3000)
+                    executeOnBackground(
+                        task = { picture.reverseCameraRotation(this@MainActivity, goldenEye.currentConfig) },
+                        onSuccess = {
+                            previewPictureView.setImageBitmap(it)
+                            mainHandler.postDelayed({ previewPictureView.visibility = View.GONE }, 3000)
+                        },
+                        onError = { it.printStackTrace() }
+                    )
                 }
 
                 override fun onError(t: Throwable) {
                     t.printStackTrace()
                 }
             })
+        }
+
+        tapToFocusView.setOnClickListener {
+            goldenEye.currentConfig.isTapToFocusEnabled = goldenEye.currentConfig.isTapToFocusEnabled.not()
+            updateViews()
         }
     }
 
@@ -177,7 +191,17 @@ class MainActivity : AppCompatActivity() {
             previewSizeView.text = "Preview:\n${previewSize.convertToString()}"
             nextCameraView.text = "Cycle camera"
             takePictureView.text = "Take picture"
+            tapToFocusView.text = "Tap to Focus:\n$isTapToFocusEnabled"
+        }
+    }
 
+    private fun <T> executeOnBackground(task: () -> T, onSuccess: (T) -> Unit, onError: ((Throwable) -> Unit)? = null) {
+        Executors.newSingleThreadExecutor().execute {
+            try {
+                onSuccess(task())
+            } catch (t: Throwable) {
+                onError?.invoke(t)
+            }
         }
     }
 }

@@ -8,7 +8,6 @@ import android.graphics.Rect
 import android.hardware.Camera
 import android.view.Surface
 import android.view.TextureView
-import co.infinum.goldeneye.CameraUtils.calculateDisplayOrientation
 
 internal object CameraUtils {
     private const val FOCUS_AREA_SIZE = 300
@@ -119,7 +118,7 @@ internal object CameraUtils {
             when (config.previewScale) {
                 PreviewScale.SCALE_TO_FILL -> Math.max(scaleX, scaleY)
                 PreviewScale.SCALE_TO_FIT -> Math.min(scaleX, scaleY)
-                PreviewScale.FIT -> if (Math.min(scaleX, scaleY) < 1) Math.min(scaleX, scaleY) else 1f
+                PreviewScale.NO_SCALE -> 1f
             }
         return Triple(scaleX, scaleY, scale)
     }
