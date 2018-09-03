@@ -1,5 +1,4 @@
 task javadocs(type: Javadoc) {
-    excludes = ['**/*.kt']
     source = android.sourceSets.main.java.source
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
 }
@@ -10,14 +9,19 @@ afterEvaluate {
     })
 }
 
-task javadocsJar(type: Jar, dependsOn: javadocs) {
+dokka {
+    outputFormat = 'html'
+    outputDirectory = "$buildDir/javadoc"
+}
+
+task javadocsJar(type: Jar, dependsOn: dokka) {
     classifier = 'javadoc'
-    from javadocs.destinationDir
+    from dokka.outputDirectory
 }
 
 task sourcesJar(type: Jar, dependsOn: assemble) {
+    from android.sourceSets.main.java.srcDirs
     classifier = 'sources'
-    from android.sourceSets.main.java.sourceFiles
 }
 
 task generateReadme {

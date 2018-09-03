@@ -1,6 +1,7 @@
 package co.infinum.example
 
 import android.graphics.Bitmap
+import android.hardware.Camera
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -15,7 +16,9 @@ import co.infinum.goldeneye.*
 import co.infinum.goldeneye.extensions.reverseCameraRotation
 import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.PictureCallback
+import co.infinum.goldeneye.extensions.crop
 import co.infinum.goldeneye.models.PreviewScale
+import co.infinum.goldeneye.models.Size
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {

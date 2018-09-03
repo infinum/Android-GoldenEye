@@ -6,7 +6,7 @@ buildscript {
     ]
 
     ext.versions = [
-        goldeneye: '0.1.0',
+        goldeneye: '0.1.1',
         google   : '27.1.1',
         junit    : '4.12',
         mockito  : '2.10.0',
@@ -22,6 +22,7 @@ buildscript {
         classpath 'com.android.tools.build:gradle:3.1.4'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:0.9.17"
     }
 }
 
