@@ -50,6 +50,26 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
                 camera?.updateParams { setPreviewSize(previewSize.width, previewSize.height) }
                 applyMatrixTransformation(textureView)
             }
+            CameraProperty.WHITE_BALANCE -> camera?.updateParams { whiteBalance = currentConfig.whiteBalance.key }
+            CameraProperty.ZOOM -> {
+                if (_currentConfig.smoothZoomEnabled) {
+                    if (_currentConfig.zoomInProgress) {
+                        camera?.setZoomChangeListener { zoomValue, stopped, camera ->
+                            if (stopped && zoomValue != currentConfig.zoomLevel) {
+                                camera.startSmoothZoom(currentConfig.zoomLevel)
+                            } else {
+                                _currentConfig.zoomInProgress = false
+                            }
+                        }
+                        camera?.stopSmoothZoom()
+                    } else {
+                        camera?.startSmoothZoom(currentConfig.zoomLevel)
+                        _currentConfig.zoomInProgress = true
+                    }
+                } else {
+                    camera?.updateParams { zoom = currentConfig.zoomLevel }
+                }
+            }
         }
     }
 
@@ -244,7 +264,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
     @SuppressLint("ClickableViewAccessibility")
     private fun initTapToFocus() {
         textureView?.setOnTouchListener { _, event ->
-            if (currentConfig.isTapToFocusEnabled.not()
+            if (currentConfig.tapToFocusEnabled.not()
                 || event.actionMasked != MotionEvent.ACTION_DOWN
                 || currentConfig.supportedFocusModes.contains(FocusMode.AUTO).not()
             ) {

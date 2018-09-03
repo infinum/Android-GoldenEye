@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Looper
+import android.support.v4.app.ActivityCompat
 import co.infinum.goldeneye.MissingCameraPermissionException
 import co.infinum.goldeneye.TaskOnMainThreadException
 

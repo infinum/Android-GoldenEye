@@ -1,1 +1,1 @@
-include ':goldeneye', ':example', ':myapplication'
+include ':goldeneye', ':example'

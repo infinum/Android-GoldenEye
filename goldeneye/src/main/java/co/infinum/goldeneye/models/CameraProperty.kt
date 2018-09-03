@@ -6,5 +6,7 @@ internal enum class CameraProperty {
     SCALE,
     PICTURE_SIZE,
     VIDEO_SIZE,
-    PREVIEW_SIZE
+    PREVIEW_SIZE,
+    WHITE_BALANCE,
+    ZOOM
 }

@@ -1,6 +1,8 @@
 package co.infinum.goldeneye
 
 import android.hardware.Camera
+import android.os.Build
+import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.models.*
 import co.infinum.goldeneye.utils.LogDelegate
 
@@ -13,6 +15,9 @@ internal class CameraConfigImpl(
 
     private var initialized = false
     internal var locked = false
+    internal var zoomInProgress = false
+    internal val smoothZoomEnabled: Boolean
+        get() = cameraParameters?.isSmoothZoomSupported ?: false
 
     internal var cameraParameters: Camera.Parameters? = null
         set(value) {
@@ -23,14 +28,23 @@ internal class CameraConfigImpl(
             }
         }
 
-    override var isTapToFocusEnabled = false
-
     private fun setInitialValues(params: Camera.Parameters) {
         this.previewSize = params.previewSize?.toInternalSize() ?: Size.UNKNOWN
         this.pictureSize = params.pictureSize?.toInternalSize() ?: Size.UNKNOWN
         this.flashMode = FlashMode.fromString(params.flashMode)
         this.focusMode = FocusMode.fromString(params.focusMode)
+        this.pinchToZoomEnabled = params.isZoomSupported
     }
+
+    override var tapToFocusEnabled = true
+    override var pinchToZoomEnabled = false
+        set(value) {
+            if (cameraParameters?.isZoomSupported == true && value) {
+                field = value
+            } else {
+                LogDelegate.log("Zoom not supported.")
+            }
+        }
 
     internal fun toCameraInfo() = CameraInfo(id, orientation, facing)
 
@@ -49,7 +63,7 @@ internal class CameraConfigImpl(
             }
         }
 
-    override var flashMode: FlashMode = FlashMode.UNKNOWN
+    override var flashMode: FlashMode = FlashMode.OFF
         set(value) {
             if (supportedFlashModes.contains(value)) {
                 field = value
@@ -105,6 +119,54 @@ internal class CameraConfigImpl(
             onUpdateListener(CameraProperty.SCALE)
         }
 
+    override var whiteBalance = WhiteBalance.AUTO
+        set(value) {
+            if (supportedWhiteBalance.contains(value)) {
+                field = value
+                onUpdateListener(CameraProperty.WHITE_BALANCE)
+            } else {
+                LogDelegate.log("Unsupported WhiteBalance [$value]")
+            }
+        }
+
+    override var zoomLevel = 0
+        set(value) {
+            if (value in 0..maxZoomLevel) {
+                field = value
+                onUpdateListener(CameraProperty.ZOOM)
+            } else {
+                LogDelegate.log("Unsupported zoom level [$value]. Must be in [0, $maxZoomLevel]")
+            }
+        }
+
+    override var zoomPercentage: Int
+        get() = cameraParameters?.zoomRatios?.getOrNull(zoomLevel) ?: 100
+        set(value) {
+            val zoomLevel = cameraParameters?.zoomRatios?.indexOfFirst { it == value } ?: -1
+            if (zoomLevel != -1) {
+                this.zoomLevel = zoomLevel
+            } else {
+                LogDelegate.log("Unsupported zoom percentage [$value].")
+            }
+        }
+
+    override val maxZoomLevel: Int
+        get() = cameraParameters?.maxZoom ?: 0
+
+    override val maxZoomPercentage: Int
+        get() = cameraParameters?.zoomRatios?.sorted()?.last() ?: 100
+
+    override var videoStabilizationEnabled = false
+        @RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
+        set(value) {
+            cameraParameters?.zoom
+            if (cameraParameters?.isVideoStabilizationSupported == true && value) {
+                field = value
+            } else {
+                LogDelegate.log("Video stabilization not supported.")
+            }
+        }
+
     override val supportedFlashModes
         get() = cameraParameters?.supportedFlashModes
             ?.map { FlashMode.fromString(it) }
@@ -117,6 +179,13 @@ internal class CameraConfigImpl(
             ?.map { FocusMode.fromString(it) }
             ?.distinct()
             ?.filter { it != FocusMode.UNKNOWN }
+            ?: emptyList()
+
+    override val supportedWhiteBalance: List<WhiteBalance>
+        get() = cameraParameters?.supportedWhiteBalance
+            ?.map { WhiteBalance.fromString(it) }
+            ?.distinct()
+            ?.filter { it != WhiteBalance.UNKNOWN }
             ?: emptyList()
 
     override val supportedPictureSizes
