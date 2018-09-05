@@ -2,21 +2,18 @@
 
 package co.infinum.goldeneye
 
-import android.annotation.SuppressLint
 import android.app.Activity
+import android.graphics.Bitmap
 import android.hardware.Camera
-import android.os.Handler
-import android.os.Looper
-import android.view.MotionEvent
+import android.os.Build
 import android.view.TextureView
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
-import co.infinum.goldeneye.extensions.takePicture
 import co.infinum.goldeneye.extensions.updateParams
 import co.infinum.goldeneye.models.CameraInfo
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.Facing
-import co.infinum.goldeneye.models.FocusMode
+import co.infinum.goldeneye.models.PreviewScale
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.Intrinsics
 import co.infinum.goldeneye.utils.LogDelegate
@@ -24,52 +21,63 @@ import co.infinum.goldeneye.utils.LogDelegate.log
 import java.io.File
 import java.io.IOException
 
-private const val DELAY_FOCUS_RESET = 10_000L
-
 internal class GoldenEyeImpl @JvmOverloads constructor(
     private val activity: Activity,
-    logger: GoldenEye.Logger? = null
+    logger: GoldenEye.Logger? = null,
+    private val onZoomChangeCallback: OnZoomChangeCallback? = null
 ) : GoldenEye {
 
     private var camera: Camera? = null
     private var textureView: TextureView? = null
-    private var mainHandler = Handler(Looper.getMainLooper())
+    private var gestureHandler: GestureHandler? = null
+    private var videoRecorder: VideoRecorder? = null
+    private var pictureRecorder: PictureRecorder? = null
 
     private val onUpdateListener: (CameraProperty) -> Unit = {
         when (it) {
-            CameraProperty.FOCUS -> camera?.updateParams { focusMode = currentConfig.focusMode.key }
-            CameraProperty.FLASH -> camera?.updateParams { flashMode = currentConfig.flashMode.key }
+            CameraProperty.FOCUS -> camera?.updateParams { focusMode = config.focusMode.key }
+            CameraProperty.FLASH -> camera?.updateParams { flashMode = config.flashMode.key }
+            CameraProperty.COLOR_EFFECT -> camera?.updateParams { colorEffect = config.colorEffect.key }
+            CameraProperty.ANTIBANDING -> camera?.updateParams { antibanding = config.antibanding.key }
+            CameraProperty.SCENE_MODE -> camera?.updateParams { sceneMode = config.sceneMode.key }
+            CameraProperty.WHITE_BALANCE -> camera?.updateParams { whiteBalance = config.whiteBalance.key }
             CameraProperty.SCALE -> applyMatrixTransformation(textureView)
             CameraProperty.PICTURE_SIZE -> {
-                val pictureSize = currentConfig.pictureSize
+                val pictureSize = config.pictureSize
                 camera?.updateParams { setPictureSize(pictureSize.width, pictureSize.height) }
             }
-            CameraProperty.VIDEO_SIZE -> log("Ignoring video size for now")
             CameraProperty.PREVIEW_SIZE -> {
-                val previewSize = currentConfig.previewSize
+                val previewSize = config.previewSize
                 camera?.updateParams { setPreviewSize(previewSize.width, previewSize.height) }
                 applyMatrixTransformation(textureView)
             }
-            CameraProperty.WHITE_BALANCE -> camera?.updateParams { whiteBalance = currentConfig.whiteBalance.key }
             CameraProperty.ZOOM -> {
-                if (_currentConfig.smoothZoomEnabled) {
-                    if (_currentConfig.zoomInProgress) {
+                if (_config.smoothZoomEnabled) {
+                    if (_config.zoomInProgress) {
                         camera?.setZoomChangeListener { zoomValue, stopped, camera ->
-                            if (stopped && zoomValue != currentConfig.zoomLevel) {
-                                camera.startSmoothZoom(currentConfig.zoomLevel)
+                            if (stopped && zoomValue != config.zoomLevel) {
+                                camera.startSmoothZoom(config.zoomLevel)
                             } else {
-                                _currentConfig.zoomInProgress = false
+                                _config.zoomInProgress = false
                             }
                         }
                         camera?.stopSmoothZoom()
                     } else {
-                        camera?.startSmoothZoom(currentConfig.zoomLevel)
-                        _currentConfig.zoomInProgress = true
+                        camera?.startSmoothZoom(config.zoomLevel)
+                        _config.zoomInProgress = true
                     }
                 } else {
-                    camera?.updateParams { zoom = currentConfig.zoomLevel }
+                    camera?.updateParams { zoom = config.zoomLevel }
                 }
             }
+            CameraProperty.VIDEO_STABILIZATION -> {
+                camera?.updateParams {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                        videoStabilization = config.videoStabilizationEnabled
+                    }
+                }
+            }
+
         }
     }
 
@@ -77,22 +85,40 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
     override val availableCameras: List<CameraInfo>
         get() = _availableCameras.map { it.toCameraInfo() }
 
-    private var _currentConfig: CameraConfigImpl = CameraConfigImpl(-1, -1, Facing.BACK, onUpdateListener)
-    override val currentConfig: CameraConfig
-        get() = _currentConfig
+    private var _config: CameraConfigImpl = CameraConfigImpl(-1, -1, Facing.BACK, onUpdateListener)
+    override val config: CameraConfig
+        get() = _config
 
     init {
         LogDelegate.logger = logger
         initAvailableCameras()
     }
 
+    override fun init(cameraInfo: CameraInfo, onSuccess: () -> Unit, onError: (Throwable) -> Unit) {
+        init(cameraInfo, object : InitCallback {
+            override fun onSuccess() {
+                onSuccess()
+            }
+
+            override fun onError(t: Throwable) {
+                onError(t)
+            }
+        })
+    }
+
     override fun init(cameraInfo: CameraInfo, callback: InitCallback) {
         try {
-            mainHandler.removeCallbacksAndMessages(null)
             Intrinsics.checkCameraPermission(activity)
-            stopPreview()
-            _currentConfig = _availableCameras.first { it.id == cameraInfo.id }
-            openCamera(_currentConfig)
+            release()
+            val previousPreviewScale = _config.previewScale
+            _config = _availableCameras.first { it.id == cameraInfo.id }
+            _config.previewScale = previousPreviewScale
+            openCamera(_config)
+            camera?.let {
+                this.gestureHandler = GestureHandler(activity, it, config, onZoomChangeCallback)
+                this.videoRecorder = VideoRecorder(activity, it, _config)
+                this.pictureRecorder = PictureRecorder(activity, it, _config)
+            }
             callback.onSuccess()
         } catch (t: Throwable) {
             callback.onError(t)
@@ -106,7 +132,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
         }
 
         this.textureView = textureView
-        initTapToFocus()
+        this.gestureHandler?.init(textureView)
 
         textureView.onSurfaceUpdate(
             onAvailable = { startPreview() },
@@ -114,116 +140,76 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
         )
     }
 
-    override fun stopPreview() {
+    override fun release() {
         camera?.let {
             it.stopPreview()
             it.release()
         }
         camera = null
+        gestureHandler?.release()
+        gestureHandler = null
+    }
+
+    override fun takePicture(onPictureTaken: (Bitmap) -> Unit, onError: (Throwable) -> Unit, onShutter: (() -> Unit)?) {
+        takePicture(object : PictureCallback() {
+            override fun onPictureTaken(picture: Bitmap) {
+                onPictureTaken(picture)
+            }
+
+            override fun onError(t: Throwable) {
+                onError(t)
+            }
+
+            override fun onShutter() {
+                onShutter?.invoke()
+            }
+        })
     }
 
     override fun takePicture(callback: PictureCallback) {
-        if (camera == null) {
-            log("Camera is not initialized. Did you call init() method?")
-            return
-        }
+        if (isCameraReady().not()) return
 
-        if (textureView == null) {
-            log("Preview not active. Did you call start() method?")
-            return
-        }
+        pictureRecorder?.takePicture(callback)
+    }
 
-        if (_currentConfig.locked) {
-            log("Camera is currently locked.")
-            return
-        }
+    override fun startRecording(file: File, onVideoRecorded: (File) -> Unit, onError: (Throwable) -> Unit) {
+        startRecording(file, object : VideoCallback {
+            override fun onVideoRecorded(file: File) {
+                onVideoRecorded(file)
+            }
 
-        try {
-            _currentConfig.locked = true
-            camera?.takePicture(
-                onShutter = { callback.onShutter() },
-                onPicture = {
-                    _currentConfig.locked = false
-                    callback.onPictureTaken(it)
-                    camera?.startPreview()
-                },
-                onError = {
-                    _currentConfig.locked = false
-                    callback.onError(it)
-                    camera?.startPreview()
-                }
-            )
-        } catch (t: Throwable) {
-            _currentConfig.locked = false
-            callback.onError(t)
-        }
+            override fun onError(t: Throwable) {
+                onError(t)
+            }
+        })
     }
 
     override fun startRecording(file: File, callback: VideoCallback) {
-        //        this.videoFile = file
-        //        this.videoCallback = callback
-        //        if (camera == null) {
-        //            errorCallback.onError()
-        //            return
-        //        }
-        //
-        //        if (cameraLocked) {
-        //            errorCallback.onError()
-        //            return
-        //        }
-        //
-        //        val videoSize = if (currentCameraConfiguration().videoSize != Size(0, 0)) currentCameraConfiguration().videoSize else cameraOptions.videoSizes[0]
-        //        textureView?.let { camera?.initAndStartPreview(it, PreviewType.VIDEO) }
-        //
-        //        camera?.unlock()
-        //        try {
-        //            videoRecorder = MediaRecorder().also {
-        //                it.setCamera(camera)
-        //                it.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
-        //                it.setVideoSource(MediaRecorder.VideoSource.CAMERA)
-        //                it.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-        //                it.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-        //                it.setVideoEncoder(MediaRecorder.VideoEncoder.H264)
-        //                it.setOutputFile(file.absolutePath)
-        //                it.setPreviewDisplay(Surface(textureView?.surfaceTexture))
-        //                it.setVideoSize(videoSize.width, videoSize.height)
-        //                it.setOrientationHint(calculateCameraDisplayOrientation())
-        //                it.setVideoEncodingBitRate(10000000)
-        //                it.prepare()
-        //                it.start()
-        //            }
-        //            cameraLocked = true
-        //        } catch (e: Exception) {
-        //            errorCallback.onError()
-        //        }
+        if (isCameraReady().not()) return
+
+        videoRecorder?.startRecording(file, object : VideoCallback {
+            override fun onVideoRecorded(file: File) {
+                startPreview()
+                callback.onVideoRecorded(file)
+            }
+
+            override fun onError(t: Throwable) {
+                startPreview()
+                callback.onError(t)
+            }
+        })
     }
 
     override fun stopRecording() {
-        //        try {
-        //            videoRecorder?.stop()
-        //            if (videoCallback != null && videoFile != null) {
-        //                videoCallback!!.onVideoRecorded(videoFile!!)
-        //                videoCallback = null
-        //                videoFile = null
-        //            }
-        //        } catch (e: Exception) {
-        //            errorCallback.onError()
-        //        } finally {
-        //            videoRecorder?.release()
-        //            videoRecorder = null
-        //
-        //            camera?.reconnect()
-        //            cameraLocked = false
-        //            textureView?.let { camera?.initAndStartPreview(it, previewType) }
-        //        }
+        videoRecorder?.stopRecording()
     }
 
     @Throws(Throwable::class)
     private fun openCamera(config: CameraConfigImpl) {
         Camera.open(config.id)?.also {
             this.camera = it
-            _currentConfig = config
-            _currentConfig.cameraParameters = it.parameters
+            _config = config
+            _config.cameraParameters = it.parameters
         }
     }
 
@@ -233,7 +219,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
                 camera.apply {
                     stopPreview()
                     setPreviewTexture(textureView.surfaceTexture)
-                    setDisplayOrientation(CameraUtils.calculateDisplayOrientation(activity, currentConfig))
+                    setDisplayOrientation(CameraUtils.calculateDisplayOrientation(activity, config))
                     applyConfig()
                     applyMatrixTransformation(textureView)
                     startPreview()
@@ -247,68 +233,51 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
     private fun applyConfig() {
         camera?.apply {
             parameters = parameters.apply {
-                val previewSize = currentConfig.previewSize
+                val previewSize = config.previewSize
                 setPreviewSize(previewSize.width, previewSize.height)
-                val pictureSize = currentConfig.pictureSize
+
+                val pictureSize = config.pictureSize
                 setPictureSize(pictureSize.width, pictureSize.height)
-                if (currentConfig.supportedFocusModes.contains(currentConfig.focusMode)) {
-                    focusMode = currentConfig.focusMode.key
+
+                if (config.isVideoStabilizationSupported
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
+                ) {
+                    videoStabilization = config.videoStabilizationEnabled
                 }
-                if (currentConfig.supportedFlashModes.contains(currentConfig.flashMode)) {
-                    flashMode = currentConfig.flashMode.key
+
+                if (config.supportedFocusModes.contains(config.focusMode)) {
+                    focusMode = config.focusMode.key
+                }
+
+                if (config.supportedFlashModes.contains(config.flashMode)) {
+                    flashMode = config.flashMode.key
+                }
+
+                if (config.supportedAntibanding.contains(config.antibanding)) {
+                    antibanding = config.antibanding.key
+                }
+
+                if (config.supportedColorEffects.contains(config.colorEffect)) {
+                    colorEffect = config.colorEffect.key
+                }
+
+                if (config.supportedSceneModes.contains(config.sceneMode)) {
+                    sceneMode = config.sceneMode.key
+                }
+
+                if (config.supportedWhiteBalance.contains(config.whiteBalance)) {
+                    whiteBalance = config.whiteBalance.key
+                }
+
+                if (parameters.isZoomSupported) {
+                    zoom = config.zoomLevel
                 }
             }
         }
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    private fun initTapToFocus() {
-        textureView?.setOnTouchListener { _, event ->
-            if (currentConfig.tapToFocusEnabled.not()
-                || event.actionMasked != MotionEvent.ACTION_DOWN
-                || currentConfig.supportedFocusModes.contains(FocusMode.AUTO).not()
-            ) {
-                return@setOnTouchListener false
-            }
-
-            ifNotNull(camera, textureView) { camera, textureView ->
-                camera.updateParams {
-                    focusMode = FocusMode.AUTO.key
-                    val areas = CameraUtils
-                        .calculateFocusArea(activity, textureView, currentConfig, event.x, event.y)
-                    if (maxNumFocusAreas > 0) {
-                        focusAreas = areas
-                    }
-                    if (maxNumMeteringAreas > 0) {
-                        meteringAreas = areas
-                    }
-                }
-
-                camera.autoFocus { success, _ ->
-                    if (success) {
-                        camera.cancelAutoFocus()
-                        resetFocusWithDelay()
-                    }
-                }
-            }
-
-            return@setOnTouchListener true
-        }
-    }
-
-    /**
-     * Possible use case is that current focus mode is continuous and user
-     * wants to tap to focus. If he taps, we have to switch focusMode to AUTO
-     * and focus on tapped area. After 10 seconds, focusMode is reset in
-     * case user had continuous mode.
-     */
-    private fun resetFocusWithDelay() {
-        mainHandler.removeCallbacksAndMessages(null)
-        mainHandler.postDelayed({ camera?.updateParams { focusMode = currentConfig.focusMode.key } }, DELAY_FOCUS_RESET)
     }
 
     private fun applyMatrixTransformation(textureView: TextureView?) {
-        textureView?.setTransform(CameraUtils.calculateTextureMatrix(activity, currentConfig, textureView))
+        textureView?.setTransform(CameraUtils.calculateTextureMatrix(activity, config, textureView))
     }
 
     private fun initAvailableCameras() {
@@ -318,5 +287,28 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             val facing = if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) Facing.BACK else Facing.FRONT
             _availableCameras.add(CameraConfigImpl(id, cameraInfo.orientation, facing, onUpdateListener))
         }
+    }
+
+    private fun isCameraReady(): Boolean {
+        if (camera == null
+            || pictureRecorder == null
+            || videoRecorder == null
+            || gestureHandler == null
+        ) {
+            log("Camera is not initialized. Did you call init() method?")
+            return false
+        }
+
+        if (textureView == null) {
+            log("Preview not active. Did you call start() method?")
+            return false
+        }
+
+        if (_config.locked) {
+            log("Camera is currently locked.")
+            return false
+        }
+
+        return true
     }
 }

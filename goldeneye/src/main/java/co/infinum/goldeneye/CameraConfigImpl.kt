@@ -1,8 +1,8 @@
 package co.infinum.goldeneye
 
 import android.hardware.Camera
+import android.media.CamcorderProfile
 import android.os.Build
-import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.models.*
 import co.infinum.goldeneye.utils.LogDelegate
 
@@ -13,40 +13,7 @@ internal class CameraConfigImpl(
     private val onUpdateListener: (CameraProperty) -> Unit
 ) : CameraConfig {
 
-    private var initialized = false
-    internal var locked = false
-    internal var zoomInProgress = false
-    internal val smoothZoomEnabled: Boolean
-        get() = cameraParameters?.isSmoothZoomSupported ?: false
-
-    internal var cameraParameters: Camera.Parameters? = null
-        set(value) {
-            field = value
-            if (value != null && initialized.not()) {
-                initialized = true
-                setInitialValues(value)
-            }
-        }
-
-    private fun setInitialValues(params: Camera.Parameters) {
-        this.previewSize = params.previewSize?.toInternalSize() ?: Size.UNKNOWN
-        this.pictureSize = params.pictureSize?.toInternalSize() ?: Size.UNKNOWN
-        this.flashMode = FlashMode.fromString(params.flashMode)
-        this.focusMode = FocusMode.fromString(params.focusMode)
-        this.pinchToZoomEnabled = params.isZoomSupported
-    }
-
     override var tapToFocusEnabled = true
-    override var pinchToZoomEnabled = false
-        set(value) {
-            if (cameraParameters?.isZoomSupported == true && value) {
-                field = value
-            } else {
-                LogDelegate.log("Zoom not supported.")
-            }
-        }
-
-    internal fun toCameraInfo() = CameraInfo(id, orientation, facing)
 
     override var previewSize: Size = Size.UNKNOWN
         get() = when {
@@ -107,7 +74,6 @@ internal class CameraConfigImpl(
         set(value) {
             if (supportedVideoSizes.contains(value)) {
                 field = value
-                onUpdateListener(CameraProperty.VIDEO_SIZE)
             } else {
                 LogDelegate.log("Unsupported VideoSize [$value]")
             }
@@ -131,11 +97,11 @@ internal class CameraConfigImpl(
 
     override var zoomLevel = 0
         set(value) {
-            if (value in 0..maxZoomLevel) {
+            if (isZoomSupported && value in 0..maxZoomLevel) {
                 field = value
                 onUpdateListener(CameraProperty.ZOOM)
             } else {
-                LogDelegate.log("Unsupported zoom level [$value]. Must be in [0, $maxZoomLevel]")
+                LogDelegate.log("Unsupported ZoomLevel [$value]. Must be in [0, $maxZoomLevel]")
             }
         }
 
@@ -146,7 +112,7 @@ internal class CameraConfigImpl(
             if (zoomLevel != -1) {
                 this.zoomLevel = zoomLevel
             } else {
-                LogDelegate.log("Unsupported zoom percentage [$value].")
+                LogDelegate.log("Unsupported ZoomPercentage [$value].")
             }
         }
 
@@ -157,15 +123,126 @@ internal class CameraConfigImpl(
         get() = cameraParameters?.zoomRatios?.sorted()?.last() ?: 100
 
     override var videoStabilizationEnabled = false
-        @RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
         set(value) {
-            cameraParameters?.zoom
-            if (cameraParameters?.isVideoStabilizationSupported == true && value) {
+            if (isVideoStabilizationSupported) {
                 field = value
+                onUpdateListener(CameraProperty.VIDEO_STABILIZATION)
             } else {
-                LogDelegate.log("Video stabilization not supported.")
+                LogDelegate.log("VideoStabilization not supported.")
             }
         }
+
+    override var pinchToZoomEnabled = false
+        set(value) {
+            if (isZoomSupported) {
+                field = value
+            } else {
+                LogDelegate.log("Zoom not supported.")
+            }
+        }
+
+    override var resetFocusDelay = 7_500L
+        set(value) {
+            if (value > 0) {
+                field = value
+            } else {
+                LogDelegate.log("Focus delay must be positive.")
+            }
+        }
+
+    override var pinchToZoomFriction = 1f
+        set(value) {
+            if (value > 0) {
+                field = value
+            } else {
+                LogDelegate.log("Pinch to zoom friction must be positive.")
+            }
+        }
+
+    override var sceneMode = SceneMode.UNKNOWN
+        set(value) {
+            if (supportedSceneModes.contains(value)) {
+                field = value
+                onUpdateListener(CameraProperty.SCENE_MODE)
+            } else {
+                LogDelegate.log("Unsupported SceneMode [$value]")
+            }
+        }
+
+    override var colorEffect = ColorEffect.UNKNOWN
+        set(value) {
+            if (supportedColorEffects.contains(value)) {
+                field = value
+                onUpdateListener(CameraProperty.COLOR_EFFECT)
+            } else {
+                LogDelegate.log("Unsupported ColorEffect [$value]")
+            }
+        }
+
+    override var videoQuality = VideoQuality.UNKNOWN
+        set(value) {
+            if (supportedVideoQualities.contains(value)) {
+                field = value
+            } else {
+                LogDelegate.log("Unsupported VideoQuality [$value]")
+            }
+        }
+
+    override var antibanding = Antibanding.UNKNOWN
+        set(value) {
+            if (supportedAntibanding.contains(value)) {
+                field = value
+                onUpdateListener(CameraProperty.ANTIBANDING)
+            } else {
+                LogDelegate.log("Unsupported Antibanding [$value]")
+            }
+        }
+
+    override var exposureCompensation = 0
+        set(value) {
+            cameraParameters?.autoWhiteBalanceLock
+            if (isExposureCompensationSupported && value in minExposureCompensation..maxExposureCompensation) {
+                field = value
+                onUpdateListener(CameraProperty.EXPOSURE_COMPENSATION)
+            } else {
+                LogDelegate.log("Unsupported ExposureCompensation [$value]")
+            }
+        }
+
+    override val isVideoStabilizationSupported: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
+            && cameraParameters?.isVideoStabilizationSupported == true
+
+    override val isZoomSupported: Boolean
+        get() = cameraParameters?.isZoomSupported == true
+
+    override val supportedWhiteBalance: List<WhiteBalance>
+        get() = cameraParameters?.supportedWhiteBalance
+            ?.map { WhiteBalance.fromString(it) }
+            ?.distinct()
+            ?.filter { it != WhiteBalance.UNKNOWN }
+            ?: emptyList()
+
+    override val supportedSceneModes: List<SceneMode>
+        get() = cameraParameters?.supportedSceneModes
+            ?.map { SceneMode.fromString(it) }
+            ?.distinct()
+            ?.filter { it != SceneMode.UNKNOWN }
+            ?: emptyList()
+
+    override val supportedColorEffects: List<ColorEffect>
+        get() = cameraParameters?.supportedColorEffects
+            ?.map { ColorEffect.fromString(it) }
+            ?.distinct()
+            ?.filter { it != ColorEffect.UNKNOWN }
+            ?: emptyList()
+
+    override val supportedAntibanding: List<Antibanding>
+        get() = cameraParameters?.supportedAntibanding
+            ?.map { Antibanding.fromString(it) }
+            ?.distinct()
+            ?.filter { it != Antibanding.UNKNOWN }
+            ?: emptyList()
 
     override val supportedFlashModes
         get() = cameraParameters?.supportedFlashModes
@@ -181,12 +258,8 @@ internal class CameraConfigImpl(
             ?.filter { it != FocusMode.UNKNOWN }
             ?: emptyList()
 
-    override val supportedWhiteBalance: List<WhiteBalance>
-        get() = cameraParameters?.supportedWhiteBalance
-            ?.map { WhiteBalance.fromString(it) }
-            ?.distinct()
-            ?.filter { it != WhiteBalance.UNKNOWN }
-            ?: emptyList()
+    override val supportedZoomPercentages: List<Int>
+        get() = cameraParameters?.zoomRatios ?: listOf(100)
 
     override val supportedPictureSizes
         get() = cameraParameters?.supportedPictureSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
@@ -196,4 +269,57 @@ internal class CameraConfigImpl(
 
     override val supportedPreviewSizes: List<Size>
         get() = cameraParameters?.supportedPreviewSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
+
+    override val supportedVideoQualities: List<VideoQuality>
+        get() = VideoQuality.values()
+            .filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
+
+    override val minExposureCompensation: Int
+        get() = cameraParameters?.minExposureCompensation ?: 0
+
+    override val maxExposureCompensation: Int
+        get() = cameraParameters?.maxExposureCompensation ?: 0
+
+    override val isExposureCompensationSupported
+        get() = minExposureCompensation != 0 && maxExposureCompensation != 0
+
+    internal var locked = false
+
+    internal var zoomInProgress = false
+
+    internal val smoothZoomEnabled
+        get() = cameraParameters?.isSmoothZoomSupported == true
+
+    internal var cameraParameters: Camera.Parameters? = null
+        set(value) {
+            field = value
+            if (value != null && initialized.not()) {
+                initialized = true
+                setInitialValues(value)
+            }
+        }
+
+    internal fun toCameraInfo() = CameraInfo(id, orientation, facing)
+
+    private var initialized = false
+
+    private fun setInitialValues(params: Camera.Parameters) {
+        this.previewSize = params.previewSize?.toInternalSize() ?: Size.UNKNOWN
+        this.pictureSize = params.pictureSize?.toInternalSize() ?: Size.UNKNOWN
+        this.antibanding = Antibanding.fromString(params.antibanding)
+        this.whiteBalance = WhiteBalance.fromString(params.whiteBalance)
+        this.colorEffect = ColorEffect.fromString(params.colorEffect)
+        this.flashMode = FlashMode.fromString(params.flashMode)
+        this.pinchToZoomEnabled = isZoomSupported
+        this.sceneMode = SceneMode.fromString(params.sceneMode)
+        this.focusMode = FocusMode.fromString(params.focusMode)
+        this.videoQuality = when {
+            supportedVideoQualities.contains(VideoQuality.HIGH) -> VideoQuality.HIGH
+            supportedVideoQualities.contains(VideoQuality.LOW) -> VideoQuality.LOW
+            else -> VideoQuality.UNKNOWN
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+            videoStabilizationEnabled = params.videoStabilization
+        }
+    }
 }

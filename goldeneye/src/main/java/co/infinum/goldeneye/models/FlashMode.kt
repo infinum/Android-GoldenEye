@@ -13,6 +13,6 @@ enum class FlashMode constructor(
     RED_EYE(Camera.Parameters.FLASH_MODE_RED_EYE);
 
     companion object {
-        fun fromString(key: String?) = values().find { it.key == key } ?: UNKNOWN
+        fun fromString(string: String?) = values().find { it.key == string } ?: UNKNOWN
     }
 }

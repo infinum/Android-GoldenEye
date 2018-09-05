@@ -2,5 +2,5 @@ package co.infinum.example
 
 data class ListItem<T>(
     val realItem: T,
-    val convertToString: (T) -> String
+    val text: String
 )

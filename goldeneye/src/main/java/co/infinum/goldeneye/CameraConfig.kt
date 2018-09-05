@@ -19,8 +19,15 @@ interface CameraConfig {
     var videoStabilizationEnabled: Boolean
     var tapToFocusEnabled: Boolean
     var pinchToZoomEnabled: Boolean
+    var resetFocusDelay: Long
+    var pinchToZoomFriction: Float
+    var sceneMode: SceneMode
+    var colorEffect: ColorEffect
+    var antibanding: Antibanding
     var zoomLevel: Int
     var zoomPercentage: Int
+    var videoQuality: VideoQuality
+    var exposureCompensation: Int
 
     val maxZoomLevel: Int
     val maxZoomPercentage: Int
@@ -30,4 +37,14 @@ interface CameraConfig {
     val supportedFlashModes: List<FlashMode>
     val supportedFocusModes: List<FocusMode>
     val supportedWhiteBalance: List<WhiteBalance>
+    val supportedZoomPercentages: List<Int>
+    val supportedSceneModes: List<SceneMode>
+    val supportedColorEffects: List<ColorEffect>
+    val supportedAntibanding: List<Antibanding>
+    val supportedVideoQualities: List<VideoQuality>
+    val minExposureCompensation: Int
+    val maxExposureCompensation: Int
+    val isExposureCompensationSupported: Boolean
+    val isVideoStabilizationSupported: Boolean
+    val isZoomSupported: Boolean
 }

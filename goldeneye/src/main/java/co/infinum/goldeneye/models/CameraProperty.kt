@@ -5,8 +5,12 @@ internal enum class CameraProperty {
     FLASH,
     SCALE,
     PICTURE_SIZE,
-    VIDEO_SIZE,
     PREVIEW_SIZE,
     WHITE_BALANCE,
-    ZOOM
+    ZOOM,
+    VIDEO_STABILIZATION,
+    COLOR_EFFECT,
+    ANTIBANDING,
+    SCENE_MODE,
+    EXPOSURE_COMPENSATION
 }

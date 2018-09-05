@@ -14,7 +14,7 @@ import java.io.File
 abstract class PictureCallback {
     abstract fun onPictureTaken(picture: Bitmap)
     abstract fun onError(t: Throwable)
-    fun onShutter() {
+    open fun onShutter() {
     }
 }
 
@@ -32,4 +32,8 @@ interface VideoCallback {
 interface InitCallback {
     fun onSuccess()
     fun onError(t: Throwable)
+}
+
+interface OnZoomChangeCallback {
+    fun onZoomChanged(zoomLevel: Int, zoomRatio: Int)
 }

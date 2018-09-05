@@ -24,7 +24,7 @@ android {
 }
 
 dependencies {
-    implementation 'co.infinum:goldeneye:0.1.1'
+    implementation project(":goldeneye")
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$versions.kotlin"
     implementation 'com.android.support:recyclerview-v7:27.1.1'

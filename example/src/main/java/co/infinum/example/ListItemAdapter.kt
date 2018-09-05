@@ -9,7 +9,7 @@ import android.widget.TextView
 class ListItemAdapter<T>(
     private val items: List<ListItem<T>>,
     private val onClick: (T) -> Unit
-) : RecyclerView.Adapter<ViewHolder>() {
+) : RecyclerView.Adapter<ListItemAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int)=
         ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_list, parent, false))
 
@@ -17,10 +17,10 @@ class ListItemAdapter<T>(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.itemView.findViewById<TextView>(R.id.textView).text = item.convertToString(item.realItem)
+        holder.itemView.findViewById<TextView>(R.id.textView).text = item.text
         holder.itemView.setOnClickListener { onClick(item.realItem) }
     }
 
-}
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
-class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+}

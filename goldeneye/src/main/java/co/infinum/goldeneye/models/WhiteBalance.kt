@@ -16,6 +16,6 @@ enum class WhiteBalance(
     UNKNOWN("");
 
     companion object {
-        fun fromString(key: String?) = values().find { it.key == key } ?: UNKNOWN
+        fun fromString(string: String?) = values().find { it.key == string } ?: UNKNOWN
     }
 }

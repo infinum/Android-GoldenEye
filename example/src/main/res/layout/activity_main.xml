@@ -14,103 +14,95 @@
         android:layout_height="match_parent"
         tools:background="#fff"/>
 
+    <ImageView
+        android:id="@+id/settingsView"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="right"
+        android:padding="16dp"
+        android:tint="#fff"
+        app:srcCompat="@drawable/ic_settings"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="#4000"
+        android:background="#3000"
         android:orientation="vertical">
 
-        <FrameLayout
-            android:id="@+id/settingsToggleButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <ImageView
-                android:id="@+id/settingsToggleImageView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:tint="#fff"
-                app:srcCompat="@drawable/ic_arrow_up"/>
-
-        </FrameLayout>
-
-        <LinearLayout
-            android:id="@+id/settingsContainer"
+        <TextView
+            android:id="@+id/zoomView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:gravity="center"
+            android:padding="8dp"
+            android:textColor="#fff"
+            tools:text="Zoom: 1.32x"/>
 
-            <LinearLayout
-                style="@style/SettingsRow">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/focusModeView"
-                    style="@style/SettingsText"
-                    tools:text="Auto"/>
+            <ImageView
+                android:id="@+id/recordVideoView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:scaleType="fitCenter"
+                android:tint="#fff"
+                app:srcCompat="@drawable/ic_record_video"/>
 
-                <TextView
-                    android:id="@+id/flashModeView"
-                    style="@style/SettingsText"
-                    tools:text="Auto"/>
+            <ImageView
+                android:id="@+id/takePictureView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:scaleType="fitCenter"
+                android:tint="#fff"
+                app:srcCompat="@drawable/ic_take_picture"/>
 
-                <TextView
-                    android:id="@+id/previewScaleView"
-                    style="@style/SettingsText"
-                    tools:text="Auto"/>
-
-            </LinearLayout>
-
-            <LinearLayout
-                style="@style/SettingsRow">
-
-                <TextView
-                    android:id="@+id/previewSizeView"
-                    style="@style/SettingsText"
-                    tools:text="Auto"/>
-
-                <TextView
-                    android:id="@+id/videoSizeView"
-                    style="@style/SettingsText"
-                    tools:text="Auto"/>
-
-                <TextView
-                    android:id="@+id/pictureSizeView"
-                    style="@style/SettingsText"
-                    tools:text="Auto"/>
-
-            </LinearLayout>
-
-            <LinearLayout
-                style="@style/SettingsRow">
-
-                <TextView
-                    android:id="@+id/nextCameraView"
-                    style="@style/SettingsText"
-                    tools:text="Auto"/>
-
-                <TextView
-                    android:id="@+id/takePictureView"
-                    style="@style/SettingsText"
-                    tools:text="Auto"/>
-
-                <TextView
-                    android:id="@+id/tapToFocusView"
-                    style="@style/SettingsText"
-                    tools:text="Auto"/>
-
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/switchCameraView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:scaleType="fitCenter"
+                android:tint="#fff"
+                app:srcCompat="@drawable/ic_switch_camera"/>
 
         </LinearLayout>
 
     </LinearLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/settingsRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#fff"
+        android:visibility="gone"/>
 
     <ImageView
         android:id="@+id/previewPictureView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#000"
+        android:clickable="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:visibility="gone"/>
+
+    <TextureView
+        android:id="@+id/previewVideoView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         android:visibility="gone"/>
 
 </FrameLayout>

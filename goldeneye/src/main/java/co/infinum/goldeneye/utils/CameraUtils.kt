@@ -10,9 +10,12 @@ import android.view.Surface
 import android.view.TextureView
 import co.infinum.goldeneye.CameraConfig
 import co.infinum.goldeneye.extensions.isNotMeasured
+import co.infinum.goldeneye.extensions.limit
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.PreviewScale
 import co.infinum.goldeneye.models.Size
+import kotlin.math.max
+import kotlin.math.min
 
 internal object CameraUtils {
     private const val FOCUS_AREA_SIZE = 300
@@ -105,8 +108,8 @@ internal object CameraUtils {
         }
 
         /* Convert camera x,y into preview x,y that translates x,y if preview is not fullscreen or if is scaled outside of screen */
-        val translatedPreviewX = rotatedX - Math.max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
-        val translatedPreviewY = rotatedY - Math.max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
+        val translatedPreviewX = rotatedX - max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
+        val translatedPreviewY = rotatedY - max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
 
         /* Ratio of genius [-1000,1000] coordinates to scaled preview size */
         val cameraWidthRatio = 2000f / scaledPreviewX
@@ -117,15 +120,15 @@ internal object CameraUtils {
         val cameraFocusY = cameraHeightRatio * translatedPreviewY - 1000
 
         /* Measure left and top rectangle point */
-        val left = Math.max(-1000f, cameraFocusX).toInt()
-        val top = Math.max(-1000f, cameraFocusY).toInt()
+        val left = cameraFocusX.limit(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
+        val top = cameraFocusY.limit(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
 
         /* Sadly, this is the end */
         val rect = Rect(
-            Math.min(left, 1000 - FOCUS_AREA_SIZE),
-            Math.min(top, 1000 - FOCUS_AREA_SIZE),
-            Math.min(left + FOCUS_AREA_SIZE, 1000),
-            Math.min(top + FOCUS_AREA_SIZE, 1000)
+            left,
+            top,
+            min(left + FOCUS_AREA_SIZE, 1000),
+            min(top + FOCUS_AREA_SIZE, 1000)
         )
         return listOf(Camera.Area(rect, 1000))
     }
@@ -138,8 +141,8 @@ internal object CameraUtils {
         x: Float, y: Float
     ): Boolean {
 
-        val diffX = Math.max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
-        val diffY = Math.max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
+        val diffX = max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
+        val diffY = max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
         return x < diffX || x > diffX + scaledPreviewX || y < diffY || y > diffY + scaledPreviewY
     }
 
@@ -162,8 +165,8 @@ internal object CameraUtils {
 
         val scale =
             when (config.previewScale) {
-                PreviewScale.SCALE_TO_FILL -> Math.max(scaleX, scaleY)
-                PreviewScale.SCALE_TO_FIT -> Math.min(scaleX, scaleY)
+                PreviewScale.SCALE_TO_FILL -> max(scaleX, scaleY)
+                PreviewScale.SCALE_TO_FIT -> min(scaleX, scaleY)
                 PreviewScale.NO_SCALE -> 1f
             }
         return Triple(scaleX, scaleY, scale)

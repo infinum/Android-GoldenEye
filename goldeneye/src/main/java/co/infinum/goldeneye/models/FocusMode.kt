@@ -15,6 +15,6 @@ enum class FocusMode(
     CONTINUOUS_PICTURE(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
 
     companion object {
-        fun fromString(key: String?) = values().find { it.key == key } ?: UNKNOWN
+        fun fromString(string: String?) = values().find { it.key == string } ?: UNKNOWN
     }
 }
