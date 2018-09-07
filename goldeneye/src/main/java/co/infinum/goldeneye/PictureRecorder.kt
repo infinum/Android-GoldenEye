@@ -2,6 +2,7 @@ package co.infinum.goldeneye
 
 import android.app.Activity
 import android.hardware.Camera
+import co.infinum.goldeneye.config.CameraConfigImpl
 import co.infinum.goldeneye.extensions.*
 import co.infinum.goldeneye.models.Facing
 

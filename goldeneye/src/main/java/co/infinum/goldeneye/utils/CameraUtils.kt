@@ -8,9 +8,7 @@ import android.graphics.Rect
 import android.hardware.Camera
 import android.view.Surface
 import android.view.TextureView
-import co.infinum.goldeneye.CameraConfig
 import co.infinum.goldeneye.extensions.isNotMeasured
-import co.infinum.goldeneye.extensions.limit
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.PreviewScale
 import co.infinum.goldeneye.models.Size

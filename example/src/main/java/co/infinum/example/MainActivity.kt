@@ -6,6 +6,7 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
@@ -33,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     private var settingsAdapter = SettingsAdapter(listOf())
 
     private val initCallback = object : InitCallback {
-        override fun onSuccess() {
+        override fun onConfigReady() {
             goldenEye.startPreview(findViewById(R.id.textureView))
             zoomView.text = "Zoom: ${goldenEye.config.zoomPercentage.toPercentage()}"
         }
@@ -127,6 +128,10 @@ class MainActivity : AppCompatActivity() {
             val nextIndex = (currentIndex + 1) % goldenEye.availableCameras.size
             goldenEye.init(goldenEye.availableCameras[nextIndex], initCallback)
         }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        Log.e("GoldenEye", "Result received")
     }
 
     override fun onBackPressed() {

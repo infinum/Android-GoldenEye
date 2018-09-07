@@ -2,12 +2,14 @@ package co.infinum.goldeneye
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.graphics.Point
 import android.hardware.Camera
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.TextureView
+import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.limit
 import co.infinum.goldeneye.extensions.mainHandler
@@ -15,19 +17,18 @@ import co.infinum.goldeneye.extensions.updateParams
 import co.infinum.goldeneye.models.FocusMode
 import co.infinum.goldeneye.utils.CameraUtils
 
-private const val ZOOM_DELTA_SPAN_DP = 2f
-
 internal class GestureHandler(
     private val activity: Activity,
     private val camera: Camera,
     private val config: CameraConfig,
-    private val onZoomChangeCallback: OnZoomChangeCallback? = null
+    private val onZoomChangeCallback: OnZoomChangeCallback? = null,
+    private val onFocusChangeCallback: OnFocusChangeCallback? = null
 ) {
 
     private val zoomDeltaSpan: Int =
         TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
-            ZOOM_DELTA_SPAN_DP,
+            2f,
             activity.resources.displayMetrics
         ).toInt()
     private var textureView: TextureView? = null
@@ -50,8 +51,9 @@ internal class GestureHandler(
             val zoomLevelDelta = (spanDelta / (zoomDeltaSpan * config.pinchToZoomFriction)).toInt()
 
             if (zoomLevelDelta != 0) {
-                config.zoomLevel = (config.zoomLevel + zoomLevelDelta).limit(0, config.maxZoomLevel)
-                onZoomChangeCallback?.onZoomChanged(config.zoomLevel, config.zoomPercentage)
+                val zoomLevel = (config.zoom.level + zoomLevelDelta).limit(0, config.maxZoom.level)
+                config.zoom = config.supportedZooms[zoomLevel]
+                onZoomChangeCallback?.onZoomChanged(config.zoom)
             }
 
             spanDelta %= zoomDeltaSpan
@@ -74,6 +76,7 @@ internal class GestureHandler(
                     val areas = CameraUtils.calculateFocusArea(activity, textureView, config, e.x, e.y)
                     if (maxNumFocusAreas > 0) {
                         focusAreas = areas
+                        onFocusChangeCallback?.onFocusChanged(Point(e.x.toInt(), e.y.toInt()))
                     }
                 }
 
