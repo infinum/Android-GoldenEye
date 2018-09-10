@@ -8,6 +8,7 @@ import co.infinum.goldeneye.config.CameraConfigImpl
 import co.infinum.goldeneye.extensions.hasAudioPermission
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.models.Facing
+import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
 import java.io.File
@@ -36,12 +37,13 @@ internal class VideoRecorder(
                     LogDelegate.log("Recording video without audio. Missing RECORD_AUDIO permission.")
                 }
                 setVideoSource(MediaRecorder.VideoSource.CAMERA)
+                val videoSize = config.videoSize.takeIf { it != Size.UNKNOWN } ?: config.supportedVideoSizes[0]
                 setProfile(CamcorderProfile.get(config.videoQuality.key).apply {
-                    videoFrameHeight = config.videoSize.height
-                    videoFrameWidth = config.videoSize.width
+                    videoFrameHeight = videoSize.height
+                    videoFrameWidth = videoSize.width
                 })
                 setOutputFile(file.absolutePath)
-                setVideoSize(config.videoSize.width, config.videoSize.height)
+                setVideoSize(videoSize.width, videoSize.height)
                 val cameraOrientation = CameraUtils.calculateDisplayOrientation(activity, config)
                 setOrientationHint(if (config.facing == Facing.BACK) cameraOrientation else -cameraOrientation)
                 prepare()

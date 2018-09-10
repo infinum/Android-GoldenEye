@@ -8,6 +8,8 @@ import android.graphics.Rect
 import android.hardware.Camera
 import android.view.Surface
 import android.view.TextureView
+import co.infinum.goldeneye.config.CameraConfig
+import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.extensions.isNotMeasured
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.PreviewScale
@@ -22,7 +24,7 @@ internal object CameraUtils {
      * Camera and device orientation do not sync. This method will calculate
      * their orientation difference so that can be used to sync them manually.
      */
-    fun calculateDisplayOrientation(activity: Activity, config: CameraConfig): Int {
+    fun calculateDisplayOrientation(activity: Activity, config: CameraInfo): Int {
         val deviceOrientation = getDeviceOrientation(activity)
         val cameraOrientation = config.orientation
 
@@ -118,8 +120,8 @@ internal object CameraUtils {
         val cameraFocusY = cameraHeightRatio * translatedPreviewY - 1000
 
         /* Measure left and top rectangle point */
-        val left = cameraFocusX.limit(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
-        val top = cameraFocusY.limit(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
+        val left = cameraFocusX.coerceIn(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
+        val top = cameraFocusY.coerceIn(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
 
         /* Sadly, this is the end */
         val rect = Rect(
@@ -130,6 +132,9 @@ internal object CameraUtils {
         )
         return listOf(Camera.Area(rect, 1000))
     }
+
+    fun findBestMatchingSize(referenceSize: Size, availableSizes: List<Size>): Size =
+        availableSizes.find { it.aspectRatio == referenceSize.aspectRatio } ?: (availableSizes.getOrNull(0) ?: Size.UNKNOWN)
 
     private fun touchNotInPreview(
         rotatedTextureViewX: Int,

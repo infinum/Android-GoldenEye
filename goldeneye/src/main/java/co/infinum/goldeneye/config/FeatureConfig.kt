@@ -5,6 +5,9 @@ import co.infinum.goldeneye.models.*
 import co.infinum.goldeneye.utils.LogDelegate
 
 interface FeatureConfig {
+    var tapToFocusEnabled: Boolean
+    var resetFocusDelay: Long
+
     var flashMode: FlashMode
     val supportedFlashModes: List<FlashMode>
 
@@ -24,7 +27,7 @@ interface FeatureConfig {
     val supportedAntibanding: List<Antibanding>
 
     var exposureCompensation: Int
-    val supportedExposureCompensation: Pair<Int, Int>
+    val supportedExposureCompensation: List<Int>
     val isExposureCompensationSupported: Boolean
 }
 
@@ -33,6 +36,25 @@ internal class FeatureConfigImpl(
 ) : FeatureConfig {
 
     var params: Camera.Parameters? = null
+
+    fun initialize() {
+        this.flashMode = FlashMode.fromString(params?.flashMode)
+        this.focusMode = FocusMode.fromString(params?.focusMode)
+        this.whiteBalance = WhiteBalance.fromString(params?.whiteBalance)
+        this.sceneMode = SceneMode.fromString(params?.sceneMode)
+        this.colorEffect = ColorEffect.fromString(params?.colorEffect)
+        this.antibanding = Antibanding.fromString(params?.antibanding)
+    }
+
+    override var tapToFocusEnabled = true
+    override var resetFocusDelay = 7_500L
+        set(value) {
+            if (value > 0) {
+                field = value
+            } else {
+                LogDelegate.log("Reset focus delay must be bigger than 0.")
+            }
+        }
 
     override var flashMode = FlashMode.UNKNOWN
         set(value) {
@@ -128,6 +150,7 @@ internal class FeatureConfigImpl(
                 LogDelegate.log("Unsupported Antibanding [$value]")
             }
         }
+
     override val supportedAntibanding: List<Antibanding>
         get() = params?.supportedAntibanding
             ?.map { Antibanding.fromString(it) }
@@ -137,17 +160,20 @@ internal class FeatureConfigImpl(
 
     override var exposureCompensation = 0
         set(value) {
-            val (min, max) = supportedExposureCompensation
-            if (isExposureCompensationSupported && value in min..max) {
+            if (value in supportedExposureCompensation) {
                 field = value
                 onUpdateListener(CameraProperty.EXPOSURE_COMPENSATION)
             } else {
                 LogDelegate.log("Unsupported ExposureCompensation [$value]")
             }
         }
-    override val supportedExposureCompensation: Pair<Int, Int>
-        get() = (params?.minExposureCompensation ?: 0) to (params?.maxExposureCompensation ?: 0)
+    override val supportedExposureCompensation: List<Int>
+        get() {
+            val min = params?.minExposureCompensation ?: 0
+            val max = params?.maxExposureCompensation ?: 0
+            return if (min == 0 && max == 0) emptyList() else (min..max).toList()
+        }
 
     override val isExposureCompensationSupported: Boolean
-        get() = supportedExposureCompensation.first != 0 || supportedExposureCompensation.second != 0
+        get() = supportedExposureCompensation.isNotEmpty()
 }

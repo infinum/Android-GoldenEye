@@ -11,5 +11,6 @@ internal enum class CameraProperty {
     COLOR_EFFECT,
     ANTIBANDING,
     SCENE_MODE,
-    EXPOSURE_COMPENSATION
+    EXPOSURE_COMPENSATION,
+    PREVIEW_SCALE
 }

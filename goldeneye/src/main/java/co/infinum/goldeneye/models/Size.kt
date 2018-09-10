@@ -15,6 +15,8 @@ data class Size internal constructor(
     override fun compareTo(other: Size): Int {
         return other.height * other.width - width * height
     }
+
+    val aspectRatio = if (this != Size.UNKNOWN) this.width / this.height else -1
 }
 
 internal fun Camera.Size.toInternalSize() = Size(width, height)

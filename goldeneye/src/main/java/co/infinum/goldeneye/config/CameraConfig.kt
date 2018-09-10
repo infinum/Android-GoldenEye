@@ -3,7 +3,6 @@ package co.infinum.goldeneye.config
 import android.hardware.Camera
 
 interface CameraConfig :
-    GoldenEyeConfig,
     CameraInfo,
     VideoConfig,
     FeatureConfig,
@@ -11,14 +10,12 @@ interface CameraConfig :
     ZoomConfig
 
 internal class CameraConfigImpl(
-    private val goldenEyeConfig: GoldenEyeConfig,
     private val cameraInfo: CameraInfo,
     private val videoConfig: VideoConfigImpl,
     private val featureConfig: FeatureConfigImpl,
     private val sizeConfig: SizeConfigImpl,
     private val zoomConfig: ZoomConfigImpl
 ) : CameraConfig,
-    GoldenEyeConfig by goldenEyeConfig,
     CameraInfo by cameraInfo,
     VideoConfig by videoConfig,
     FeatureConfig by featureConfig,
@@ -35,11 +32,14 @@ internal class CameraConfigImpl(
             videoConfig.params = value
             featureConfig.params = value
             sizeConfig.params = value
-            zoomConfig.params
+            zoomConfig.params = value
 
             if (initialized.not()) {
                 initialized = true
-
+                videoConfig.initialize()
+                featureConfig.initialize()
+                sizeConfig.initialize()
+                zoomConfig.initialize()
             }
         }
 }

@@ -9,8 +9,8 @@ import co.infinum.goldeneye.utils.LogDelegate
 
 interface VideoConfig {
     var videoQuality: VideoQuality
-    var videoStabilizationEnabled: Boolean
     val supportedVideoQualities: List<VideoQuality>
+    var videoStabilizationEnabled: Boolean
     val isVideoStabilizationSupported: Boolean
 }
 
@@ -21,6 +21,18 @@ internal class VideoConfigImpl(
 
     var params: Camera.Parameters? = null
 
+    fun initialize() {
+        if (isVideoStabilizationSupported) {
+            this.videoStabilizationEnabled = true
+        }
+        this.videoQuality = when {
+            supportedVideoQualities.contains(VideoQuality.HIGH) -> VideoQuality.HIGH
+            supportedVideoQualities.contains(VideoQuality.LOW) -> VideoQuality.LOW
+            supportedVideoQualities.isNotEmpty() -> supportedVideoQualities[0]
+            else -> VideoQuality.UNKNOWN
+        }
+    }
+
     override var videoQuality = VideoQuality.UNKNOWN
         set(value) {
             if (supportedVideoQualities.contains(value)) {
@@ -29,6 +41,10 @@ internal class VideoConfigImpl(
                 LogDelegate.log("Unsupported VideoQuality [$value]")
             }
         }
+
+    override val supportedVideoQualities: List<VideoQuality>
+        get() = VideoQuality.values()
+            .filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
 
     override var videoStabilizationEnabled = false
         set(value) {
@@ -40,11 +56,7 @@ internal class VideoConfigImpl(
             }
         }
 
-    override val supportedVideoQualities
-        get() = VideoQuality.values()
-            .filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
-
-    override val isVideoStabilizationSupported
+    override val isVideoStabilizationSupported: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
             && params?.isVideoStabilizationSupported == true
 }

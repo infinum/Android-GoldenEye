@@ -10,6 +10,8 @@ interface ZoomConfig {
     val maxZoom: Zoom
     val supportedZooms: List<Zoom>
     val isZoomSupported: Boolean
+    var pinchToZoomEnabled: Boolean
+    var pinchToZoomFriction: Float
 }
 
 internal class ZoomConfigImpl(
@@ -17,6 +19,18 @@ internal class ZoomConfigImpl(
 ) : ZoomConfig {
 
     var params: Camera.Parameters? = null
+
+    fun initialize() {
+        if (isZoomSupported) {
+            val zoomLevel = params?.zoom ?: 0
+            val zoomRatio = params?.zoomRatios?.getOrNull(zoomLevel) ?: 100
+            this.zoom = Zoom(zoomLevel, zoomRatio)
+        } else {
+            zoom = Zoom(-1, 0)
+        }
+
+        this.pinchToZoomEnabled = isZoomSupported
+    }
 
     override var zoom = Zoom(0, 100)
         set(value) {
@@ -31,7 +45,7 @@ internal class ZoomConfigImpl(
     override val maxZoom
         get() = Zoom(
             level = params?.maxZoom ?: 0,
-            percentage = params?.zoomRatios?.getOrNull(params?.maxZoom ?: -1) ?: 100
+            ratio = params?.zoomRatios?.getOrNull(params?.maxZoom ?: -1) ?: 100
         )
 
     override val supportedZooms
@@ -41,4 +55,18 @@ internal class ZoomConfigImpl(
 
     override val isZoomSupported
         get() = params?.isZoomSupported == true
+
+    override var pinchToZoomEnabled = true
+        set(value) {
+            field = isZoomSupported && value
+        }
+
+    override var pinchToZoomFriction = 1f
+        set(value) {
+            if (value > 0) {
+                field = value
+            } else {
+                LogDelegate.log("Pinch to zoom friction must be bigger than 0.")
+            }
+        }
 }

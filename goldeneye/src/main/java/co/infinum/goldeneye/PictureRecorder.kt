@@ -24,7 +24,7 @@ internal class PictureRecorder(
                         bitmap?.mutate {
                             reverseCameraRotation(
                                 activity = activity,
-                                config = config,
+                                info = config,
                                 cx = bitmap.width / 2f,
                                 cy = bitmap.height / 2f
                             )

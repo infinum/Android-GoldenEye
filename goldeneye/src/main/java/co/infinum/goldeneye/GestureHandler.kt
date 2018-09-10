@@ -11,7 +11,6 @@ import android.view.ScaleGestureDetector
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.ifNotNull
-import co.infinum.goldeneye.extensions.limit
 import co.infinum.goldeneye.extensions.mainHandler
 import co.infinum.goldeneye.extensions.updateParams
 import co.infinum.goldeneye.models.FocusMode
@@ -51,7 +50,7 @@ internal class GestureHandler(
             val zoomLevelDelta = (spanDelta / (zoomDeltaSpan * config.pinchToZoomFriction)).toInt()
 
             if (zoomLevelDelta != 0) {
-                val zoomLevel = (config.zoom.level + zoomLevelDelta).limit(0, config.maxZoom.level)
+                val zoomLevel = (config.zoom.level + zoomLevelDelta).coerceIn(0, config.maxZoom.level)
                 config.zoom = config.supportedZooms[zoomLevel]
                 onZoomChangeCallback?.onZoomChanged(config.zoom)
             }

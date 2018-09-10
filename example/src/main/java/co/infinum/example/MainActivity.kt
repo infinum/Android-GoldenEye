@@ -6,7 +6,6 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
@@ -18,10 +17,11 @@ import android.view.TextureView
 import android.view.View
 import co.infinum.goldeneye.GoldenEye
 import co.infinum.goldeneye.InitCallback
+import co.infinum.goldeneye.Logger
 import co.infinum.goldeneye.OnZoomChangeCallback
 import co.infinum.goldeneye.models.PreviewScale
+import co.infinum.goldeneye.models.Zoom
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.activity_main.view.*
 import java.io.File
 
 @SuppressLint("SetTextI18n")
@@ -35,8 +35,7 @@ class MainActivity : AppCompatActivity() {
 
     private val initCallback = object : InitCallback {
         override fun onConfigReady() {
-            goldenEye.startPreview(findViewById(R.id.textureView))
-            zoomView.text = "Zoom: ${goldenEye.config.zoomPercentage.toPercentage()}"
+            zoomView.text = "Zoom: ${goldenEye.config.zoom.ratio.toPercentage()}"
         }
 
         override fun onError(t: Throwable) {
@@ -49,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         goldenEye = GoldenEye.Builder(this)
-            .setLogger(object : GoldenEye.Logger {
+            .setLogger(object : Logger {
                 override fun log(message: String) {
                     Log.e("GoldenEye", message)
                 }
@@ -59,12 +58,12 @@ class MainActivity : AppCompatActivity() {
                 }
             })
             .setOnZoomChangeCallback(object : OnZoomChangeCallback {
-                override fun onZoomChanged(zoomLevel: Int, zoomRatio: Int) {
-                    zoomView.text = "Zoom: ${zoomRatio.toPercentage()}"
+                override fun onZoomChanged(zoom: Zoom) {
+                    zoomView.text = "Zoom: ${zoom.ratio.toPercentage()}"
                 }
             })
             .build()
-        goldenEye.init(goldenEye.availableCameras[0], initCallback)
+        goldenEye.open(textureView, goldenEye.availableCameras[0], initCallback)
         videoFile = File.createTempFile("vid", "")
 
         settingsView.setOnClickListener {
@@ -126,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         switchCameraView.setOnClickListener { _ ->
             val currentIndex = goldenEye.availableCameras.indexOfFirst { goldenEye.config.id == it.id }
             val nextIndex = (currentIndex + 1) % goldenEye.availableCameras.size
-            goldenEye.init(goldenEye.availableCameras[nextIndex], initCallback)
+            goldenEye.open(textureView, goldenEye.availableCameras[nextIndex], initCallback)
         }
     }
 
@@ -145,13 +144,6 @@ class MainActivity : AppCompatActivity() {
     private fun prepareItems() {
         with(goldenEye.config) {
             val settingsItems = listOf(
-                SettingsItem("Preview scale:", previewScale.convertToString()) {
-                    displayDialog(
-                        title = "Preview scale",
-                        listItems = PreviewScale.values().map { ListItem(it, it.convertToString()) },
-                        onClick = { previewScale = it }
-                    )
-                },
                 SettingsItem("Preview size:", previewSize.convertToString()) {
                     displayDialog(
                         title = "Preview size",
@@ -201,48 +193,11 @@ class MainActivity : AppCompatActivity() {
                         onClick = { focusMode = it }
                     )
                 },
-                SettingsItem("Pinch to zoom:", pinchToZoomEnabled.convertToString()) {
-                    displayDialog(
-                        title = "Pinch to zoom",
-                        listItems = boolList(),
-                        onClick = { pinchToZoomEnabled = it }
-                    )
-                },
-                SettingsItem("Pinch to zoom friction:", pinchToZoomFriction.convertToString()) {
-                    displayDialog(
-                        title = "Friction",
-                        listItems = listOf(
-                            ListItem(0.5f, "0.50"),
-                            ListItem(1f, "1.00"),
-                            ListItem(2f, "2.00")
-                        ),
-                        onClick = { pinchToZoomFriction = it }
-                    )
-                },
-                SettingsItem("Zoom:", zoomPercentage.toPercentage()) {
+                SettingsItem("Zoom:", zoom.ratio.toPercentage()) {
                     displayDialog(
                         title = "Zoom",
-                        listItems = supportedZoomPercentages.map { ListItem(it, it.toPercentage()) },
-                        onClick = { zoomPercentage = it }
-                    )
-                },
-                SettingsItem("Tap to focus:", tapToFocusEnabled.convertToString()) {
-                    displayDialog(
-                        title = "Tap to focus",
-                        listItems = boolList(),
-                        onClick = { tapToFocusEnabled = it }
-                    )
-                },
-                SettingsItem("Tap to focus reset delay:", resetFocusDelay.toString()) {
-                    displayDialog(
-                        title = "Reset delay",
-                        listItems = listOf(
-                            ListItem(2_500L, "2 500"),
-                            ListItem(5_000L, "5 000"),
-                            ListItem(7_500L, "7 500"),
-                            ListItem(10_000L, "10 000")
-                        ),
-                        onClick = { resetFocusDelay = it }
+                        listItems = supportedZooms.map { ListItem(it, it.ratio.toPercentage()) },
+                        onClick = { zoom = it }
                     )
                 },
                 SettingsItem("White Balance:", whiteBalance.convertToString()) {
@@ -269,7 +224,7 @@ class MainActivity : AppCompatActivity() {
                 SettingsItem("Exposure compensation:", exposureCompensation.toString()) {
                     displayDialog(
                         title = "Exposure compensation",
-                        listItems = (minExposureCompensation..maxExposureCompensation).map { ListItem(it, it.toString()) },
+                        listItems = supportedExposureCompensation.map { ListItem(it, it.toString()) },
                         onClick = { exposureCompensation = it }
                     )
                 },
