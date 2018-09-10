@@ -169,7 +169,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
 
     @Throws(Throwable::class)
     private fun openCamera(config: CameraConfigImpl) {
-        Camera.open(config.id)?.also {
+        Camera.open(config.id.toInt())?.also {
             this.camera = it
             _config = config
             _config.params = it.parameters
@@ -256,7 +256,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             val facing = if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) Facing.BACK else Facing.FRONT
 
             val cameraInfo = object: CameraInfo {
-                override val id = id
+                override val id = id.toString()
                 override val orientation = info.orientation
                 override val facing = facing
             }
@@ -264,7 +264,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             _availableCameras.add(
                 CameraConfigImpl(
                     cameraInfo = cameraInfo,
-                    videoConfig = VideoConfigImpl(id, onUpdateListener),
+                    videoConfig = VideoConfigImpl(id.toString(), onUpdateListener),
                     featureConfig = FeatureConfigImpl(onUpdateListener),
                     sizeConfig = SizeConfigImpl(onUpdateListener),
                     zoomConfig = ZoomConfigImpl(onUpdateListener)

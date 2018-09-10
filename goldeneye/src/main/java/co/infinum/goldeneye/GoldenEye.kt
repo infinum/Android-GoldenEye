@@ -3,6 +3,7 @@ package co.infinum.goldeneye
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Point
+import android.os.Build
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
@@ -52,6 +53,12 @@ interface GoldenEye {
         fun setOnFocusChangeCallback(callback: OnFocusChangeCallback) = apply { this.onFocusChangeCallback = callback }
 
 
-        fun build(): GoldenEye = GoldenEyeImpl(activity, onZoomChangeCallback, onFocusChangeCallback, logger)
+        fun build(): GoldenEye {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                GoldenEye2Impl(activity)
+            } else {
+                GoldenEyeImpl(activity, onZoomChangeCallback, onFocusChangeCallback, logger)
+            }
+        }
     }
 }

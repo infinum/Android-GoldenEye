@@ -15,7 +15,7 @@ interface VideoConfig {
 }
 
 internal class VideoConfigImpl(
-    private val id: Int,
+    private val id: String,
     private val onUpdateListener: (CameraProperty) -> Unit
 ) : VideoConfig {
 
@@ -44,7 +44,7 @@ internal class VideoConfigImpl(
 
     override val supportedVideoQualities: List<VideoQuality>
         get() = VideoQuality.values()
-            .filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
+            .filter { CamcorderProfile.hasProfile(id.toInt(), it.key) && it != VideoQuality.UNKNOWN }
 
     override var videoStabilizationEnabled = false
         set(value) {

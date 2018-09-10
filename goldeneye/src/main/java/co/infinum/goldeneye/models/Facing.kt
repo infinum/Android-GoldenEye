@@ -1,5 +1,5 @@
 package co.infinum.goldeneye.models
 
 enum class Facing {
-    BACK, FRONT
+    BACK, FRONT, EXTERNAL
 }
