@@ -63,7 +63,6 @@ class MainActivity : AppCompatActivity() {
                 }
             })
             .build()
-        goldenEye.open(textureView, goldenEye.availableCameras[0], initCallback)
         videoFile = File.createTempFile("vid", "")
 
         settingsView.setOnClickListener {
@@ -139,6 +138,13 @@ class MainActivity : AppCompatActivity() {
         } else {
             super.onBackPressed()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+//        Handler().postDelayed(Runnable {
+            goldenEye.open(textureView, goldenEye.availableCameras[0], initCallback)
+//        }, 2000)
     }
 
     private fun prepareItems() {

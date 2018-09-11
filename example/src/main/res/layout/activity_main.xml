@@ -11,8 +11,7 @@
     <TextureView
         android:id="@+id/textureView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:background="#fff"/>
+        android:layout_height="match_parent"/>
 
     <ImageView
         android:id="@+id/settingsView"

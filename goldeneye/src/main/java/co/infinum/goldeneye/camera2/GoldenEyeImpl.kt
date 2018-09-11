@@ -16,7 +16,6 @@ import co.infinum.goldeneye.camera1.config.CameraInfo
 import co.infinum.goldeneye.camera2.config.*
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.ifNotNull
-import co.infinum.goldeneye.extensions.mainHandler
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
 import co.infinum.goldeneye.models.*
 import co.infinum.goldeneye.utils.CameraUtils
@@ -114,15 +113,6 @@ internal class GoldenEyeImpl(
                 lastCameraRequest = null
             }
 
-            override fun onClosed(camera: CameraDevice?) {
-                if (lastCameraRequest == null) {
-                    LogDelegate.log("Camera closed")
-                    release()
-                } else {
-                    openLastRequestedCamera()
-                }
-            }
-
             override fun onDisconnected(camera: CameraDevice?) {
                 if (lastCameraRequest == null) {
                     LogDelegate.log("Camera disconnected")
@@ -139,35 +129,38 @@ internal class GoldenEyeImpl(
                     openLastRequestedCamera()
                 }
             }
-        }, mainHandler)
+        }, null)
     }
 
     private fun startPreview() {
         textureView?.onSurfaceUpdate(
-            onAvailable = {
-                //        textureView?.surfaceTexture?.setDefaultBufferSize()
-                val surface = Surface(it.surfaceTexture)
+            onAvailable = { view ->
+                try {
+                    view.setTransform(CameraUtils.calculateTextureMatrix(activity, config, view))
+                    val texture = textureView?.surfaceTexture?.apply {
+                        setDefaultBufferSize(config.previewSize.width, config.previewSize.height)
+                    }
+                    val surface = Surface(texture)
+                    val previewRequestBuilder = cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)?.apply {
+                        addTarget(surface)
+                    }
+                    cameraDevice?.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
 
-                val previewRequest = cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)?.apply {
-                    addTarget(surface)
-                }
-                // Here, we create a CameraCaptureSession for camera preview.
-                cameraDevice?.createCaptureSession(listOf(surface),
-                    object : CameraCaptureSession.StateCallback() {
                         override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-                            cameraCaptureSession
-                                .setRepeatingRequest(previewRequest?.build(), object : CameraCaptureSession.CaptureCallback() {},
-                                    mainHandler
-                                )
+                            try {
+                                cameraCaptureSession.setRepeatingRequest(previewRequestBuilder?.build(), null, null)
+                            } catch (t: Throwable) {
+                                LogDelegate.log(t)
+                            }
                         }
 
-                        override fun onConfigureFailed(session: CameraCaptureSession) {
-                            LogDelegate.log("Logi log")
+                        override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
                         }
                     }, null
-                )
-
-                it.setTransform(CameraUtils.calculateTextureMatrix(activity, config, it))
+                    )
+                } catch (e: CameraAccessException) {
+                    e.printStackTrace()
+                }
             },
             onSizeChanged = { it.setTransform(CameraUtils.calculateTextureMatrix(activity, config, it)) }
         )
