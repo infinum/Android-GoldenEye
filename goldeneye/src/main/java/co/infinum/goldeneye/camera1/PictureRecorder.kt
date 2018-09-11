@@ -1,8 +1,10 @@
-package co.infinum.goldeneye
+package co.infinum.goldeneye.camera1
 
 import android.app.Activity
 import android.hardware.Camera
-import co.infinum.goldeneye.config.CameraConfigImpl
+import co.infinum.goldeneye.PictureCallback
+import co.infinum.goldeneye.PictureConversionException
+import co.infinum.goldeneye.camera1.config.CameraConfigImpl
 import co.infinum.goldeneye.extensions.*
 import co.infinum.goldeneye.models.Facing
 
@@ -13,9 +15,7 @@ internal class PictureRecorder(
 ) {
 
     fun takePicture(callback: PictureCallback) {
-
         try {
-            config.locked = true
             val shutterCallback = Camera.ShutterCallback { callback.onShutter() }
             val pictureCallback = Camera.PictureCallback { data, _ ->
                 async(
@@ -34,7 +34,6 @@ internal class PictureRecorder(
                         }
                     },
                     onResult = {
-                        unlock()
                         if (it != null) {
                             callback.onPictureTaken(it)
                         } else {
@@ -45,13 +44,7 @@ internal class PictureRecorder(
             }
             camera.takePicture(shutterCallback, null, pictureCallback)
         } catch (t: Throwable) {
-            unlock()
             callback.onError(t)
         }
-    }
-
-    private fun unlock() {
-        config.locked = false
-        camera.startPreview()
     }
 }

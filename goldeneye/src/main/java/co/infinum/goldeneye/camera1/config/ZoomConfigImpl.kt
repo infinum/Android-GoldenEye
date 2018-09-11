@@ -1,18 +1,10 @@
 package co.infinum.goldeneye.camera1.config
 
 import android.hardware.Camera
+import co.infinum.goldeneye.config.ZoomConfig
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.Zoom
 import co.infinum.goldeneye.utils.LogDelegate
-
-interface ZoomConfig {
-    var zoom: Zoom
-    val maxZoom: Zoom
-    val supportedZooms: List<Zoom>
-    val isZoomSupported: Boolean
-    var pinchToZoomEnabled: Boolean
-    var pinchToZoomFriction: Float
-}
 
 internal class ZoomConfigImpl(
     private val onUpdateListener: (CameraProperty) -> Unit

@@ -2,7 +2,6 @@ package co.infinum.goldeneye
 
 import android.graphics.Bitmap
 import android.graphics.Point
-import co.infinum.goldeneye.config.ZoomConfig
 import co.infinum.goldeneye.models.Zoom
 import java.io.File
 

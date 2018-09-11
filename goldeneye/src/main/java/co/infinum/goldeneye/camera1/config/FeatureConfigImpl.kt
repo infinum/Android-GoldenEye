@@ -1,35 +1,9 @@
 package co.infinum.goldeneye.camera1.config
 
 import android.hardware.Camera
+import co.infinum.goldeneye.config.FeatureConfig
 import co.infinum.goldeneye.models.*
 import co.infinum.goldeneye.utils.LogDelegate
-
-interface FeatureConfig {
-    var tapToFocusEnabled: Boolean
-    var resetFocusDelay: Long
-
-    var flashMode: FlashMode
-    val supportedFlashModes: List<FlashMode>
-
-    var focusMode: FocusMode
-    val supportedFocusModes: List<FocusMode>
-
-    var whiteBalance: WhiteBalance
-    val supportedWhiteBalance: List<WhiteBalance>
-
-    var sceneMode: SceneMode
-    val supportedSceneModes: List<SceneMode>
-
-    var colorEffect: ColorEffect
-    val supportedColorEffects: List<ColorEffect>
-
-    var antibanding: Antibanding
-    val supportedAntibanding: List<Antibanding>
-
-    var exposureCompensation: Int
-    val supportedExposureCompensation: List<Int>
-    val isExposureCompensationSupported: Boolean
-}
 
 internal class FeatureConfigImpl(
     private val onUpdateListener: (CameraProperty) -> Unit
@@ -157,23 +131,4 @@ internal class FeatureConfigImpl(
             ?.distinct()
             ?.filter { it != Antibanding.UNKNOWN }
             ?: emptyList()
-
-    override var exposureCompensation = 0
-        set(value) {
-            if (value in supportedExposureCompensation) {
-                field = value
-                onUpdateListener(CameraProperty.EXPOSURE_COMPENSATION)
-            } else {
-                LogDelegate.log("Unsupported ExposureCompensation [$value]")
-            }
-        }
-    override val supportedExposureCompensation: List<Int>
-        get() {
-            val min = params?.minExposureCompensation ?: 0
-            val max = params?.maxExposureCompensation ?: 0
-            return if (min == 0 && max == 0) emptyList() else (min..max).toList()
-        }
-
-    override val isExposureCompensationSupported: Boolean
-        get() = supportedExposureCompensation.isNotEmpty()
 }

@@ -3,15 +3,18 @@
 package co.infinum.goldeneye.camera1
 
 import android.app.Activity
+import android.graphics.Bitmap
 import android.hardware.Camera
 import android.os.Build
 import android.view.TextureView
 import co.infinum.goldeneye.*
 import co.infinum.goldeneye.camera1.config.*
+import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
 import co.infinum.goldeneye.extensions.updateParams
 import co.infinum.goldeneye.models.CameraProperty
+import co.infinum.goldeneye.models.CameraState
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.utils.CameraUtils
@@ -46,7 +49,6 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             CameraProperty.PREVIEW_SIZE -> updatePreviewSize(config.pictureSize)
             CameraProperty.ZOOM -> camera?.updateParams { zoom = config.zoom.level }
             CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization()
-            CameraProperty.EXPOSURE_COMPENSATION -> camera?.updateParams { exposureCompensation = config.exposureCompensation }
             CameraProperty.PREVIEW_SCALE -> applyMatrixTransformation(textureView)
         }
     }
@@ -75,6 +77,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
                 this.pictureRecorder = PictureRecorder(activity, it, _config)
             }
             callback.onConfigReady()
+            state = CameraState.READY
 
             this.textureView = textureView
             this.gestureHandler?.init(textureView)
@@ -96,29 +99,51 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
         camera = null
         gestureHandler?.release()
         gestureHandler = null
+        state = CameraState.CLOSED
     }
 
     override fun takePicture(callback: PictureCallback) {
         if (isCameraReady().not()) return
 
-        pictureRecorder?.takePicture(callback)
+        state = CameraState.TAKING_PICTURE
+        pictureRecorder?.takePicture(object: PictureCallback() {
+            override fun onPictureTaken(picture: Bitmap) {
+                resetCameraPreview()
+                callback.onPictureTaken(picture)
+            }
+
+            override fun onError(t: Throwable) {
+                resetCameraPreview()
+                callback.onError(t)
+            }
+
+            private fun resetCameraPreview() {
+                state = CameraState.READY
+                camera?.startPreview()
+            }
+        })
     }
 
     override fun startRecording(file: File, callback: VideoCallback) {
         if (isCameraReady().not()) return
 
+        state = CameraState.RECORDING
         updatePreviewSize(config.videoSize)
         videoRecorder?.startRecording(file, object : VideoCallback {
             override fun onVideoRecorded(file: File) {
-                startPreview()
-                updatePreviewSize(config.pictureSize)
+                resetCameraPreview()
                 callback.onVideoRecorded(file)
             }
 
             override fun onError(t: Throwable) {
+                resetCameraPreview()
+                callback.onError(t)
+            }
+
+            private fun resetCameraPreview() {
+                state = CameraState.READY
                 startPreview()
                 updatePreviewSize(config.pictureSize)
-                callback.onError(t)
             }
         })
     }
@@ -129,7 +154,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
 
     @Throws(Throwable::class)
     private fun openCamera(config: CameraConfigImpl) {
-        Camera.open(config.id.toInt())?.also {
+        Camera.open(config.id)?.also {
             this.camera = it
             _config = config
             _config.params = it.parameters
@@ -194,10 +219,6 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
                     whiteBalance = config.whiteBalance.key
                 }
 
-                if (config.isExposureCompensationSupported) {
-                    exposureCompensation = config.exposureCompensation
-                }
-
                 if (parameters.isZoomSupported) {
                     zoom = config.zoom.level
                 }
@@ -216,15 +237,16 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             val facing = if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) Facing.BACK else Facing.FRONT
 
             val cameraInfo = object: CameraInfo {
-                override val id = id.toString()
+                override val id = id
                 override val orientation = info.orientation
                 override val facing = facing
+                override val bestResolution = Size.UNKNOWN
             }
 
             _availableCameras.add(
                 CameraConfigImpl(
                     cameraInfo = cameraInfo,
-                    videoConfig = VideoConfigImpl(id.toString(), onUpdateListener),
+                    videoConfig = VideoConfigImpl(id, onUpdateListener),
                     featureConfig = FeatureConfigImpl(onUpdateListener),
                     sizeConfig = SizeConfigImpl(onUpdateListener),
                     zoomConfig = ZoomConfigImpl(onUpdateListener)
@@ -248,8 +270,8 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             return false
         }
 
-        if (_config.locked) {
-            log("Camera is currently locked.")
+        if (state != CameraState.READY) {
+            log("Camera is not ready.")
             return false
         }
 

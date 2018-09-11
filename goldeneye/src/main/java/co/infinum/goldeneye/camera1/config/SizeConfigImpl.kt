@@ -1,25 +1,13 @@
 package co.infinum.goldeneye.camera1.config
 
 import android.hardware.Camera
+import co.infinum.goldeneye.config.SizeConfig
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.PreviewScale
 import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.models.toInternalSize
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
-
-interface SizeConfig {
-    var previewSize: Size
-    val supportedPreviewSizes: List<Size>
-
-    var pictureSize: Size
-    val supportedPictureSizes: List<Size>
-
-    var videoSize: Size
-    val supportedVideoSizes: List<Size>
-
-    var previewScale: PreviewScale
-}
 
 internal class SizeConfigImpl(
     private val onUpdateListener: (CameraProperty) -> Unit

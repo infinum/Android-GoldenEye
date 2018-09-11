@@ -221,13 +221,6 @@ class MainActivity : AppCompatActivity() {
                         onClick = { colorEffect = it }
                     )
                 },
-                SettingsItem("Exposure compensation:", exposureCompensation.toString()) {
-                    displayDialog(
-                        title = "Exposure compensation",
-                        listItems = supportedExposureCompensation.map { ListItem(it, it.toString()) },
-                        onClick = { exposureCompensation = it }
-                    )
-                },
                 SettingsItem("Antibanding:", antibanding.convertToString()) {
                     displayDialog(
                         title = "Antibanding",

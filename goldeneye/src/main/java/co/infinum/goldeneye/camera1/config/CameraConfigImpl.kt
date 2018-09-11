@@ -1,13 +1,7 @@
 package co.infinum.goldeneye.camera1.config
 
 import android.hardware.Camera
-
-interface CameraConfig :
-    CameraInfo,
-    VideoConfig,
-    FeatureConfig,
-    SizeConfig,
-    ZoomConfig
+import co.infinum.goldeneye.config.*
 
 internal class CameraConfigImpl(
     private val cameraInfo: CameraInfo,
@@ -22,9 +16,7 @@ internal class CameraConfigImpl(
     SizeConfig by sizeConfig,
     ZoomConfig by zoomConfig {
 
-    var locked = false
-
-    var initialized = false
+    private var initialized = false
 
     var params: Camera.Parameters? = null
         set(value) {

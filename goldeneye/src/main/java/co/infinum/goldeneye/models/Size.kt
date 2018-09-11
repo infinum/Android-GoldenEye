@@ -3,6 +3,8 @@
 package co.infinum.goldeneye.models
 
 import android.hardware.Camera
+import android.os.Build
+import android.support.annotation.RequiresApi
 
 data class Size internal constructor(
     val width: Int,
@@ -16,7 +18,9 @@ data class Size internal constructor(
         return other.height * other.width - width * height
     }
 
-    val aspectRatio = if (this != Size.UNKNOWN) this.width / this.height else -1
+    val aspectRatio = if (this.height != 0 && this.width != 0) this.width / this.height else -1
 }
 
 internal fun Camera.Size.toInternalSize() = Size(width, height)
+@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+internal fun android.util.Size.toInternalSize() = Size(width, height)

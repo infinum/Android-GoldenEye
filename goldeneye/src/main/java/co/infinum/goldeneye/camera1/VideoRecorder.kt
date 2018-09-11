@@ -26,7 +26,6 @@ internal class VideoRecorder(
 
     fun startRecording(file: File, callback: VideoCallback) {
         try {
-            config.locked = true
             this.file = file
             this.callback = callback
             camera.unlock()
@@ -51,7 +50,6 @@ internal class VideoRecorder(
                 start()
             }
         } catch (t: Throwable) {
-            config.locked = false
             callback.onError(t)
         }
     }
@@ -67,7 +65,6 @@ internal class VideoRecorder(
         } finally {
             mediaRecorder?.release()
             camera.reconnect()
-            config.locked = false
             mediaRecorder = null
             callback = null
             file = null

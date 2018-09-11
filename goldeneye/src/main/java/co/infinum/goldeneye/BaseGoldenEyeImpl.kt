@@ -1,11 +1,18 @@
 package co.infinum.goldeneye
 
+import android.Manifest
 import android.graphics.Bitmap
+import android.support.annotation.RequiresPermission
 import android.view.TextureView
 import co.infinum.goldeneye.camera1.config.CameraInfo
+import co.infinum.goldeneye.models.CameraState
 import java.io.File
 
-abstract class BaseGoldenEyeImpl : GoldenEye {
+internal abstract class BaseGoldenEyeImpl : GoldenEye {
+
+    protected var state = CameraState.CLOSED
+
+    @RequiresPermission(Manifest.permission.CAMERA)
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, onSuccess: () -> Unit, onError: (Throwable) -> Unit) {
         open(textureView, cameraInfo, object : InitCallback {
             override fun onConfigReady() {

@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Looper
 import co.infinum.goldeneye.MissingCameraPermissionException
 import co.infinum.goldeneye.TaskOnMainThreadException
-import co.infinum.goldeneye.config.CameraConfigImpl
 import co.infinum.goldeneye.extensions.hasCameraPermission
 
 internal object Intrinsics {
