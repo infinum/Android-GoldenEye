@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package co.infinum.goldeneye.extensions
 
 import android.hardware.Camera

@@ -1,20 +1,23 @@
-package co.infinum.goldeneye.camera2
+package co.infinum.goldeneye
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.ImageFormat
-import android.hardware.camera2.*
+import android.graphics.Rect
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CameraManager
+import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.support.annotation.RequiresApi
 import android.support.annotation.RequiresPermission
 import android.view.Surface
 import android.view.TextureView
-import co.infinum.goldeneye.*
-import co.infinum.goldeneye.camera1.config.CameraInfo
-import co.infinum.goldeneye.camera2.config.*
 import co.infinum.goldeneye.config.CameraConfig
+import co.infinum.goldeneye.config.CameraInfo
+import co.infinum.goldeneye.config.camera2.*
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
 import co.infinum.goldeneye.models.*
@@ -24,7 +27,7 @@ import co.infinum.goldeneye.utils.LogDelegate
 import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-internal class GoldenEyeImpl(
+internal class GoldenEye2Impl(
     private val activity: Activity,
     logger: Logger? = null
 ) : BaseGoldenEyeImpl() {
@@ -34,46 +37,86 @@ internal class GoldenEyeImpl(
     private var cameraDevice: CameraDevice? = null
     private var lastCameraRequest: CameraRequest? = null
     private var textureView: TextureView? = null
+    private var devicePreview: DevicePreview? = null
 
-    private val _availableCameras = mutableListOf<CameraConfigImpl>()
+    private val _availableCameras = mutableListOf<Camera2ConfigImpl>()
     override val availableCameras: List<CameraInfo> = _availableCameras
 
-    private lateinit var _config: CameraConfigImpl
+    private lateinit var _config: Camera2ConfigImpl
     override val config: CameraConfig
         get() = _config
 
     private val onUpdateListener: (CameraProperty) -> Unit = {
-        //        when (it) {
-        //            CameraProperty.FOCUS -> camera?.updateParams { focusMode = config.focusMode.key }
-        //            CameraProperty.FLASH -> camera?.updateParams { flashMode = config.flashMode.key }
-        //            CameraProperty.COLOR_EFFECT -> camera?.updateParams { colorEffect = config.colorEffect.key }
-        //            CameraProperty.ANTIBANDING -> camera?.updateParams { antibanding = config.antibanding.key }
-        //            CameraProperty.SCENE_MODE -> camera?.updateParams { sceneMode = config.sceneMode.key }
-        //            CameraProperty.WHITE_BALANCE -> camera?.updateParams { whiteBalance = config.whiteBalance.key }
-        //            CameraProperty.PICTURE_SIZE -> updatePictureSize()
-        //            CameraProperty.PREVIEW_SIZE -> updatePreviewSize(config.pictureSize)
-        //            CameraProperty.ZOOM -> camera?.updateParams { zoom = config.zoom.level }
-        //            CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization()
-        //            CameraProperty.EXPOSURE_COMPENSATION -> camera?.updateParams { exposureCompensation = config.exposureCompensation }
-        //            CameraProperty.PREVIEW_SCALE -> applyMatrixTransformation(textureView)
-        //        }
+        when (it) {
+            CameraProperty.FOCUS -> devicePreview?.updateRequest {
+                set(CaptureRequest.CONTROL_AF_MODE, config.focusMode.toCamera2())
+            }
+            CameraProperty.FLASH -> devicePreview?.updateRequest {
+                updateFlashMode(this, config.flashMode)
+            }
+            CameraProperty.COLOR_EFFECT -> devicePreview?.updateRequest {
+                set(CaptureRequest.CONTROL_EFFECT_MODE, config.colorEffect.toCamera2())
+            }
+            CameraProperty.ANTIBANDING -> devicePreview?.updateRequest {
+                set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, config.antibanding.toCamera2())
+            }
+            CameraProperty.SCENE_MODE -> devicePreview?.updateRequest {
+                set(CaptureRequest.CONTROL_SCENE_MODE, config.sceneMode.toCamera2())
+            }
+            CameraProperty.WHITE_BALANCE -> devicePreview?.updateRequest {
+                set(CaptureRequest.CONTROL_AWB_MODE, config.whiteBalance.toCamera2())
+            }
+            CameraProperty.PICTURE_SIZE -> updatePictureSize(config.pictureSize)
+            CameraProperty.PREVIEW_SIZE -> startPreview()
+            CameraProperty.ZOOM -> devicePreview?.updateRequest { updateZoom(this, config.zoom) }
+            CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization()
+            CameraProperty.PREVIEW_SCALE -> applyMatrixTransformation(textureView)
+        }
+    }
+
+    private fun updateVideoStabilization() {
+        devicePreview?.updateRequest {
+            val videoStabilizationMode = if (config.videoStabilizationEnabled) {
+                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON
+            } else {
+                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF
+            }
+            set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, videoStabilizationMode)
+        }
+    }
+
+    private fun updateZoom(requestBuilder: CaptureRequest.Builder, zoom: Int) {
+        val zoomPercentage = zoom / 100f
+        val zoomedWidth = (config.previewSize.width / zoomPercentage).toInt()
+        val zoomedHeight = (config.previewSize.height / zoomPercentage).toInt()
+        val halfWidthDiff = (config.previewSize.width - zoomedWidth) / 2
+        val halfHeightDiff = (config.previewSize.height - zoomedHeight) / 2
+        val zoomedRect = Rect(
+            halfWidthDiff,
+            halfHeightDiff,
+            config.previewSize.width - halfWidthDiff,
+            config.previewSize.height - halfHeightDiff
+        )
+        requestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomedRect)
+    }
+
+    private fun updatePictureSize(size: Size) {
+        //TODO update image reader with size
+    }
+
+    private fun updateFlashMode(requestBuilder: CaptureRequest.Builder, flashMode: FlashMode) {
+        if (flashMode == FlashMode.TORCH) {
+            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
+            requestBuilder.set(CaptureRequest.FLASH_MODE, flashMode.toCamera2())
+        } else {
+            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, flashMode.toCamera2())
+            requestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+        }
     }
 
     init {
         LogDelegate.logger = logger
         initAvailableCameras()
-    }
-
-    private fun openCamera(width: Int, height: Int) {
-
-        //        camera = Camera.initInstance(manager).apply { // (2)
-        //            setUpCameraOutputs(width, height, this) // (3)
-        //            configureTransform(width, height) // (4)
-        //            this.open() // (5) and (6)
-        //            val texture = textureView.surfaceTexture
-        //            texture.setDefaultBufferSize(previewSize.width, previewSize.height) // (7)
-        //            this.start(Surface(texture)) // (8) and (9)
-        //        }
     }
 
     @RequiresPermission(Manifest.permission.CAMERA)
@@ -96,13 +139,20 @@ internal class GoldenEyeImpl(
     private fun openCamera(cameraInfo: CameraInfo, callback: InitCallback) {
         cameraManager.openCamera(cameraInfo.id.toString(), object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice?) {
-                if (lastCameraRequest == null) {
+                if (lastCameraRequest != null) {
+                    openLastRequestedCamera()
+                    return
+                }
+
+                if (camera != null) {
                     cameraDevice = camera
                     _config = _availableCameras.first { it.id == cameraInfo.id }
                     _config.characteristics = cameraManager.getCameraCharacteristics(cameraDevice?.id)
+                    devicePreview = DevicePreview(camera, { state = CameraState.READY }, { state = CameraState.CLOSED })
+                    callback.onConfigReady()
                     startPreview()
                 } else {
-                    openLastRequestedCamera()
+                    callback.onError(CameraFailedToOpenException)
                 }
             }
 
@@ -134,35 +184,18 @@ internal class GoldenEyeImpl(
 
     private fun startPreview() {
         textureView?.onSurfaceUpdate(
-            onAvailable = { view ->
+            onAvailable = { _ ->
                 try {
-                    view.setTransform(CameraUtils.calculateTextureMatrix(activity, config, view))
                     val texture = textureView?.surfaceTexture?.apply {
                         setDefaultBufferSize(config.previewSize.width, config.previewSize.height)
                     }
-                    val surface = Surface(texture)
-                    val previewRequestBuilder = cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)?.apply {
-                        addTarget(surface)
-                    }
-                    cameraDevice?.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
-
-                        override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-                            try {
-                                cameraCaptureSession.setRepeatingRequest(previewRequestBuilder?.build(), null, null)
-                            } catch (t: Throwable) {
-                                LogDelegate.log(t)
-                            }
-                        }
-
-                        override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-                        }
-                    }, null
-                    )
-                } catch (e: CameraAccessException) {
-                    e.printStackTrace()
+                    applyMatrixTransformation(textureView)
+                    devicePreview?.startSession(Surface(texture))
+                } catch (t: Throwable) {
+                    LogDelegate.log(t)
                 }
             },
-            onSizeChanged = { it.setTransform(CameraUtils.calculateTextureMatrix(activity, config, it)) }
+            onSizeChanged = { applyMatrixTransformation(it) }
         )
     }
 
@@ -200,15 +233,19 @@ internal class GoldenEyeImpl(
                 override val facing = facing
                 override val bestResolution = bestResolution
             }
-            _availableCameras.add(
-                CameraConfigImpl(
-                    cameraInfo = cameraInfo,
-                    videoConfig = VideoConfigImpl(id, onUpdateListener),
-                    featureConfig = FeatureConfigImpl(onUpdateListener),
-                    sizeConfig = SizeConfigImpl(onUpdateListener),
-                    zoomConfig = ZoomConfigImpl(onUpdateListener)
-                )
+            val cameraConfig = Camera2ConfigImpl(
+                cameraInfo = cameraInfo,
+                videoConfig = VideoConfigImpl(id, onUpdateListener),
+                featureConfig = FeatureConfigImpl(onUpdateListener),
+                sizeConfig = SizeConfigImpl(onUpdateListener),
+                zoomConfig = ZoomConfigImpl(onUpdateListener)
             )
+            cameraConfig.characteristics = info
+            _availableCameras.add(cameraConfig)
         }
+    }
+
+    private fun applyMatrixTransformation(textureView: TextureView?) {
+        textureView?.setTransform(CameraUtils.calculateTextureMatrix(activity, config, textureView))
     }
 }

@@ -8,7 +8,7 @@ import android.graphics.Rect
 import android.hardware.Camera
 import android.view.Surface
 import android.view.TextureView
-import co.infinum.goldeneye.camera1.config.CameraInfo
+import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.isNotMeasured
 import co.infinum.goldeneye.models.Facing

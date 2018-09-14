@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package co.infinum.goldeneye.models
 
 import android.hardware.Camera
@@ -29,6 +31,7 @@ enum class FlashMode {
         AUTO -> CameraCharacteristics.CONTROL_AE_MODE_ON_AUTO_FLASH
         RED_EYE -> CameraCharacteristics.CONTROL_AE_MODE_ON_AUTO_FLASH_REDEYE
         OFF -> CameraCharacteristics.CONTROL_AE_MODE_ON
+        TORCH -> CameraCharacteristics.FLASH_MODE_TORCH
         else -> throw IllegalEnumException
     }
 

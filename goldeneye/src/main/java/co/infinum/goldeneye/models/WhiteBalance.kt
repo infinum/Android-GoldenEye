@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package co.infinum.goldeneye.models
 
 import android.annotation.TargetApi

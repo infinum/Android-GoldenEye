@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package co.infinum.goldeneye.models
 
 import android.hardware.Camera
@@ -23,10 +25,10 @@ enum class Antibanding {
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     fun toCamera2() = when (this) {
-        Antibanding.AUTO -> CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_OFF
+        Antibanding.AUTO -> CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_AUTO
         Antibanding.HZ_50 -> CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_50HZ
         Antibanding.HZ_60 -> CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_60HZ
-        Antibanding.OFF -> CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_AUTO
+        Antibanding.OFF -> CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_OFF
         else -> throw IllegalEnumException
     }
 

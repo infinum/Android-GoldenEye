@@ -1,24 +1,20 @@
-package co.infinum.goldeneye
+package co.infinum.goldeneye.gesture
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.graphics.Point
-import android.hardware.Camera
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.TextureView
+import co.infinum.goldeneye.OnFocusChangeCallback
+import co.infinum.goldeneye.OnZoomChangeCallback
 import co.infinum.goldeneye.config.CameraConfig
-import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.mainHandler
-import co.infinum.goldeneye.extensions.updateParams
 import co.infinum.goldeneye.models.FocusMode
-import co.infinum.goldeneye.utils.CameraUtils
 
 internal class GestureHandler(
     private val activity: Activity,
-    private val camera: Camera,
     private val config: CameraConfig,
     private val onZoomChangeCallback: OnZoomChangeCallback? = null,
     private val onFocusChangeCallback: OnFocusChangeCallback? = null
@@ -47,14 +43,12 @@ internal class GestureHandler(
             }
 
             spanDelta += detector.currentSpan - detector.previousSpan
-            val zoomLevelDelta = (spanDelta / (zoomDeltaSpan * config.pinchToZoomFriction)).toInt()
+            val zoomDelta = (spanDelta / (zoomDeltaSpan * config.pinchToZoomFriction)).toInt()
 
-            if (zoomLevelDelta != 0) {
-                val zoomLevel = (config.zoom.level + zoomLevelDelta).coerceIn(0, config.maxZoom.level)
-                config.zoom = config.supportedZooms[zoomLevel]
+            if (zoomDelta != 0) {
+                config.zoom = (config.zoom + zoomDelta).coerceIn(100, config.maxZoom)
                 onZoomChangeCallback?.onZoomChanged(config.zoom)
             }
-
             spanDelta %= zoomDeltaSpan
             return true
         }
@@ -69,23 +63,23 @@ internal class GestureHandler(
                 return true
             }
 
-            ifNotNull(camera, textureView) { camera, textureView ->
-                camera.updateParams {
-                    focusMode = FocusMode.AUTO.key
-                    val areas = CameraUtils.calculateFocusArea(activity, textureView, config, e.x, e.y)
-                    if (maxNumFocusAreas > 0) {
-                        focusAreas = areas
-                        onFocusChangeCallback?.onFocusChanged(Point(e.x.toInt(), e.y.toInt()))
-                    }
-                }
-
-                camera.autoFocus { success, _ ->
-                    if (success) {
-                        camera.cancelAutoFocus()
-                        resetFocusWithDelay()
-                    }
-                }
-            }
+            //            ifNotNull(camera, textureView) { camera, textureView ->
+            //                camera.updateParams {
+            //                    focusMode = FocusMode.AUTO.toCamera1()
+            //                    val areas = CameraUtils.calculateFocusArea(activity, textureView, config, e.x, e.y)
+            //                    if (maxNumFocusAreas > 0) {
+            //                        focusAreas = areas
+            //                        onFocusChangeCallback?.onFocusChanged(Point(e.x.toInt(), e.y.toInt()))
+            //                    }
+            //                }
+            //
+            //                camera.autoFocus { success, _ ->
+            //                    if (success) {
+            //                        camera.cancelAutoFocus()
+            //                        resetFocusWithDelay()
+            //                    }
+            //                }
+            //            }
 
             return true
         }
@@ -101,11 +95,11 @@ internal class GestureHandler(
      * and focus on tapped area.
      */
     private fun resetFocusWithDelay() {
-        mainHandler.removeCallbacksAndMessages(null)
-        mainHandler.postDelayed(
-            { camera.updateParams { focusMode = config.focusMode.key } },
-            config.resetFocusDelay
-        )
+        //        mainHandler.removeCallbacksAndMessages(null)
+        //        mainHandler.postDelayed(
+        //            { camera.updateParams { focusMode = config.focusMode.toCamera1() } },
+        //            config.resetFocusDelay
+        //        )
     }
 
     @SuppressLint("ClickableViewAccessibility")

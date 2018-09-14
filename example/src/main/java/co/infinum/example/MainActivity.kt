@@ -18,9 +18,8 @@ import android.view.View
 import co.infinum.goldeneye.GoldenEye
 import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.Logger
-import co.infinum.goldeneye.OnZoomChangeCallback
 import co.infinum.goldeneye.models.PreviewScale
-import co.infinum.goldeneye.models.Zoom
+import co.infinum.goldeneye.models.VideoQuality
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 
@@ -35,7 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     private val initCallback = object : InitCallback {
         override fun onConfigReady() {
-            zoomView.text = "Zoom: ${goldenEye.config.zoom.ratio.toPercentage()}"
+            //            zoomView.text = "Zoom: ${goldenEye.config.zoom.ratio.toPercentage()}"
         }
 
         override fun onError(t: Throwable) {
@@ -57,11 +56,11 @@ class MainActivity : AppCompatActivity() {
                     t.printStackTrace()
                 }
             })
-            .setOnZoomChangeCallback(object : OnZoomChangeCallback {
-                override fun onZoomChanged(zoom: Zoom) {
-                    zoomView.text = "Zoom: ${zoom.ratio.toPercentage()}"
-                }
-            })
+            //            .setOnZoomChangeCallback(object : OnZoomChangeCallback {
+            //                override fun onZoomChanged(zoom: Zoom) {
+            //                    zoomView.text = "Zoom: ${zoom.ratio.toPercentage()}"
+            //                }
+            //            })
             .build()
         videoFile = File.createTempFile("vid", "")
 
@@ -142,9 +141,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-//        Handler().postDelayed(Runnable {
-            goldenEye.open(textureView, goldenEye.availableCameras[0], initCallback)
-//        }, 2000)
+        //        Handler().postDelayed(Runnable {
+        goldenEye.open(textureView, goldenEye.availableCameras[0], initCallback)
+        //        }, 2000)
     }
 
     private fun prepareItems() {
@@ -169,6 +168,13 @@ class MainActivity : AppCompatActivity() {
                         title = "Video size",
                         listItems = supportedVideoSizes.map { ListItem(it, it.convertToString()) },
                         onClick = { videoSize = it }
+                    )
+                },
+                SettingsItem("Preview scale", previewScale.convertToString()) {
+                    displayDialog(
+                        title = "Preview scale",
+                        listItems = PreviewScale.values().map { ListItem(it, it.convertToString()) },
+                        onClick = { previewScale = it }
                     )
                 },
                 SettingsItem("Video quality:", videoQuality.convertToString()) {
@@ -199,13 +205,6 @@ class MainActivity : AppCompatActivity() {
                         onClick = { focusMode = it }
                     )
                 },
-                SettingsItem("Zoom:", zoom.ratio.toPercentage()) {
-                    displayDialog(
-                        title = "Zoom",
-                        listItems = supportedZooms.map { ListItem(it, it.ratio.toPercentage()) },
-                        onClick = { zoom = it }
-                    )
-                },
                 SettingsItem("White Balance:", whiteBalance.convertToString()) {
                     displayDialog(
                         title = "White Balance",
@@ -232,6 +231,42 @@ class MainActivity : AppCompatActivity() {
                         title = "Antibanding",
                         listItems = supportedAntibanding.map { ListItem(it, it.convertToString()) },
                         onClick = { antibanding = it }
+                    )
+                },
+                SettingsItem("Tap to focus:", tapToFocusEnabled.convertToString()) {
+                    displayDialog(
+                        title = "Tap to focus",
+                        listItems = boolList(),
+                        onClick = { tapToFocusEnabled = it }
+                    )
+                },
+                SettingsItem("Tap to focus - reset focus delay:", resetFocusDelay.toString()) {
+                    displayDialog(
+                        title = "Reset delay",
+                        listItems = listOf(
+                            ListItem(2_500L, "2500"),
+                            ListItem(5_000L, "5000"),
+                            ListItem(7_500L, "7500")
+                        ),
+                        onClick = { resetFocusDelay = it }
+                    )
+                },
+                SettingsItem("Pinch to zoom:", pinchToZoomEnabled.convertToString()) {
+                    displayDialog(
+                        title = "Pinch to zoom",
+                        listItems = boolList(),
+                        onClick = { pinchToZoomEnabled = it }
+                    )
+                },
+                SettingsItem("Pinch to zoom friction:", "%.02f".format(pinchToZoomFriction)) {
+                    displayDialog(
+                        title = "Friction",
+                        listItems = listOf(
+                            ListItem(0.5f, "0.50"),
+                            ListItem(1f, "1.00"),
+                            ListItem(2f, "2.00")
+                        ),
+                        onClick = { pinchToZoomFriction = it }
                     )
                 }
             )

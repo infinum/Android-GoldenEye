@@ -2,7 +2,6 @@ package co.infinum.goldeneye
 
 import android.graphics.Bitmap
 import android.graphics.Point
-import co.infinum.goldeneye.models.Zoom
 import java.io.File
 
 /**
@@ -41,5 +40,5 @@ interface OnFocusChangeCallback {
 }
 
 interface OnZoomChangeCallback {
-    fun onZoomChanged(zoom: Zoom)
+    fun onZoomChanged(zoom: Int)
 }

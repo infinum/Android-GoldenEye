@@ -1,22 +1,25 @@
 @file:Suppress("DEPRECATION")
 
-package co.infinum.goldeneye.camera1
+package co.infinum.goldeneye
 
 import android.app.Activity
 import android.graphics.Bitmap
 import android.hardware.Camera
 import android.os.Build
 import android.view.TextureView
-import co.infinum.goldeneye.*
-import co.infinum.goldeneye.camera1.config.*
 import co.infinum.goldeneye.config.CameraConfig
+import co.infinum.goldeneye.config.CameraInfo
+import co.infinum.goldeneye.config.camera1.*
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
 import co.infinum.goldeneye.extensions.updateParams
+import co.infinum.goldeneye.gesture.GestureHandler
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.CameraState
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.Size
+import co.infinum.goldeneye.recorders.PictureRecorder
+import co.infinum.goldeneye.recorders.VideoRecorder
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.Intrinsics
 import co.infinum.goldeneye.utils.LogDelegate
@@ -24,7 +27,7 @@ import co.infinum.goldeneye.utils.LogDelegate.log
 import java.io.File
 import java.io.IOException
 
-internal class GoldenEyeImpl @JvmOverloads constructor(
+internal class GoldenEye1Impl @JvmOverloads constructor(
     private val activity: Activity,
     private val onZoomChangeCallback: OnZoomChangeCallback? = null,
     private val onFocusChangeCallback: OnFocusChangeCallback? = null,
@@ -39,24 +42,26 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
 
     private val onUpdateListener: (CameraProperty) -> Unit = {
         when (it) {
-            CameraProperty.FOCUS -> camera?.updateParams { focusMode = config.focusMode.key }
-            CameraProperty.FLASH -> camera?.updateParams { flashMode = config.flashMode.key }
-            CameraProperty.COLOR_EFFECT -> camera?.updateParams { colorEffect = config.colorEffect.key }
-            CameraProperty.ANTIBANDING -> camera?.updateParams { antibanding = config.antibanding.key }
-            CameraProperty.SCENE_MODE -> camera?.updateParams { sceneMode = config.sceneMode.key }
-            CameraProperty.WHITE_BALANCE -> camera?.updateParams { whiteBalance = config.whiteBalance.key }
+            CameraProperty.FOCUS -> camera?.updateParams { focusMode = config.focusMode.toCamera1() }
+            CameraProperty.FLASH -> camera?.updateParams { flashMode = config.flashMode.toCamera1() }
+            CameraProperty.COLOR_EFFECT -> camera?.updateParams { colorEffect = config.colorEffect.toCamera1() }
+            CameraProperty.ANTIBANDING -> camera?.updateParams { antibanding = config.antibanding.toCamera1() }
+            CameraProperty.SCENE_MODE -> camera?.updateParams { sceneMode = config.sceneMode.toCamera1() }
+            CameraProperty.WHITE_BALANCE -> camera?.updateParams { whiteBalance = config.whiteBalance.toCamera1() }
             CameraProperty.PICTURE_SIZE -> updatePictureSize()
-            CameraProperty.PREVIEW_SIZE -> updatePreviewSize(config.pictureSize)
-            CameraProperty.ZOOM -> camera?.updateParams { zoom = config.zoom.level }
+            CameraProperty.PREVIEW_SIZE -> updatePreviewSize()
+            CameraProperty.ZOOM -> camera?.updateParams {
+                //TODO update zoom
+            }
             CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization()
             CameraProperty.PREVIEW_SCALE -> applyMatrixTransformation(textureView)
         }
     }
 
-    private val _availableCameras = mutableListOf<CameraConfigImpl>()
+    private val _availableCameras = mutableListOf<Camera1ConfigImpl>()
     override val availableCameras: List<CameraInfo> = _availableCameras
 
-    private lateinit var _config: CameraConfigImpl
+    private lateinit var _config: Camera1ConfigImpl
     override val config: CameraConfig
         get() = _config
 
@@ -72,7 +77,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             _config = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_config)
             camera?.let {
-                this.gestureHandler = GestureHandler(activity, it, config, onZoomChangeCallback, onFocusChangeCallback)
+                this.gestureHandler = GestureHandler(activity, config, onZoomChangeCallback, onFocusChangeCallback)
                 this.videoRecorder = VideoRecorder(activity, it, _config)
                 this.pictureRecorder = PictureRecorder(activity, it, _config)
             }
@@ -106,7 +111,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
         if (isCameraReady().not()) return
 
         state = CameraState.TAKING_PICTURE
-        pictureRecorder?.takePicture(object: PictureCallback() {
+        pictureRecorder?.takePicture(object : PictureCallback() {
             override fun onPictureTaken(picture: Bitmap) {
                 resetCameraPreview()
                 callback.onPictureTaken(picture)
@@ -128,7 +133,9 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
         if (isCameraReady().not()) return
 
         state = CameraState.RECORDING
-        updatePreviewSize(config.videoSize)
+        if (config.autoPickPreviewSize) {
+            config.previewSize = CameraUtils.findBestMatchingSize(config.videoSize, config.supportedPreviewSizes)
+        }
         videoRecorder?.startRecording(file, object : VideoCallback {
             override fun onVideoRecorded(file: File) {
                 resetCameraPreview()
@@ -143,7 +150,9 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             private fun resetCameraPreview() {
                 state = CameraState.READY
                 startPreview()
-                updatePreviewSize(config.pictureSize)
+                if (config.autoPickPreviewSize) {
+                    config.previewSize = CameraUtils.findBestMatchingSize(config.pictureSize, config.supportedPreviewSizes)
+                }
             }
         })
     }
@@ -153,11 +162,11 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
     }
 
     @Throws(Throwable::class)
-    private fun openCamera(config: CameraConfigImpl) {
+    private fun openCamera(config: Camera1ConfigImpl) {
         Camera.open(config.id)?.also {
             this.camera = it
             _config = config
-            _config.params = it.parameters
+            _config.characteristics = it.parameters
         }
     }
 
@@ -184,10 +193,8 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
                 val pictureSize = config.pictureSize
                 setPictureSize(pictureSize.width, pictureSize.height)
 
-                val previewSize = config.previewSize.takeIf { it != Size.UNKNOWN }
-                    ?: CameraUtils.findBestMatchingSize(pictureSize, config.supportedPreviewSizes)
+                val previewSize = config.previewSize
                 setPreviewSize(previewSize.width, previewSize.height)
-
 
                 if (config.isVideoStabilizationSupported
                     && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
@@ -196,31 +203,31 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
                 }
 
                 if (config.supportedFocusModes.contains(config.focusMode)) {
-                    focusMode = config.focusMode.key
+                    focusMode = config.focusMode.toCamera1()
                 }
 
                 if (config.supportedFlashModes.contains(config.flashMode)) {
-                    flashMode = config.flashMode.key
+                    flashMode = config.flashMode.toCamera1()
                 }
 
                 if (config.supportedAntibanding.contains(config.antibanding)) {
-                    antibanding = config.antibanding.key
+                    antibanding = config.antibanding.toCamera1()
                 }
 
                 if (config.supportedColorEffects.contains(config.colorEffect)) {
-                    colorEffect = config.colorEffect.key
+                    colorEffect = config.colorEffect.toCamera1()
                 }
 
                 if (config.supportedSceneModes.contains(config.sceneMode)) {
-                    sceneMode = config.sceneMode.key
+                    sceneMode = config.sceneMode.toCamera1()
                 }
 
                 if (config.supportedWhiteBalance.contains(config.whiteBalance)) {
-                    whiteBalance = config.whiteBalance.key
+                    whiteBalance = config.whiteBalance.toCamera1()
                 }
 
                 if (parameters.isZoomSupported) {
-                    zoom = config.zoom.level
+                    //                    zoom = config.zoom.level
                 }
             }
         }
@@ -236,7 +243,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             Camera.getCameraInfo(id, info)
             val facing = if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) Facing.BACK else Facing.FRONT
 
-            val cameraInfo = object: CameraInfo {
+            val cameraInfo = object : CameraInfo {
                 override val id = id
                 override val orientation = info.orientation
                 override val facing = facing
@@ -244,7 +251,7 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
             }
 
             _availableCameras.add(
-                CameraConfigImpl(
+                Camera1ConfigImpl(
                     cameraInfo = cameraInfo,
                     videoConfig = VideoConfigImpl(id, onUpdateListener),
                     featureConfig = FeatureConfigImpl(onUpdateListener),
@@ -281,12 +288,13 @@ internal class GoldenEyeImpl @JvmOverloads constructor(
     private fun updatePictureSize() {
         val pictureSize = config.pictureSize
         camera?.updateParams { setPictureSize(pictureSize.width, pictureSize.height) }
-        updatePreviewSize(pictureSize)
+        if (config.autoPickPreviewSize) {
+            config.previewSize = CameraUtils.findBestMatchingSize(pictureSize, config.supportedPreviewSizes)
+        }
     }
 
-    private fun updatePreviewSize(referenceSize: Size) {
-        val previewSize = config.previewSize.takeIf { it != Size.UNKNOWN }
-            ?: CameraUtils.findBestMatchingSize(referenceSize, config.supportedPreviewSizes)
+    private fun updatePreviewSize() {
+        val previewSize = config.previewSize
         camera?.updateParams { setPreviewSize(previewSize.width, previewSize.height) }
         applyMatrixTransformation(textureView)
     }

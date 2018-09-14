@@ -1,17 +1,19 @@
-package co.infinum.goldeneye.camera1
+@file:Suppress("DEPRECATION")
+
+package co.infinum.goldeneye.recorders
 
 import android.app.Activity
 import android.hardware.Camera
 import co.infinum.goldeneye.PictureCallback
 import co.infinum.goldeneye.PictureConversionException
-import co.infinum.goldeneye.camera1.config.CameraConfigImpl
+import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.*
 import co.infinum.goldeneye.models.Facing
 
 internal class PictureRecorder(
     private val activity: Activity,
     private val camera: Camera,
-    private val config: CameraConfigImpl
+    private val config: CameraConfig
 ) {
 
     fun takePicture(callback: PictureCallback) {

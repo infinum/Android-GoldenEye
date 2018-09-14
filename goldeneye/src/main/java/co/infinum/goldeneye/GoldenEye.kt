@@ -7,10 +7,8 @@ import android.graphics.Point
 import android.os.Build
 import android.support.annotation.RequiresPermission
 import android.view.TextureView
-import co.infinum.goldeneye.camera1.GoldenEyeImpl
-import co.infinum.goldeneye.camera1.config.CameraInfo
+import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.CameraConfig
-import co.infinum.goldeneye.models.Zoom
 import java.io.File
 
 interface GoldenEye {
@@ -41,13 +39,13 @@ interface GoldenEye {
 
         fun setLogger(logger: Logger) = apply { this.logger = logger }
 
-        fun setOnZoomChangeCallback(onZoomChanged: (Zoom) -> Unit) = apply {
-            this.onZoomChangeCallback = object : OnZoomChangeCallback {
-                override fun onZoomChanged(zoom: Zoom) {
-                    onZoomChanged(zoom)
-                }
-            }
-        }
+//        fun setOnZoomChangeCallback(onZoomChanged: (Zoom) -> Unit) = apply {
+//            this.onZoomChangeCallback = object : OnZoomChangeCallback {
+//                override fun onZoomChanged(zoom: Zoom) {
+//                    onZoomChanged(zoom)
+//                }
+//            }
+//        }
 
         fun setOnZoomChangeCallback(callback: OnZoomChangeCallback) = apply { this.onZoomChangeCallback = callback }
 
@@ -63,9 +61,9 @@ interface GoldenEye {
 
         fun build(): GoldenEye {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                co.infinum.goldeneye.camera2.GoldenEyeImpl(activity)
+                GoldenEye2Impl(activity)
             } else {
-                co.infinum.goldeneye.camera1.GoldenEyeImpl(activity, onZoomChangeCallback, onFocusChangeCallback, logger)
+                GoldenEye1Impl(activity, onZoomChangeCallback, onFocusChangeCallback, logger)
             }
         }
     }

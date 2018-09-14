@@ -4,7 +4,7 @@ import android.Manifest
 import android.graphics.Bitmap
 import android.support.annotation.RequiresPermission
 import android.view.TextureView
-import co.infinum.goldeneye.camera1.config.CameraInfo
+import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.models.CameraState
 import java.io.File
 

@@ -1,4 +1,4 @@
-package co.infinum.goldeneye.camera1.config
+package co.infinum.goldeneye.config
 
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.Size
