@@ -49,6 +49,7 @@ enum class FocusMode {
             else -> UNKNOWN
         }
 
+        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         fun fromCamera2(int: Int?) = when (int) {
             CameraCharacteristics.CONTROL_AF_MODE_AUTO -> AUTO
             CameraCharacteristics.CONTROL_AF_MODE_CONTINUOUS_PICTURE -> CONTINUOUS_PICTURE

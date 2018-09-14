@@ -42,6 +42,7 @@ enum class FlashMode {
             else -> UNKNOWN
         }
 
+        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         fun fromCamera2(int: Int?) = when (int) {
             CameraCharacteristics.CONTROL_AE_MODE_ON_ALWAYS_FLASH -> ON
             CameraCharacteristics.CONTROL_AE_MODE_ON_AUTO_FLASH -> AUTO

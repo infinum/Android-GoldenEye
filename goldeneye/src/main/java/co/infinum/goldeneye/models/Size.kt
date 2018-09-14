@@ -22,5 +22,6 @@ data class Size internal constructor(
 }
 
 internal fun Camera.Size.toInternalSize() = Size(width, height)
+
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal fun android.util.Size.toInternalSize() = Size(width, height)
