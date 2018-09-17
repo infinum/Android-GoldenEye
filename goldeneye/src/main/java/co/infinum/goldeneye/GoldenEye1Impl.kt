@@ -12,8 +12,9 @@ import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.camera1.*
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
-import co.infinum.goldeneye.extensions.updateParams
-import co.infinum.goldeneye.gesture.GestureHandler
+import co.infinum.goldeneye.gesture.GestureManager
+import co.infinum.goldeneye.gesture.ZoomHandlerImpl
+import co.infinum.goldeneye.gesture.camera1.FocusHandlerImpl
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.CameraState
 import co.infinum.goldeneye.models.Facing
@@ -36,27 +37,11 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
     private var camera: Camera? = null
     private var textureView: TextureView? = null
-    private var gestureHandler: GestureHandler? = null
+    private var gestureHandler: GestureManager? = null
     private var videoRecorder: VideoRecorder? = null
     private var pictureRecorder: PictureRecorder? = null
-
-    private val onUpdateListener: (CameraProperty) -> Unit = {
-        when (it) {
-            CameraProperty.FOCUS -> camera?.updateParams { focusMode = config.focusMode.toCamera1() }
-            CameraProperty.FLASH -> camera?.updateParams { flashMode = config.flashMode.toCamera1() }
-            CameraProperty.COLOR_EFFECT -> camera?.updateParams { colorEffect = config.colorEffect.toCamera1() }
-            CameraProperty.ANTIBANDING -> camera?.updateParams { antibanding = config.antibanding.toCamera1() }
-            CameraProperty.SCENE_MODE -> camera?.updateParams { sceneMode = config.sceneMode.toCamera1() }
-            CameraProperty.WHITE_BALANCE -> camera?.updateParams { whiteBalance = config.whiteBalance.toCamera1() }
-            CameraProperty.PICTURE_SIZE -> updatePictureSize()
-            CameraProperty.PREVIEW_SIZE -> updatePreviewSize()
-            CameraProperty.ZOOM -> camera?.updateParams {
-                //TODO update zoom
-            }
-            CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization()
-            CameraProperty.PREVIEW_SCALE -> applyMatrixTransformation(textureView)
-        }
-    }
+    private var configUpdateHandler: ConfigUpdateHandler? = null
+    private val onConfigUpdateListener: (CameraProperty) -> Unit = { configUpdateHandler?.onPropertyUpdated(it) }
 
     private val _availableCameras = mutableListOf<Camera1ConfigImpl>()
     override val availableCameras: List<CameraInfo> = _availableCameras
@@ -76,21 +61,18 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             release()
             _config = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_config)
-            camera?.let {
-                this.gestureHandler = GestureHandler(activity, config, onZoomChangeCallback, onFocusChangeCallback)
-                this.videoRecorder = VideoRecorder(activity, it, _config)
-                this.pictureRecorder = PictureRecorder(activity, it, _config)
-            }
+            initGestureManager(camera, textureView)
+            initRecorders(camera)
+            initConfigUpdateHandler(camera, textureView)
             callback.onConfigReady()
             state = CameraState.READY
-
             this.textureView = textureView
-            this.gestureHandler?.init(textureView)
             textureView.onSurfaceUpdate(
                 onAvailable = { startPreview() },
-                onSizeChanged = { applyMatrixTransformation(it) }
+                onSizeChanged = { it.setTransform(CameraUtils.calculateTextureMatrix(activity, config, it)) }
             )
         } catch (t: Throwable) {
+            camera = null
             callback.onError(t)
         }
 
@@ -161,6 +143,50 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         videoRecorder?.stopRecording()
     }
 
+    @Throws(CameraFailedToOpenException::class)
+    private fun initConfigUpdateHandler(camera: Camera?, textureView: TextureView?) {
+        if (camera == null || textureView == null) throw CameraFailedToOpenException
+
+        this.configUpdateHandler = ConfigUpdateHandler(
+            activity = activity,
+            camera = camera,
+            textureView = textureView,
+            config = config
+        )
+    }
+
+    @Throws(CameraFailedToOpenException::class)
+    private fun initGestureManager(camera: Camera?, textureView: TextureView?) {
+        if (camera == null || textureView == null) throw CameraFailedToOpenException
+
+        val zoomHandler = ZoomHandlerImpl(
+            activity = activity,
+            config = config,
+            onZoomChanged = { onZoomChangeCallback?.onZoomChanged(it) }
+        )
+        val focusHandler = FocusHandlerImpl(
+            activity = activity,
+            camera = camera,
+            textureView = textureView,
+            config = config,
+            onFocusChanged = { onFocusChangeCallback?.onFocusChanged(it) }
+        )
+        this.gestureHandler = GestureManager(
+            activity = activity,
+            textureView = textureView,
+            zoomHandler = zoomHandler,
+            focusHandler = focusHandler
+        )
+    }
+
+    @Throws(CameraFailedToOpenException::class)
+    private fun initRecorders(camera: Camera?) {
+        if (camera == null) throw CameraFailedToOpenException
+
+        this.videoRecorder = VideoRecorder(activity, camera, _config)
+        this.pictureRecorder = PictureRecorder(activity, camera, _config)
+    }
+
     @Throws(Throwable::class)
     private fun openCamera(config: Camera1ConfigImpl) {
         Camera.open(config.id)?.also {
@@ -178,7 +204,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                     setPreviewTexture(textureView.surfaceTexture)
                     setDisplayOrientation(CameraUtils.calculateDisplayOrientation(activity, config))
                     applyConfig()
-                    applyMatrixTransformation(textureView)
+                    textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, config, textureView))
                     startPreview()
                 }
             }
@@ -233,10 +259,6 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         }
     }
 
-    private fun applyMatrixTransformation(textureView: TextureView?) {
-        textureView?.setTransform(CameraUtils.calculateTextureMatrix(activity, config, textureView))
-    }
-
     private fun initAvailableCameras() {
         for (id in 0 until Camera.getNumberOfCameras()) {
             val info = Camera.CameraInfo()
@@ -253,21 +275,17 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             _availableCameras.add(
                 Camera1ConfigImpl(
                     cameraInfo = cameraInfo,
-                    videoConfig = VideoConfigImpl(id, onUpdateListener),
-                    featureConfig = FeatureConfigImpl(onUpdateListener),
-                    sizeConfig = SizeConfigImpl(onUpdateListener),
-                    zoomConfig = ZoomConfigImpl(onUpdateListener)
+                    videoConfig = VideoConfigImpl(id, onConfigUpdateListener),
+                    featureConfig = FeatureConfigImpl(onConfigUpdateListener),
+                    sizeConfig = SizeConfigImpl(onConfigUpdateListener),
+                    zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
                 )
             )
         }
     }
 
     private fun isCameraReady(): Boolean {
-        if (camera == null
-            || pictureRecorder == null
-            || videoRecorder == null
-            || gestureHandler == null
-        ) {
+        if (camera == null) {
             log("Camera is not initialized. Did you call init() method?")
             return false
         }
@@ -283,27 +301,5 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         }
 
         return true
-    }
-
-    private fun updatePictureSize() {
-        val pictureSize = config.pictureSize
-        camera?.updateParams { setPictureSize(pictureSize.width, pictureSize.height) }
-        if (config.autoPickPreviewSize) {
-            config.previewSize = CameraUtils.findBestMatchingSize(pictureSize, config.supportedPreviewSizes)
-        }
-    }
-
-    private fun updatePreviewSize() {
-        val previewSize = config.previewSize
-        camera?.updateParams { setPreviewSize(previewSize.width, previewSize.height) }
-        applyMatrixTransformation(textureView)
-    }
-
-    private fun updateVideoStabilization() {
-        camera?.updateParams {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-                videoStabilization = config.videoStabilizationEnabled
-            }
-        }
     }
 }

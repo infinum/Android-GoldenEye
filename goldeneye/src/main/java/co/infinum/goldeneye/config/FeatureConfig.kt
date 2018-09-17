@@ -5,6 +5,7 @@ import co.infinum.goldeneye.utils.LogDelegate
 
 interface FeatureConfig {
     var tapToFocusEnabled: Boolean
+    val isTapToFocusSupported: Boolean
     var resetFocusDelay: Long
 
     var flashMode: FlashMode
@@ -33,6 +34,15 @@ internal abstract class BaseFeatureConfig<T>(
     var characteristics: T? = null
 
     override var tapToFocusEnabled = true
+        get() = field && isTapToFocusSupported
+        set(value) {
+            if (isTapToFocusSupported) {
+                field = value
+            } else {
+                LogDelegate.log("Unsupported Tap to focus.")
+            }
+        }
+
     override var resetFocusDelay = 7_500L
         set(value) {
             if (value > 0) {

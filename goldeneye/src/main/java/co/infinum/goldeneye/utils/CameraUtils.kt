@@ -6,10 +6,13 @@ import android.app.Activity
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.hardware.Camera
+import android.hardware.camera2.params.MeteringRectangle
+import android.os.Build
+import android.support.annotation.RequiresApi
 import android.view.Surface
 import android.view.TextureView
-import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.CameraConfig
+import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.extensions.isNotMeasured
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.PreviewScale
@@ -18,7 +21,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 internal object CameraUtils {
-    private const val FOCUS_AREA_SIZE = 300
+    private const val FOCUS_AREA_SIZE = 200
 
     /**
      * Camera and device orientation do not sync. This method will calculate
@@ -61,6 +64,19 @@ internal object CameraUtils {
         return matrix
     }
 
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    fun calculateCamera2FocusArea(
+        activity: Activity,
+        textureView: TextureView,
+        config: CameraConfig,
+        x: Float,
+        y: Float
+    ): Array<MeteringRectangle> {
+
+        val rect = calculateFocusRect(activity, textureView, config, x, y)
+        return arrayOf(MeteringRectangle(rect, MeteringRectangle.METERING_WEIGHT_MAX - 1))
+    }
+
     /**
      * This... oh...
      *
@@ -74,63 +90,27 @@ internal object CameraUtils {
      * and manually do all the scaling and potential rotation because camera and device orientation
      * is not in sync.
      */
-    fun calculateFocusArea(activity: Activity, textureView: TextureView, config: CameraConfig, x: Float, y: Float): List<Camera.Area>? {
-        val (_, _, scale) = calculateScale(activity, config, textureView)
-        val displayOrientation = calculateDisplayOrientation(activity, config)
+    fun calculateCamera1FocusArea(
+        activity: Activity,
+        textureView: TextureView,
+        config: CameraConfig,
+        x: Float,
+        y: Float
+    ): List<Camera.Area>? {
 
-        /* Calculate real scaled preview size */
-        val scaledPreviewX = config.previewSize.width * scale
-        val scaledPreviewY = config.previewSize.height * scale
-
-        /* Sync texture view orientation with camera orientation */
-        val rotatedTextureViewX = if (displayOrientation % 180 == 0) textureView.width else textureView.height
-        val rotatedTextureViewY = if (displayOrientation % 180 == 0) textureView.height else textureView.width
-
-        /* Convert texture view x,y into camera x,y */
-        val rotatedX = when (displayOrientation) {
-            90 -> y
-            180 -> textureView.width - x
-            270 -> textureView.height - y
-            else -> x
-        }
-        val rotatedY = when (displayOrientation) {
-            90 -> textureView.width - x
-            180 -> textureView.height - y
-            270 -> x
-            else -> y
-        }
-
-        if (touchNotInPreview(rotatedTextureViewX, rotatedTextureViewY, scaledPreviewX,
-                scaledPreviewY, rotatedX, rotatedY
-            )
-        ) {
-            return null
-        }
-
-        /* Convert camera x,y into preview x,y that translates x,y if preview is not fullscreen or if is scaled outside of screen */
-        val translatedPreviewX = rotatedX - max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
-        val translatedPreviewY = rotatedY - max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
+        val rect = calculateFocusRect(activity, textureView, config, x, y) ?: return null
 
         /* Ratio of genius [-1000,1000] coordinates to scaled preview size */
-        val cameraWidthRatio = 2000f / scaledPreviewX
-        val cameraHeightRatio = 2000f / scaledPreviewY
-
-        /* Convert translated x,y to genius coordinate system */
-        val cameraFocusX = cameraWidthRatio * translatedPreviewX - 1000
-        val cameraFocusY = cameraHeightRatio * translatedPreviewY - 1000
+        val cameraWidthRatio = 2000f / config.previewSize.width
+        val cameraHeightRatio = 2000f / config.previewSize.height
 
         /* Measure left and top rectangle point */
-        val left = cameraFocusX.coerceIn(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
-        val top = cameraFocusY.coerceIn(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
+        val left = (cameraWidthRatio * rect.left - 1000).coerceIn(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
+        val top = (cameraHeightRatio * rect.height() - 1000).coerceIn(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
+        val right = min(left + FOCUS_AREA_SIZE, 1000)
+        val bottom = min(top + FOCUS_AREA_SIZE, 1000)
 
-        /* Sadly, this is the end */
-        val rect = Rect(
-            left,
-            top,
-            min(left + FOCUS_AREA_SIZE, 1000),
-            min(top + FOCUS_AREA_SIZE, 1000)
-        )
-        return listOf(Camera.Area(rect, 1000))
+        return listOf(Camera.Area(Rect(left, top, right, bottom), 1000))
     }
 
     fun findBestMatchingSize(referenceSize: Size, availableSizes: List<Size>): Size =
@@ -183,4 +163,55 @@ internal object CameraUtils {
             Surface.ROTATION_0 -> 0
             else -> 0
         }
+
+    private fun calculateFocusRect(
+        activity: Activity,
+        textureView: TextureView,
+        config: CameraConfig,
+        x: Float,
+        y: Float
+    ): Rect? {
+
+        val (_, _, scale) = calculateScale(activity, config, textureView)
+        val displayOrientation = calculateDisplayOrientation(activity, config)
+
+        /* Calculate real scaled preview size */
+        val scaledPreviewX = config.previewSize.width * scale
+        val scaledPreviewY = config.previewSize.height * scale
+
+        /* Sync texture view orientation with camera orientation */
+        val rotatedTextureViewX = if (displayOrientation % 180 == 0) textureView.width else textureView.height
+        val rotatedTextureViewY = if (displayOrientation % 180 == 0) textureView.height else textureView.width
+
+        /* Convert texture view x,y into camera x,y */
+        val rotatedX = when (displayOrientation) {
+            90 -> y
+            180 -> textureView.width - x
+            270 -> textureView.height - y
+            else -> x
+        }
+        val rotatedY = when (displayOrientation) {
+            90 -> textureView.width - x
+            180 -> textureView.height - y
+            270 -> x
+            else -> y
+        }
+
+        if (touchNotInPreview(rotatedTextureViewX, rotatedTextureViewY, scaledPreviewX, scaledPreviewY, rotatedX, rotatedY)) {
+            return null
+        }
+
+        /* Convert camera x,y into preview x,y that translates x,y if preview is not fullscreen or if is scaled outside of screen */
+        val translatedPreviewX = rotatedX - max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
+        val translatedPreviewY = rotatedY - max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
+
+        val rectWidth = config.previewSize.width * 0.1f
+        val rectHeight = config.previewSize.height * 0.1f
+        val left = (translatedPreviewX / scale - rectWidth / 2).coerceIn(0f, config.previewSize.width - rectWidth).toInt()
+        val top = (translatedPreviewY / scale - rectHeight / 2).coerceIn(0f, config.previewSize.height - rectHeight).toInt()
+        val right = min(left + rectWidth.toInt(), config.previewSize.width - 1)
+        val bottom = min(top + rectHeight.toInt(), config.previewSize.height - 1)
+
+        return Rect(left, top, right, bottom)
+    }
 }

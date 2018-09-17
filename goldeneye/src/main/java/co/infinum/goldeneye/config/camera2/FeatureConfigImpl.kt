@@ -13,6 +13,9 @@ internal class FeatureConfigImpl(
     val onUpdateListener: (CameraProperty) -> Unit
 ) : BaseFeatureConfig<CameraCharacteristics>(onUpdateListener) {
 
+    override val isTapToFocusSupported: Boolean
+        get() = characteristics?.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF) ?: 0 > 0
+
     override val supportedFlashModes: List<FlashMode>
         get() {
             if (characteristics?.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == false) {
