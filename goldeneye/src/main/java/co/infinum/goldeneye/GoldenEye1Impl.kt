@@ -19,8 +19,8 @@ import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.CameraState
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.Size
-import co.infinum.goldeneye.recorders.PictureRecorder
-import co.infinum.goldeneye.recorders.VideoRecorder
+import co.infinum.goldeneye.recorders.camera1.PictureRecorder
+import co.infinum.goldeneye.recorders.camera1.VideoRecorder
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.Intrinsics
 import co.infinum.goldeneye.utils.LogDelegate

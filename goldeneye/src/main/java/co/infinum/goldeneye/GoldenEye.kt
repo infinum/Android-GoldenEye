@@ -61,7 +61,7 @@ interface GoldenEye {
 
         fun build(): GoldenEye {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                GoldenEye2Impl(activity)
+                GoldenEye2Impl(activity, logger)
             } else {
                 GoldenEye1Impl(activity, onZoomChangeCallback, onFocusChangeCallback, logger)
             }

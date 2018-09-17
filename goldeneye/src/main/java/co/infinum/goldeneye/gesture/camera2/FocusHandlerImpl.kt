@@ -26,7 +26,7 @@ internal class FocusHandlerImpl(
 ) : FocusHandler {
 
     override fun requestFocus(point: PointF) {
-        if (config.isTapToFocusSupported.not() || config.supportedFocusModes.contains(FocusMode.AUTO)) return
+        if (config.isTapToFocusSupported.not() || config.supportedFocusModes.contains(FocusMode.AUTO).not()) return
 
         ifNotNull(devicePreview.session, devicePreview.requestBuilder) { session, builder ->
             builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)

@@ -1,6 +1,6 @@
 @file:Suppress("DEPRECATION")
 
-package co.infinum.goldeneye.recorders
+package co.infinum.goldeneye.recorders.camera1
 
 import android.app.Activity
 import android.hardware.Camera
@@ -8,8 +8,6 @@ import android.media.CamcorderProfile
 import android.media.MediaRecorder
 import co.infinum.goldeneye.VideoCallback
 import co.infinum.goldeneye.config.CameraConfig
-import co.infinum.goldeneye.config.CameraConfigImpl
-import co.infinum.goldeneye.config.camera1.Camera1ConfigImpl
 import co.infinum.goldeneye.extensions.hasAudioPermission
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.models.Facing

@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
@@ -21,6 +22,7 @@ import co.infinum.goldeneye.gesture.GestureManager
 import co.infinum.goldeneye.gesture.ZoomHandlerImpl
 import co.infinum.goldeneye.gesture.camera2.FocusHandlerImpl
 import co.infinum.goldeneye.models.*
+import co.infinum.goldeneye.recorders.camera2.PictureRecorder
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.Intrinsics
 import co.infinum.goldeneye.utils.LogDelegate
@@ -39,6 +41,7 @@ internal class GoldenEye2Impl(
     private var devicePreview: DevicePreview? = null
     private var gestureManager: GestureManager? = null
     private var configUpdateHandler: ConfigUpdateHandler? = null
+    private var pictureRecorder: PictureRecorder? = null
     private val onConfigUpdateListener: (CameraProperty) -> Unit = { configUpdateHandler?.onPropertyUpdated(it) }
 
     private val _availableCameras = mutableListOf<Camera2ConfigImpl>()
@@ -83,6 +86,7 @@ internal class GoldenEye2Impl(
                     initDevicePreview(camera, cameraInfo)
                     initGestureManager(textureView, devicePreview)
                     initConfigUpdateHandler(devicePreview, textureView)
+                    initRecorders(devicePreview)
                     callback.onConfigReady()
                     startPreview()
                 } catch (t: Throwable) {
@@ -114,6 +118,13 @@ internal class GoldenEye2Impl(
                 }
             }
         }, null)
+    }
+
+    @Throws(CameraFailedToOpenException::class)
+    private fun initRecorders(devicePreview: DevicePreview?) {
+        if(devicePreview == null) throw CameraFailedToOpenException
+
+        this.pictureRecorder = PictureRecorder(activity, config, devicePreview)
     }
 
     @Throws(CameraFailedToOpenException::class)
@@ -184,7 +195,27 @@ internal class GoldenEye2Impl(
     }
 
     override fun takePicture(callback: PictureCallback) {
-        TODO("not implemented")
+        if (state != CameraState.READY) {
+            LogDelegate.log("Camera is not ready.")
+            return
+        }
+
+        state = CameraState.TAKING_PICTURE
+        pictureRecorder?.takePicture(object: PictureCallback() {
+            override fun onPictureTaken(picture: Bitmap) {
+                state = CameraState.READY
+                callback.onPictureTaken(picture)
+            }
+
+            override fun onError(t: Throwable) {
+                state = CameraState.READY
+                callback.onError(t)
+            }
+
+            override fun onShutter() {
+                callback.onShutter()
+            }
+        })
     }
 
     override fun startRecording(file: File, callback: VideoCallback) {

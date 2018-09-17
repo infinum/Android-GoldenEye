@@ -13,6 +13,12 @@ internal fun <T1, T2> ifNotNull(p1: T1?, p2: T2?, action: (T1, T2) -> Unit) {
     }
 }
 
+internal fun <T1, T2, T3> ifNotNull(p1: T1?, p2: T2?, p3: T3?, action: (T1, T2, T3) -> Unit) {
+    if (p1 != null && p2 != null && p3 != null) {
+        action(p1, p2, p3)
+    }
+}
+
 internal fun <T> async(task: () -> T?, onResult: (T?) -> Unit) {
     backgroundExecutor.execute {
         val result = task()

@@ -1,9 +1,11 @@
 package co.infinum.goldeneye.models
 
 import android.app.Activity
+import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
+import android.media.ImageReader
 import android.os.Build
 import android.support.annotation.RequiresApi
 import android.view.Surface
@@ -23,6 +25,7 @@ class DevicePreview(
 
     var requestBuilder: CaptureRequest.Builder? = null
     var session: CameraCaptureSession? = null
+    var imageReader: ImageReader? = null
     private var surface: Surface? = null
 
     private val stateCallback = object : CameraCaptureSession.StateCallback() {
@@ -48,12 +51,13 @@ class DevicePreview(
 
     fun startPreview(textureView: TextureView) {
         try {
+            this.imageReader = ImageReader.newInstance(config.pictureSize.width, config.pictureSize.height, ImageFormat.JPEG, 2)
             val texture = textureView.surfaceTexture?.apply {
                 setDefaultBufferSize(config.previewSize.width, config.previewSize.height)
             }
             textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, config, textureView))
-            val surface = Surface(texture)
-            cameraDevice.createCaptureSession(listOf(surface), stateCallback, null)
+            this.surface = Surface(texture)
+            cameraDevice.createCaptureSession(listOf(surface, imageReader?.surface), stateCallback, null)
         } catch (t: Throwable) {
             LogDelegate.log(t)
             onEnded()
