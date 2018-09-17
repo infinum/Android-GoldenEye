@@ -17,8 +17,8 @@ class DevicePreview(
     private val activity: Activity,
     private val config: CameraConfig,
     private val cameraDevice: CameraDevice,
-    private val onSessionStarted: () -> Unit,
-    private val onSessionEnded: () -> Unit
+    private val onStarted: () -> Unit,
+    private val onEnded: () -> Unit
 ) {
 
     var requestBuilder: CaptureRequest.Builder? = null
@@ -34,15 +34,15 @@ class DevicePreview(
                 }
                 applyConfig()
                 cameraCaptureSession.setRepeatingRequest(requestBuilder?.build(), null, null)
-                onSessionStarted()
+                onStarted()
             } catch (t: Throwable) {
-                onSessionEnded()
+                onEnded()
                 LogDelegate.log(t)
             }
         }
 
         override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-            onSessionEnded()
+            onEnded()
         }
     }
 
@@ -56,7 +56,7 @@ class DevicePreview(
             cameraDevice.createCaptureSession(listOf(surface), stateCallback, null)
         } catch (t: Throwable) {
             LogDelegate.log(t)
-            onSessionEnded()
+            onEnded()
         }
     }
 
@@ -72,13 +72,19 @@ class DevicePreview(
             session?.setRepeatingRequest(request, null, null)
         } catch (t: Throwable) {
             LogDelegate.log(t)
-            onSessionEnded()
         }
     }
 
-    fun stopSession() {
-        session?.stopRepeating()
-        onSessionEnded()
+    fun release() {
+        try {
+            session?.close()
+        } catch (t: Throwable) {
+            LogDelegate.log(t)
+        } finally {
+            requestBuilder = null
+            session = null
+            onEnded()
+        }
     }
 }
 

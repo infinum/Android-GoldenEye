@@ -57,6 +57,7 @@ internal class GoldenEye2Impl(
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         Intrinsics.checkCameraPermission(activity)
         try {
+            release()
             this.textureView = textureView
             when (state) {
                 CameraState.CLOSED, CameraState.READY -> openCamera(cameraInfo, callback)
@@ -138,8 +139,8 @@ internal class GoldenEye2Impl(
             activity = activity,
             config = config,
             cameraDevice = camera,
-            onSessionStarted = { state = CameraState.READY },
-            onSessionEnded = { state = CameraState.CLOSED }
+            onStarted = { state = CameraState.READY },
+            onEnded = { state = CameraState.CLOSED }
         )
     }
 
@@ -170,7 +171,16 @@ internal class GoldenEye2Impl(
     }
 
     override fun release() {
-        TODO("not implemented")
+        try {
+            devicePreview?.release()
+            cameraDevice?.close()
+        } catch (t: Throwable) {
+            LogDelegate.log(t)
+        } finally {
+            devicePreview = null
+            cameraDevice = null
+            textureView = null
+        }
     }
 
     override fun takePicture(callback: PictureCallback) {
