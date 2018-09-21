@@ -56,7 +56,6 @@ internal abstract class BaseSession(
 
     @CallSuper
     open fun release() {
-
         try {
             session?.apply {
                 stopRepeating()

@@ -61,16 +61,17 @@ internal class ConfigUpdateHandler(
     }
 
     private fun updateZoom(requestBuilder: CaptureRequest.Builder, zoom: Int) {
+        val previewSize = config.previewSize
         val zoomPercentage = zoom / 100f
-        val zoomedWidth = (config.previewSize.width / zoomPercentage).toInt()
-        val zoomedHeight = (config.previewSize.height / zoomPercentage).toInt()
-        val halfWidthDiff = (config.previewSize.width - zoomedWidth) / 2
-        val halfHeightDiff = (config.previewSize.height - zoomedHeight) / 2
+        val zoomedWidth = (previewSize.width / zoomPercentage).toInt()
+        val zoomedHeight = (previewSize.height / zoomPercentage).toInt()
+        val halfWidthDiff = (previewSize.width - zoomedWidth) / 2
+        val halfHeightDiff = (previewSize.height - zoomedHeight) / 2
         val zoomedRect = Rect(
             halfWidthDiff,
             halfHeightDiff,
-            config.previewSize.width - halfWidthDiff,
-            config.previewSize.height - halfHeightDiff
+            previewSize.width - halfWidthDiff,
+            previewSize.height - halfHeightDiff
         )
         requestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomedRect)
     }

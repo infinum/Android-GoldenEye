@@ -1,6 +1,7 @@
 package co.infinum.goldeneye.gesture
 
 import android.app.Activity
+import android.hardware.camera2.CaptureRequest
 import android.util.TypedValue
 import co.infinum.goldeneye.config.CameraConfig
 
@@ -13,7 +14,7 @@ internal class ZoomHandlerImpl(
     private val zoomPinchDelta: Int =
         TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
-            2f,
+            1f,
             activity.resources.displayMetrics
         ).toInt()
     private var pinchDelta = 0f

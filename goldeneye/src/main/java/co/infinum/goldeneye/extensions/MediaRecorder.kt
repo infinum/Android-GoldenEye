@@ -43,15 +43,12 @@ private fun MediaRecorder.buildInstance(activity: Activity, config: CameraConfig
     setVideoSize(config.videoSize.width, config.videoSize.height)
     setVideoEncodingBitRate(profile.videoBitRate)
     setVideoEncoder(profile.videoCodec)
-    if (activity.hasAudioPermission() && config.videoQuality.isTimeLapseQuality().not()) {
+
+    if (activity.hasAudioPermission()) {
         setAudioEncodingBitRate(profile.audioBitRate)
         setAudioChannels(profile.audioChannels)
         setAudioSamplingRate(profile.audioSampleRate)
         setAudioEncoder(profile.audioCodec)
-    }
-
-    if (config.videoQuality.isTimeLapseQuality()) {
-        //TODO setCaptureRate
     }
 
     setOutputFile(file.absolutePath)

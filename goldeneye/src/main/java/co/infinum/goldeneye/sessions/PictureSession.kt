@@ -8,7 +8,6 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import android.view.TextureView
 import co.infinum.goldeneye.BaseGoldenEyeImpl
-import co.infinum.goldeneye.BaseGoldenEyeImpl.Companion.state
 import co.infinum.goldeneye.PictureCallback
 import co.infinum.goldeneye.PictureConversionException
 import co.infinum.goldeneye.config.CameraConfig

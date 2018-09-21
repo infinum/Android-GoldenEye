@@ -79,6 +79,7 @@ internal class GoldenEye2Impl(
     @SuppressLint("MissingPermission")
     private fun openCamera(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         state = CameraState.INITIALIZING
+        AsyncUtils.startBackgroundThread()
         cameraManager.openCamera(cameraInfo.id, object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice?) {
                 if (lastCameraRequest != null) {
@@ -182,6 +183,7 @@ internal class GoldenEye2Impl(
         } finally {
             cameraDevice = null
             sessionsManager = null
+            AsyncUtils.stopBackgroundThread()
         }
     }
 

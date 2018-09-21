@@ -25,6 +25,8 @@ interface FeatureConfig {
 
     var antibanding: Antibanding
     val supportedAntibanding: List<Antibanding>
+
+    var jpegQuality: Int
 }
 
 internal abstract class BaseFeatureConfig<T>(
@@ -50,6 +52,11 @@ internal abstract class BaseFeatureConfig<T>(
             } else {
                 LogDelegate.log("Reset focus delay must be bigger than 0.")
             }
+        }
+
+    override var jpegQuality = 100
+        set(value) {
+            field = value.coerceIn(1, 100)
         }
 
     override var flashMode = FlashMode.UNKNOWN

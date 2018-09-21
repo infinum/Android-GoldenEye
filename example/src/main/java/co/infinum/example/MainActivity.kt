@@ -19,7 +19,6 @@ import co.infinum.goldeneye.GoldenEye
 import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.Logger
 import co.infinum.goldeneye.models.PreviewScale
-import co.infinum.goldeneye.models.VideoQuality
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 
@@ -34,7 +33,7 @@ class MainActivity : AppCompatActivity() {
 
     private val initCallback = object : InitCallback {
         override fun onConfigReady() {
-            //            zoomView.text = "Zoom: ${goldenEye.config.zoom.ratio.toPercentage()}"
+                        zoomView.text = "Zoom: ${goldenEye.config.zoom.toPercentage()}"
         }
 
         override fun onError(t: Throwable) {
@@ -56,11 +55,7 @@ class MainActivity : AppCompatActivity() {
                     t.printStackTrace()
                 }
             })
-            //            .setOnZoomChangeCallback(object : OnZoomChangeCallback {
-            //                override fun onZoomChanged(zoom: Zoom) {
-            //                    zoomView.text = "Zoom: ${zoom.ratio.toPercentage()}"
-            //                }
-            //            })
+            .setOnZoomChangedCallback { zoomView.text = "Zoom: ${it.toPercentage()}" }
             .build()
         videoFile = File.createTempFile("vid", "")
 
@@ -144,6 +139,11 @@ class MainActivity : AppCompatActivity() {
         //        Handler().postDelayed(Runnable {
         goldenEye.open(textureView, goldenEye.availableCameras[0], initCallback)
         //        }, 2000)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        goldenEye.release()
     }
 
     private fun prepareItems() {
