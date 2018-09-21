@@ -13,8 +13,8 @@ import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
 
 internal class SizeConfigImpl(
-    onUpdateListener: (CameraProperty) -> Unit
-) : BaseSizeConfig<Camera.Parameters>(onUpdateListener) {
+    onUpdateCallback: (CameraProperty) -> Unit
+) : BaseSizeConfig<Camera.Parameters>(onUpdateCallback) {
 
     override val supportedPreviewSizes
         get() = characteristics?.supportedPreviewSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
@@ -25,7 +25,6 @@ internal class SizeConfigImpl(
     override val supportedVideoSizes
         get() = characteristics?.supportedVideoSizes
             ?.map { it.toInternalSize() }
-            ?.filter { if (it.width > it.height) it.height <= 1080 else it.width <= 1080 }
             ?.sorted()
             ?: emptyList()
 }

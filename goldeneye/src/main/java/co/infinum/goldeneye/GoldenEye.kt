@@ -7,8 +7,8 @@ import android.graphics.Point
 import android.os.Build
 import android.support.annotation.RequiresPermission
 import android.view.TextureView
-import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.CameraConfig
+import co.infinum.goldeneye.config.CameraInfo
 import java.io.File
 
 interface GoldenEye {
@@ -34,34 +34,34 @@ interface GoldenEye {
     class Builder(private val activity: Activity) {
 
         private var logger: Logger? = null
-        private var onZoomChangeCallback: OnZoomChangeCallback? = null
-        private var onFocusChangeCallback: OnFocusChangeCallback? = null
+        private var onZoomChangeCallback: OnZoomChangedCallback? = null
+        private var onFocusChangeCallback: OnFocusChangedCallback? = null
 
         fun setLogger(logger: Logger) = apply { this.logger = logger }
 
-//        fun setOnZoomChangeCallback(onZoomChanged: (Zoom) -> Unit) = apply {
-//            this.onZoomChangeCallback = object : OnZoomChangeCallback {
-//                override fun onZoomChanged(zoom: Zoom) {
-//                    onZoomChanged(zoom)
-//                }
-//            }
-//        }
+        fun setOnZoomChangeCallback(onZoomChanged: (Int) -> Unit) = apply {
+            this.onZoomChangeCallback = object : OnZoomChangedCallback {
+                override fun onZoomChanged(zoom: Int) {
+                    onZoomChanged(zoom)
+                }
+            }
+        }
 
-        fun setOnZoomChangeCallback(callback: OnZoomChangeCallback) = apply { this.onZoomChangeCallback = callback }
+        fun setOnZoomChangeCallback(callback: OnZoomChangedCallback) = apply { this.onZoomChangeCallback = callback }
 
         fun setOnFocusChangeCallback(onFocusChanged: (Point) -> Unit) = apply {
-            this.onFocusChangeCallback = object : OnFocusChangeCallback {
+            this.onFocusChangeCallback = object : OnFocusChangedCallback {
                 override fun onFocusChanged(point: Point) {
                     onFocusChanged(point)
                 }
             }
         }
 
-        fun setOnFocusChangeCallback(callback: OnFocusChangeCallback) = apply { this.onFocusChangeCallback = callback }
+        fun setOnFocusChangeCallback(callback: OnFocusChangedCallback) = apply { this.onFocusChangeCallback = callback }
 
         fun build(): GoldenEye {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                GoldenEye2Impl(activity, logger)
+                GoldenEye2Impl(activity, onZoomChangeCallback, onFocusChangeCallback, logger)
             } else {
                 GoldenEye1Impl(activity, onZoomChangeCallback, onFocusChangeCallback, logger)
             }

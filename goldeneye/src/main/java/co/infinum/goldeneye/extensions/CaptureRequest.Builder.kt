@@ -7,7 +7,7 @@ import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.models.FlashMode
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-fun CaptureRequest.Builder?.copyParamsFrom(other: CaptureRequest.Builder?) {
+internal fun CaptureRequest.Builder?.copyParamsFrom(other: CaptureRequest.Builder?) {
     if (other == null || this == null) {
         return
     }
@@ -24,7 +24,7 @@ fun CaptureRequest.Builder?.copyParamsFrom(other: CaptureRequest.Builder?) {
 }
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-fun CaptureRequest.Builder?.applyConfig(config: CameraConfig?) {
+internal fun CaptureRequest.Builder?.applyConfig(config: CameraConfig?) {
     if (this == null || config == null) {
         return
     }

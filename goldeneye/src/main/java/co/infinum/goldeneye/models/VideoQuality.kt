@@ -23,6 +23,8 @@ enum class VideoQuality(
     TIME_LAPSE_480P(CamcorderProfile.QUALITY_TIME_LAPSE_480P),
     TIME_LAPSE_720P(CamcorderProfile.QUALITY_TIME_LAPSE_720P),
     TIME_LAPSE_1080P(CamcorderProfile.QUALITY_TIME_LAPSE_1080P),
+    @RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
+    TIME_LAPSE_QVGA(CamcorderProfile.QUALITY_TIME_LAPSE_QVGA),
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     TIME_LAPSE_2160P(CamcorderProfile.QUALITY_TIME_LAPSE_2160P),
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -37,5 +39,17 @@ enum class VideoQuality(
     HIGH_SPEED_1080P(CamcorderProfile.QUALITY_HIGH_SPEED_1080P),
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     HIGH_SPEED_2160P(CamcorderProfile.QUALITY_HIGH_SPEED_2160P),
-    UNKNOWN(-1)
+    UNKNOWN(-1);
+
+    fun isTimeLapseQuality() = listOf(
+        TIME_LAPSE_LOW,
+        TIME_LAPSE_HIGH,
+        TIME_LAPSE_QCIF,
+        TIME_LAPSE_CIF,
+        TIME_LAPSE_480P,
+        TIME_LAPSE_720P,
+        TIME_LAPSE_1080P,
+        TIME_LAPSE_QVGA,
+        TIME_LAPSE_2160P
+    ).contains(this)
 }

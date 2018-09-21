@@ -7,8 +7,8 @@ import co.infinum.goldeneye.config.BaseFeatureConfig
 import co.infinum.goldeneye.models.*
 
 internal class FeatureConfigImpl(
-    onUpdateListener: (CameraProperty) -> Unit
-) : BaseFeatureConfig<Camera.Parameters>(onUpdateListener) {
+    onUpdateCallback: (CameraProperty) -> Unit
+) : BaseFeatureConfig<Camera.Parameters>(onUpdateCallback) {
 
     override val isTapToFocusSupported: Boolean
         get() = characteristics?.maxNumFocusAreas ?: 0 > 0

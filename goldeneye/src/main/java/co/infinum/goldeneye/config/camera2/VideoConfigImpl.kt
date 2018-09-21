@@ -9,9 +9,9 @@ import co.infinum.goldeneye.models.VideoQuality
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class VideoConfigImpl(
-    id: Int,
-    onUpdateListener: (CameraProperty) -> Unit
-) : BaseVideoConfig<CameraCharacteristics>(id, onUpdateListener) {
+    id: String,
+    onUpdateCallback: (CameraProperty) -> Unit
+) : BaseVideoConfig<CameraCharacteristics>(id, onUpdateCallback) {
 
     override val isVideoStabilizationSupported: Boolean
         get() = supportedVideoStabilizationModes.size > 1

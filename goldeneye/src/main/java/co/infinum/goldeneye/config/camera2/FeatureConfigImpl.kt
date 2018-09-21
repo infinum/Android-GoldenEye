@@ -10,8 +10,8 @@ import co.infinum.goldeneye.utils.LogDelegate
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class FeatureConfigImpl(
-    val onUpdateListener: (CameraProperty) -> Unit
-) : BaseFeatureConfig<CameraCharacteristics>(onUpdateListener) {
+    onUpdateCallback: (CameraProperty) -> Unit
+) : BaseFeatureConfig<CameraCharacteristics>(onUpdateCallback) {
 
     override val isTapToFocusSupported: Boolean
         get() = characteristics?.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF) ?: 0 > 0

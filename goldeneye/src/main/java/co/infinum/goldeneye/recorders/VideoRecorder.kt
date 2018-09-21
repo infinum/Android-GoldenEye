@@ -8,6 +8,7 @@ import android.media.CamcorderProfile
 import android.media.MediaRecorder
 import co.infinum.goldeneye.VideoCallback
 import co.infinum.goldeneye.config.CameraConfig
+import co.infinum.goldeneye.extensions.buildCamera1Instance
 import co.infinum.goldeneye.extensions.hasAudioPermission
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.models.Facing
@@ -27,31 +28,17 @@ internal class VideoRecorder(
     private var mediaRecorder: MediaRecorder? = null
 
     fun startRecording(file: File, callback: VideoCallback) {
+        this.file = file
+        this.callback = callback
+        if (activity.hasAudioPermission().not()) {
+            LogDelegate.log("Recording video without audio. Missing RECORD_AUDIO permission.")
+        }
         try {
-            this.file = file
-            this.callback = callback
             camera.unlock()
-            mediaRecorder = MediaRecorder().apply {
-                setCamera(camera)
-                if (activity.hasAudioPermission()) {
-                    setAudioSource(MediaRecorder.AudioSource.DEFAULT)
-                } else {
-                    LogDelegate.log("Recording video without audio. Missing RECORD_AUDIO permission.")
-                }
-                setVideoSource(MediaRecorder.VideoSource.CAMERA)
-                val videoSize = config.videoSize.takeIf { it != Size.UNKNOWN } ?: config.supportedVideoSizes[0]
-                setProfile(CamcorderProfile.get(config.videoQuality.key).apply {
-                    videoFrameHeight = videoSize.height
-                    videoFrameWidth = videoSize.width
-                })
-                setOutputFile(file.absolutePath)
-                setVideoSize(videoSize.width, videoSize.height)
-                val cameraOrientation = CameraUtils.calculateDisplayOrientation(activity, config)
-                setOrientationHint(if (config.facing == Facing.BACK) cameraOrientation else -cameraOrientation)
-                prepare()
-                start()
-            }
+            mediaRecorder = MediaRecorder().buildCamera1Instance(activity, camera, config, file)
+            mediaRecorder?.start()
         } catch (t: Throwable) {
+            camera.reconnect()
             callback.onError(t)
         }
     }

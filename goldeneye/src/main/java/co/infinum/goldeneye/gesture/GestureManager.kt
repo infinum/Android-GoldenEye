@@ -7,7 +7,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.TextureView
-import co.infinum.goldeneye.extensions.mainHandler
+import co.infinum.goldeneye.extensions.MAIN_HANDLER
 
 @SuppressLint("ClickableViewAccessibility")
 internal class GestureManager(
@@ -51,6 +51,6 @@ internal class GestureManager(
     }
 
     fun release() {
-        mainHandler.removeCallbacksAndMessages(null)
+        MAIN_HANDLER.removeCallbacksAndMessages(null)
     }
 }

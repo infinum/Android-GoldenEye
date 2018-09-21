@@ -35,10 +35,10 @@ interface InitCallback {
     fun onError(t: Throwable)
 }
 
-interface OnFocusChangeCallback {
+interface OnFocusChangedCallback {
     fun onFocusChanged(point: Point)
 }
 
-interface OnZoomChangeCallback {
+interface OnZoomChangedCallback {
     fun onZoomChanged(zoom: Int)
 }

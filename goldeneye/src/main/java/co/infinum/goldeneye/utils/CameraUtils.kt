@@ -50,7 +50,7 @@ internal object CameraUtils {
      * After we reverse the process, we can scale our preview however we want regarding to PreviewScale
      * of current config.
      */
-    fun calculateTextureMatrix(activity: Activity, config: CameraConfig, textureView: TextureView): Matrix {
+    fun calculateTextureMatrix(activity: Activity, textureView: TextureView, config: CameraConfig): Matrix {
         val matrix = Matrix()
         val previewSize = config.previewSize
         if (textureView.isNotMeasured() || previewSize == Size.UNKNOWN) {
@@ -58,7 +58,7 @@ internal object CameraUtils {
         }
 
         /* scaleX and scaleY are used to reverse the process and scale is used to scale image according to PreviewScale */
-        val (scaleX, scaleY, scale) = calculateScale(activity, config, textureView)
+        val (scaleX, scaleY, scale) = calculateScale(activity, textureView, config)
 
         matrix.setScale(1 / scaleX * scale, 1 / scaleY * scale, textureView.width / 2f, textureView.height / 2f)
         return matrix
@@ -100,9 +100,10 @@ internal object CameraUtils {
 
         val rect = calculateFocusRect(activity, textureView, config, x, y) ?: return null
 
+        val previewSize = config.previewSize
         /* Ratio of genius [-1000,1000] coordinates to scaled preview size */
-        val cameraWidthRatio = 2000f / config.previewSize.width
-        val cameraHeightRatio = 2000f / config.previewSize.height
+        val cameraWidthRatio = 2000f / previewSize.width
+        val cameraHeightRatio = 2000f / previewSize.height
 
         /* Measure left and top rectangle point */
         val left = (cameraWidthRatio * rect.left - 1000).coerceIn(-1000f, 1000f - FOCUS_AREA_SIZE).toInt()
@@ -121,7 +122,8 @@ internal object CameraUtils {
         rotatedTextureViewY: Int,
         scaledPreviewX: Float,
         scaledPreviewY: Float,
-        x: Float, y: Float
+        x: Float,
+        y: Float
     ): Boolean {
 
         val diffX = max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
@@ -129,7 +131,7 @@ internal object CameraUtils {
         return x < diffX || x > diffX + scaledPreviewX || y < diffY || y > diffY + scaledPreviewY
     }
 
-    private fun calculateScale(activity: Activity, config: CameraConfig, textureView: TextureView): Triple<Float, Float, Float> {
+    private fun calculateScale(activity: Activity, textureView: TextureView, config: CameraConfig): Triple<Float, Float, Float> {
         val previewSize = config.previewSize
         val displayOrientation = calculateDisplayOrientation(activity, config)
         val scaleX =
@@ -148,9 +150,11 @@ internal object CameraUtils {
 
         val scale =
             when (config.previewScale) {
-                PreviewScale.SCALE_TO_FILL -> max(scaleX, scaleY)
-                PreviewScale.SCALE_TO_FIT -> min(scaleX, scaleY)
-                PreviewScale.NO_SCALE -> 1f
+                PreviewScale.MANUAL_FILL,
+                PreviewScale.AUTO_FILL -> max(scaleX, scaleY)
+                PreviewScale.MANUAL_FIT,
+                PreviewScale.AUTO_FIT -> min(scaleX, scaleY)
+                PreviewScale.MANUAL -> 1f
             }
         return Triple(scaleX, scaleY, scale)
     }
@@ -172,12 +176,13 @@ internal object CameraUtils {
         y: Float
     ): Rect? {
 
-        val (_, _, scale) = calculateScale(activity, config, textureView)
+        val (_, _, scale) = calculateScale(activity, textureView, config)
         val displayOrientation = calculateDisplayOrientation(activity, config)
 
+        val previewSize = config.previewSize
         /* Calculate real scaled preview size */
-        val scaledPreviewX = config.previewSize.width * scale
-        val scaledPreviewY = config.previewSize.height * scale
+        val scaledPreviewX = previewSize.width * scale
+        val scaledPreviewY = previewSize.height * scale
 
         /* Sync texture view orientation with camera orientation */
         val rotatedTextureViewX = if (displayOrientation % 180 == 0) textureView.width else textureView.height
@@ -205,12 +210,12 @@ internal object CameraUtils {
         val translatedPreviewX = rotatedX - max(0f, (rotatedTextureViewX - scaledPreviewX) / 2)
         val translatedPreviewY = rotatedY - max(0f, (rotatedTextureViewY - scaledPreviewY) / 2)
 
-        val rectWidth = config.previewSize.width * 0.1f
-        val rectHeight = config.previewSize.height * 0.1f
-        val left = (translatedPreviewX / scale - rectWidth / 2).coerceIn(0f, config.previewSize.width - rectWidth).toInt()
-        val top = (translatedPreviewY / scale - rectHeight / 2).coerceIn(0f, config.previewSize.height - rectHeight).toInt()
-        val right = min(left + rectWidth.toInt(), config.previewSize.width - 1)
-        val bottom = min(top + rectHeight.toInt(), config.previewSize.height - 1)
+        val rectWidth = previewSize.width * 0.1f
+        val rectHeight = previewSize.height * 0.1f
+        val left = (translatedPreviewX / scale - rectWidth / 2).coerceIn(0f, previewSize.width - rectWidth).toInt()
+        val top = (translatedPreviewY / scale - rectHeight / 2).coerceIn(0f, previewSize.height - rectHeight).toInt()
+        val right = min(left + rectWidth.toInt(), previewSize.width - 1)
+        val bottom = min(top + rectHeight.toInt(), previewSize.height - 1)
 
         return Rect(left, top, right, bottom)
     }

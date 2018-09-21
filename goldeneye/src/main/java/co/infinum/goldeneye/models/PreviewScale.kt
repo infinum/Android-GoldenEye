@@ -1,5 +1,9 @@
 package co.infinum.goldeneye.models
 
 enum class PreviewScale {
-    NO_SCALE, SCALE_TO_FILL, SCALE_TO_FIT
+    MANUAL,
+    MANUAL_FIT,
+    MANUAL_FILL,
+    AUTO_FIT,
+    AUTO_FILL
 }

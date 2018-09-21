@@ -12,20 +12,10 @@ interface ZoomConfig {
 }
 
 internal abstract class BaseZoomConfig<T>(
-    private val onUpdateListener: (CameraProperty) -> Unit
+    protected val onUpdateCallback: (CameraProperty) -> Unit
 ) : ZoomConfig {
 
     var characteristics: T? = null
-
-    override var zoom = 100
-        set(value) {
-            if (isZoomSupported) {
-                field = value.coerceIn(100, maxZoom)
-                onUpdateListener(CameraProperty.ZOOM)
-            } else {
-                LogDelegate.log("Unsupported ZoomLevel [$value]")
-            }
-        }
 
     override var pinchToZoomEnabled = true
         get() = field && isZoomSupported

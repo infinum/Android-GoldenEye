@@ -28,7 +28,7 @@ interface FeatureConfig {
 }
 
 internal abstract class BaseFeatureConfig<T>(
-    private val onUpdateListener: (CameraProperty) -> Unit
+    private val onUpdateCallback: (CameraProperty) -> Unit
 ) : FeatureConfig {
 
     var characteristics: T? = null
@@ -62,7 +62,7 @@ internal abstract class BaseFeatureConfig<T>(
         set(value) {
             if (supportedFlashModes.contains(value)) {
                 field = value
-                onUpdateListener(CameraProperty.FLASH)
+                onUpdateCallback(CameraProperty.FLASH)
             } else {
                 LogDelegate.log("Unsupported FlashMode [$value]")
             }
@@ -78,7 +78,7 @@ internal abstract class BaseFeatureConfig<T>(
         set(value) {
             if (supportedFocusModes.contains(value)) {
                 field = value
-                onUpdateListener(CameraProperty.FOCUS)
+                onUpdateCallback(CameraProperty.FOCUS)
             } else {
                 LogDelegate.log("Unsupported FocusMode [$value]")
             }
@@ -94,7 +94,7 @@ internal abstract class BaseFeatureConfig<T>(
         set(value) {
             if (supportedWhiteBalance.contains(value)) {
                 field = value
-                onUpdateListener(CameraProperty.WHITE_BALANCE)
+                onUpdateCallback(CameraProperty.WHITE_BALANCE)
             } else {
                 LogDelegate.log("Unsupported WhiteBalance [$value]")
             }
@@ -110,7 +110,7 @@ internal abstract class BaseFeatureConfig<T>(
         set(value) {
             if (supportedSceneModes.contains(value)) {
                 field = value
-                onUpdateListener(CameraProperty.SCENE_MODE)
+                onUpdateCallback(CameraProperty.SCENE_MODE)
             } else {
                 LogDelegate.log("Unsupported SceneMode [$value]")
             }
@@ -125,7 +125,7 @@ internal abstract class BaseFeatureConfig<T>(
         set(value) {
             if (supportedColorEffects.contains(value)) {
                 field = value
-                onUpdateListener(CameraProperty.COLOR_EFFECT)
+                onUpdateCallback(CameraProperty.COLOR_EFFECT)
             } else {
                 LogDelegate.log("Unsupported ColorEffect [$value]")
             }
@@ -141,7 +141,7 @@ internal abstract class BaseFeatureConfig<T>(
         set(value) {
             if (supportedAntibanding.contains(value)) {
                 field = value
-                onUpdateListener(CameraProperty.ANTIBANDING)
+                onUpdateCallback(CameraProperty.ANTIBANDING)
             } else {
                 LogDelegate.log("Unsupported Antibanding [$value]")
             }

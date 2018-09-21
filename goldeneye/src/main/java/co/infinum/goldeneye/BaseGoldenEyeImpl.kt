@@ -9,8 +9,9 @@ import co.infinum.goldeneye.models.CameraState
 import java.io.File
 
 internal abstract class BaseGoldenEyeImpl : GoldenEye {
-
-    protected var state = CameraState.CLOSED
+    companion object {
+        var state = CameraState.CLOSED
+    }
 
     @RequiresPermission(Manifest.permission.CAMERA)
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, onSuccess: () -> Unit, onError: (Throwable) -> Unit) {

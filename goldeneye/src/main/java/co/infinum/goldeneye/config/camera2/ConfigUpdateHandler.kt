@@ -17,41 +17,40 @@ import co.infinum.goldeneye.utils.CameraUtils
 internal class ConfigUpdateHandler(
     private val activity: Activity,
     private val textureView: TextureView,
-    private val sessionsSyncManager: SessionsManager,
+    private val sessionsManager: SessionsManager,
     private val config: CameraConfig
 ) {
 
     fun onPropertyUpdated(property: CameraProperty) {
         when (property) {
-            CameraProperty.FOCUS -> sessionsSyncManager.updateRequests {
+            CameraProperty.FOCUS -> sessionsManager.updateSession {
                 set(CaptureRequest.CONTROL_AF_MODE, config.focusMode.toCamera2())
             }
-            CameraProperty.FLASH -> sessionsSyncManager.updateRequests {
+            CameraProperty.FLASH -> sessionsManager.updateSession {
                 updateFlashMode(this, config.flashMode)
             }
-            CameraProperty.COLOR_EFFECT -> sessionsSyncManager.updateRequests {
+            CameraProperty.COLOR_EFFECT -> sessionsManager.updateSession {
                 set(CaptureRequest.CONTROL_EFFECT_MODE, config.colorEffect.toCamera2())
             }
-            CameraProperty.ANTIBANDING -> sessionsSyncManager.updateRequests {
+            CameraProperty.ANTIBANDING -> sessionsManager.updateSession {
                 set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, config.antibanding.toCamera2())
             }
-            CameraProperty.SCENE_MODE -> sessionsSyncManager.updateRequests {
+            CameraProperty.SCENE_MODE -> sessionsManager.updateSession {
                 set(CaptureRequest.CONTROL_SCENE_MODE, config.sceneMode.toCamera2())
             }
-            CameraProperty.WHITE_BALANCE -> sessionsSyncManager.updateRequests {
+            CameraProperty.WHITE_BALANCE -> sessionsManager.updateSession {
                 set(CaptureRequest.CONTROL_AWB_MODE, config.whiteBalance.toCamera2())
             }
-            CameraProperty.PICTURE_SIZE -> updatePictureSize(config.pictureSize)
-            CameraProperty.PREVIEW_SIZE -> {
-            } //TODO restart preview
-            CameraProperty.ZOOM -> sessionsSyncManager.updateRequests { updateZoom(this, config.zoom) }
+            CameraProperty.PICTURE_SIZE -> sessionsManager.restartSession()
+            CameraProperty.PREVIEW_SIZE -> sessionsManager.restartSession()
+            CameraProperty.ZOOM -> sessionsManager.updateSession { updateZoom(this, config.zoom) }
             CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization()
-            CameraProperty.PREVIEW_SCALE -> textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, config, textureView))
+            CameraProperty.PREVIEW_SCALE -> textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
         }
     }
 
     private fun updateVideoStabilization() {
-        sessionsSyncManager.updateRequests {
+        sessionsManager.updateSession {
             val videoStabilizationMode = if (config.videoStabilizationEnabled) {
                 CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON
             } else {
@@ -74,10 +73,6 @@ internal class ConfigUpdateHandler(
             config.previewSize.height - halfHeightDiff
         )
         requestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomedRect)
-    }
-
-    private fun updatePictureSize(size: Size) {
-        //TODO update image reader with size
     }
 
     private fun updateFlashMode(requestBuilder: CaptureRequest.Builder, flashMode: FlashMode) {

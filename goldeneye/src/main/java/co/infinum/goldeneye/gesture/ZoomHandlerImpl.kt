@@ -2,7 +2,6 @@ package co.infinum.goldeneye.gesture
 
 import android.app.Activity
 import android.util.TypedValue
-import co.infinum.goldeneye.OnZoomChangeCallback
 import co.infinum.goldeneye.config.CameraConfig
 
 internal class ZoomHandlerImpl(

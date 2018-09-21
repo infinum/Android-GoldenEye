@@ -4,6 +4,7 @@ package co.infinum.goldeneye.recorders
 
 import android.app.Activity
 import android.hardware.Camera
+import android.text.AndroidCharacter.mirror
 import co.infinum.goldeneye.PictureCallback
 import co.infinum.goldeneye.PictureConversionException
 import co.infinum.goldeneye.config.CameraConfig
@@ -23,7 +24,7 @@ internal class PictureRecorder(
                 async(
                     task = {
                         val bitmap = data.toBitmap()
-                        bitmap?.mutate {
+                        bitmap?.applyMatrix {
                             reverseCameraRotation(
                                 activity = activity,
                                 info = config,
@@ -44,6 +45,7 @@ internal class PictureRecorder(
                     }
                 )
             }
+
             camera.takePicture(shutterCallback, null, pictureCallback)
         } catch (t: Throwable) {
             callback.onError(t)

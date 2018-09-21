@@ -6,31 +6,27 @@ import android.hardware.camera2.*
 import android.media.ImageReader
 import android.os.Build
 import android.support.annotation.RequiresApi
-import android.view.Surface
 import android.view.TextureView
-import co.infinum.goldeneye.CameraLockedException
-import co.infinum.goldeneye.GoldenEye2Impl
+import co.infinum.goldeneye.BaseGoldenEyeImpl
+import co.infinum.goldeneye.BaseGoldenEyeImpl.Companion.state
 import co.infinum.goldeneye.PictureCallback
 import co.infinum.goldeneye.PictureConversionException
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.*
+import co.infinum.goldeneye.models.CameraState
 import co.infinum.goldeneye.models.Facing
-import co.infinum.goldeneye.utils.CameraUtils
+import co.infinum.goldeneye.utils.AsyncUtils
 import co.infinum.goldeneye.utils.LogDelegate
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class PictureSession(
-    private val activity: Activity,
-    private val config: CameraConfig,
-    private val cameraDevice: CameraDevice
-) {
+    activity: Activity,
+    cameraDevice: CameraDevice,
+    config: CameraConfig
+) : BaseSession(activity, cameraDevice, config) {
 
     private var imageReader: ImageReader? = null
     private var callback: PictureCallback? = null
-
-    private var sessionBuilder: CaptureRequest.Builder? = null
-    private var session: CameraCaptureSession? = null
-    private var surface: Surface? = null
     private var locked = false
 
     private val captureCallback = object : CameraCaptureSession.CaptureCallback() {
@@ -60,7 +56,7 @@ internal class PictureSession(
                 locked = true
                 capture()
             } else {
-                session?.capture(sessionBuilder?.build(), this, GoldenEye2Impl.backgroundHandler)
+                session?.capture(sessionBuilder?.build(), this, AsyncUtils.backgroundHandler)
             }
         }
 
@@ -70,7 +66,7 @@ internal class PictureSession(
                 addTarget(imageReader?.surface)
                 session?.apply {
                     stopRepeating()
-                    capture(build(), null, GoldenEye2Impl.backgroundHandler)
+                    capture(build(), null, AsyncUtils.backgroundHandler)
                 }
             }
         }
@@ -107,47 +103,26 @@ internal class PictureSession(
                 }
                 startSession()
             } catch (t: Throwable) {
+                BaseGoldenEyeImpl.state = CameraState.CLOSED
                 LogDelegate.log(t)
             }
         }
 
         override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-            LogDelegate.log("Session configuration failed.")
+            BaseGoldenEyeImpl.state = CameraState.CLOSED
+            LogDelegate.log("Preview configuration failed.")
         }
     }
 
-    fun createSession(textureView: TextureView) {
+    override fun createSession(textureView: TextureView) {
         try {
             initTextureViewSurface(textureView)
             initImageReader()
-            cameraDevice.createCaptureSession(listOf(surface, imageReader?.surface), stateCallback, GoldenEye2Impl.backgroundHandler)
+            cameraDevice.createCaptureSession(listOf(surface, imageReader?.surface), stateCallback, AsyncUtils.backgroundHandler)
         } catch (t: Throwable) {
+            BaseGoldenEyeImpl.state = CameraState.CLOSED
             LogDelegate.log(t)
         }
-    }
-
-    fun updateRequest(update: CaptureRequest.Builder.() -> Unit) {
-        try {
-            sessionBuilder?.apply(update)
-        } catch (t: Throwable) {
-            LogDelegate.log(t)
-        }
-    }
-
-    fun startSession() {
-        session?.setRepeatingRequest(sessionBuilder?.build(), null, GoldenEye2Impl.backgroundHandler)
-    }
-
-    fun singleCapture() {
-        session?.capture(sessionBuilder?.build(), null, GoldenEye2Impl.backgroundHandler)
-    }
-
-    private fun initTextureViewSurface(textureView: TextureView) {
-        val texture = textureView.surfaceTexture?.apply {
-            setDefaultBufferSize(config.previewSize.width, config.previewSize.height)
-        }
-        textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, config, textureView))
-        this.surface = Surface(texture)
     }
 
     private fun initImageReader() {
@@ -158,7 +133,7 @@ internal class PictureSession(
                     val image = reader.acquireLatestImage()
                     val bitmap = image.toBitmap()
                     image.close()
-                    bitmap?.mutate {
+                    bitmap?.applyMatrix {
                         reverseCameraRotation(
                             activity = activity,
                             info = config,
@@ -180,7 +155,7 @@ internal class PictureSession(
                     }
                 }
             )
-        }, GoldenEye2Impl.backgroundHandler)
+        }, AsyncUtils.backgroundHandler)
     }
 
     fun takePicture(callback: PictureCallback) {
@@ -188,29 +163,21 @@ internal class PictureSession(
         sessionBuilder?.apply {
             set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START)
             set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
-            session?.capture(build(), captureCallback, GoldenEye2Impl.backgroundHandler)
+            session?.capture(build(), captureCallback, AsyncUtils.backgroundHandler)
             set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
             set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE)
         }
     }
 
-    fun releaseSession() {
+    override fun release() {
+        super.release()
         try {
-            session?.stopRepeating()
-            session?.abortCaptures()
-            session?.close()
             imageReader?.close()
         } catch (t: Throwable) {
             LogDelegate.log(t)
         } finally {
-            sessionBuilder = null
-            session = null
             callback = null
             imageReader = null
         }
-    }
-
-    private enum class State {
-        READY, PRECAPTURE, CAPTURE
     }
 }

@@ -7,7 +7,7 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
-import co.infinum.goldeneye.extensions.mainHandler
+import co.infinum.goldeneye.extensions.MAIN_HANDLER
 import co.infinum.goldeneye.gesture.FocusHandler
 import co.infinum.goldeneye.models.FocusMode
 import co.infinum.goldeneye.sessions.SessionsManager
@@ -37,8 +37,8 @@ internal class FocusHandlerImpl(
      * and focus on tapped area.
      */
     private fun resetFocusWithDelay() {
-        mainHandler.removeCallbacksAndMessages(null)
-        mainHandler.postDelayed(
+        MAIN_HANDLER.removeCallbacksAndMessages(null)
+        MAIN_HANDLER.postDelayed(
             { sessionsManager.unlockFocus(config.focusMode) },
             config.resetFocusDelay
         )

@@ -30,8 +30,8 @@ import java.io.IOException
 
 internal class GoldenEye1Impl @JvmOverloads constructor(
     private val activity: Activity,
-    private val onZoomChangeCallback: OnZoomChangeCallback? = null,
-    private val onFocusChangeCallback: OnFocusChangeCallback? = null,
+    private val onZoomChangedCallback: OnZoomChangedCallback? = null,
+    private val onFocusChangedCallback: OnFocusChangedCallback? = null,
     logger: Logger? = null
 ) : BaseGoldenEyeImpl() {
 
@@ -56,8 +56,9 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     }
 
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
+        Intrinsics.checkCameraPermission(activity)
         try {
-            Intrinsics.checkCameraPermission(activity)
+            state = CameraState.INITIALIZING
             release()
             _config = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_config)
@@ -65,13 +66,13 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             initRecorders(camera)
             initConfigUpdateHandler(camera, textureView)
             callback.onConfigReady()
-            state = CameraState.READY
             this.textureView = textureView
             textureView.onSurfaceUpdate(
                 onAvailable = { startPreview() },
-                onSizeChanged = { it.setTransform(CameraUtils.calculateTextureMatrix(activity, config, it)) }
+                onSizeChanged = { it.setTransform(CameraUtils.calculateTextureMatrix(activity, it, config)) }
             )
         } catch (t: Throwable) {
+            state = CameraState.CLOSED
             camera = null
             callback.onError(t)
         }
@@ -79,6 +80,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     }
 
     override fun release() {
+        state = CameraState.CLOSED
         camera?.let {
             it.stopPreview()
             it.release()
@@ -86,11 +88,10 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         camera = null
         gestureHandler?.release()
         gestureHandler = null
-        state = CameraState.CLOSED
     }
 
     override fun takePicture(callback: PictureCallback) {
-        if (isCameraReady().not()) return
+        if (state != CameraState.READY) return
 
         state = CameraState.TAKING_PICTURE
         pictureRecorder?.takePicture(object : PictureCallback() {
@@ -112,12 +113,9 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     }
 
     override fun startRecording(file: File, callback: VideoCallback) {
-        if (isCameraReady().not()) return
+        if (state != CameraState.READY) return
 
         state = CameraState.RECORDING
-        if (config.autoPickPreviewSize) {
-            config.previewSize = CameraUtils.findBestMatchingSize(config.videoSize, config.supportedPreviewSizes)
-        }
         videoRecorder?.startRecording(file, object : VideoCallback {
             override fun onVideoRecorded(file: File) {
                 resetCameraPreview()
@@ -132,9 +130,6 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             private fun resetCameraPreview() {
                 state = CameraState.READY
                 startPreview()
-                if (config.autoPickPreviewSize) {
-                    config.previewSize = CameraUtils.findBestMatchingSize(config.pictureSize, config.supportedPreviewSizes)
-                }
             }
         })
     }
@@ -162,14 +157,14 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         val zoomHandler = ZoomHandlerImpl(
             activity = activity,
             config = config,
-            onZoomChanged = { onZoomChangeCallback?.onZoomChanged(it) }
+            onZoomChanged = { onZoomChangedCallback?.onZoomChanged(it) }
         )
         val focusHandler = FocusHandlerImpl(
             activity = activity,
             camera = camera,
             textureView = textureView,
             config = config,
-            onFocusChanged = { onFocusChangeCallback?.onFocusChanged(it) }
+            onFocusChanged = { onFocusChangedCallback?.onFocusChanged(it) }
         )
         this.gestureHandler = GestureManager(
             activity = activity,
@@ -189,7 +184,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
     @Throws(Throwable::class)
     private fun openCamera(config: Camera1ConfigImpl) {
-        Camera.open(config.id)?.also {
+        Camera.open(config.id.toInt())?.also {
             this.camera = it
             _config = config
             _config.characteristics = it.parameters
@@ -204,11 +199,13 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                     setPreviewTexture(textureView.surfaceTexture)
                     setDisplayOrientation(CameraUtils.calculateDisplayOrientation(activity, config))
                     applyConfig()
-                    textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, config, textureView))
+                    textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
                     startPreview()
+                    state = CameraState.READY
                 }
             }
         } catch (e: IOException) {
+            state = CameraState.CLOSED
             log(e)
         }
     }
@@ -253,7 +250,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                 }
 
                 if (parameters.isZoomSupported) {
-                    //                    zoom = config.zoom.level
+                    zoom = zoomRatios.indexOf(config.zoom)
                 }
             }
         }
@@ -266,7 +263,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             val facing = if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) Facing.BACK else Facing.FRONT
 
             val cameraInfo = object : CameraInfo {
-                override val id = id
+                override val id = id.toString()
                 override val orientation = info.orientation
                 override val facing = facing
                 override val bestResolution = Size.UNKNOWN
@@ -275,31 +272,12 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             _availableCameras.add(
                 Camera1ConfigImpl(
                     cameraInfo = cameraInfo,
-                    videoConfig = VideoConfigImpl(id, onConfigUpdateListener),
+                    videoConfig = VideoConfigImpl(id.toString(), onConfigUpdateListener),
                     featureConfig = FeatureConfigImpl(onConfigUpdateListener),
                     sizeConfig = SizeConfigImpl(onConfigUpdateListener),
                     zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
                 )
             )
         }
-    }
-
-    private fun isCameraReady(): Boolean {
-        if (camera == null) {
-            log("Camera is not initialized. Did you call init() method?")
-            return false
-        }
-
-        if (textureView == null) {
-            log("Preview not active. Did you call start() method?")
-            return false
-        }
-
-        if (state != CameraState.READY) {
-            log("Camera is not ready.")
-            return false
-        }
-
-        return true
     }
 }

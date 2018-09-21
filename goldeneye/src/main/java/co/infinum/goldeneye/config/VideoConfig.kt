@@ -13,8 +13,8 @@ interface VideoConfig {
 }
 
 internal abstract class BaseVideoConfig<T>(
-    private val id: Int,
-    private val onUpdateListener: (CameraProperty) -> Unit
+    private val id: String,
+    private val onUpdateCallback: (CameraProperty) -> Unit
 ) : VideoConfig {
 
     var characteristics: T? = null
@@ -35,15 +35,20 @@ internal abstract class BaseVideoConfig<T>(
         }
 
     override val supportedVideoQualities: List<VideoQuality>
-        get() = VideoQuality.values()
-            .filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
+        get() =
+            if (id.toIntOrNull() != null) {
+                VideoQuality.values()
+                    .filter { CamcorderProfile.hasProfile(id.toInt(), it.key) && it != VideoQuality.UNKNOWN }
+            } else {
+                listOf()
+            }
 
     override var videoStabilizationEnabled = false
         get() = isVideoStabilizationSupported && field
         set(value) {
             if (isVideoStabilizationSupported) {
                 field = value
-                onUpdateListener(CameraProperty.VIDEO_STABILIZATION)
+                onUpdateCallback(CameraProperty.VIDEO_STABILIZATION)
             } else {
                 LogDelegate.log("VideoStabilization not supported.")
             }

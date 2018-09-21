@@ -17,8 +17,8 @@ import co.infinum.goldeneye.utils.LogDelegate
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class SizeConfigImpl(
-    onUpdateListener: (CameraProperty) -> Unit
-) : BaseSizeConfig<CameraCharacteristics>(onUpdateListener) {
+    onUpdateCallback: (CameraProperty) -> Unit
+) : BaseSizeConfig<CameraCharacteristics>(onUpdateCallback) {
 
     override val supportedPreviewSizes
         get() = characteristics?.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
@@ -39,6 +39,5 @@ internal class SizeConfigImpl(
             ?.getOutputSizes(MediaRecorder::class.java)
             ?.map { it.toInternalSize() }
             ?.sorted()
-            ?.filter { if (it.width > it.height) it.height <= 1080 else it.width <= 1080 }
             ?: emptyList()
 }

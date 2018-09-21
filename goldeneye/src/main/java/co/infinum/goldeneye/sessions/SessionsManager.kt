@@ -1,6 +1,5 @@
 package co.infinum.goldeneye.sessions
 
-import android.graphics.Bitmap
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
@@ -16,29 +15,37 @@ import java.io.File
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class SessionsManager(
     private val textureView: TextureView,
-    private val pictureSession: PictureSession
+    private val pictureSession: PictureSession,
+    private val videoSession: VideoSession
 ) {
 
-//    private var activeSession: BaseSession = pictureSession
+    private var activeSession: BaseSession = pictureSession
 
-    fun updateRequests(update: CaptureRequest.Builder.() -> Unit) {
+    fun updateSession(update: CaptureRequest.Builder.() -> Unit) {
         pictureSession.updateRequest(update)
+        videoSession.updateRequest(update)
 
         try {
-            //TODO expose way to tell whether its restart or recreate
-            pictureSession.startSession()
+            activeSession.startSession()
+        } catch (t: Throwable) {
+            LogDelegate.log(t)
+        }
+    }
+
+    fun restartSession() {
+        try {
+            if (activeSession is PictureSession) {
+                activeSession.createSession(textureView)
+            }
         } catch (t: Throwable) {
             LogDelegate.log(t)
         }
     }
 
     fun lockFocus(region: Array<MeteringRectangle>) {
-        pictureSession.updateRequest {
-            set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
-        }
-        pictureSession.singleCapture()
+        activeSession.cancelFocus()
 
-        updateRequests {
+        updateSession {
             set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
             set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START)
             set(CaptureRequest.CONTROL_AF_REGIONS, region)
@@ -46,7 +53,7 @@ internal class SessionsManager(
     }
 
     fun unlockFocus(focus: FocusMode) {
-        updateRequests {
+        updateSession {
             set(CaptureRequest.CONTROL_AF_MODE, focus.toCamera2())
             set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE)
             set(CaptureRequest.CONTROL_AF_REGIONS, null)
@@ -54,6 +61,7 @@ internal class SessionsManager(
     }
 
     fun startPreview() {
+        activeSession = pictureSession
         pictureSession.createSession(textureView)
     }
 
@@ -62,14 +70,19 @@ internal class SessionsManager(
     }
 
     fun startRecording(file: File, callback: VideoCallback) {
-        //TODO
+        pictureSession.release()
+        activeSession = videoSession
+        videoSession.startRecording(textureView, file, callback)
     }
 
     fun stopRecording() {
-        //TODO
+        videoSession.stopRecording()
+        videoSession.release()
+        activeSession
+        pictureSession.createSession(textureView)
     }
 
     fun release() {
-
+        activeSession.release()
     }
 }

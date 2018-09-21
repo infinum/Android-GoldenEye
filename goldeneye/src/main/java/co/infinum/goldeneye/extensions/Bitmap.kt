@@ -2,35 +2,24 @@
 
 package co.infinum.goldeneye.extensions
 
+import android.app.Activity
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.graphics.Point
+import android.media.Image
+import android.os.Build
+import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.TaskOnMainThreadException
+import co.infinum.goldeneye.config.CameraInfo
+import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.Size
+import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.Intrinsics
 
-/**
- * Crops original bitmap to reduce it to given size from center.
- *
- * @throws TaskOnMainThreadException if this method is called from Main thread.
- */
-fun Bitmap.crop(size: Size): Bitmap {
+internal fun Bitmap.applyMatrix(configure: Matrix.() -> Unit): Bitmap {
     Intrinsics.checkMainThread()
-    val x = if (size.width < width) (width - size.width) / 2 else 0
-    val y = if (size.height < height) (height - size.height) / 2 else 0
-    if (x == 0 && y == 0) {
-        return this
-    }
-
-    return Bitmap.createBitmap(this, x, y, size.width, size.height)
-}
-
-fun Bitmap.mirror() = mutate { mirror() }
-
-fun Bitmap.rotate(degrees: Float) = mutate { rotate(degrees, width / 2f, height / 2f) }
-
-internal fun Bitmap.mutate(updateMatrix: Matrix.() -> Unit): Bitmap {
-    Intrinsics.checkMainThread()
-    val newBitmap = Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply(updateMatrix), true)
+    val newBitmap = Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply(configure), true)
     safeRecycle(newBitmap)
     return newBitmap
 }
@@ -39,4 +28,19 @@ internal fun Bitmap.safeRecycle(newBitmap: Bitmap) {
     if (this != newBitmap) {
         recycle()
     }
+}
+
+internal fun ByteArray.toBitmap() =
+    try {
+        BitmapFactory.decodeByteArray(this, 0, size)
+    } catch (t: Throwable) {
+        null
+    }
+
+@RequiresApi(Build.VERSION_CODES.KITKAT)
+internal fun Image.toBitmap(): Bitmap? {
+    val buffer = planes[0].buffer
+    val byteArray = ByteArray(buffer.remaining())
+    buffer.get(byteArray)
+    return byteArray.toBitmap()
 }

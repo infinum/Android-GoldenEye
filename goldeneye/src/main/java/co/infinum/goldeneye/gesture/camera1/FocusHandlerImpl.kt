@@ -9,7 +9,7 @@ import android.hardware.Camera
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.ifNotNull
-import co.infinum.goldeneye.extensions.mainHandler
+import co.infinum.goldeneye.extensions.MAIN_HANDLER
 import co.infinum.goldeneye.extensions.updateParams
 import co.infinum.goldeneye.gesture.FocusHandler
 import co.infinum.goldeneye.models.FocusMode
@@ -51,8 +51,8 @@ internal class FocusHandlerImpl(
      * and focus on tapped area.
      */
     private fun resetFocusWithDelay() {
-        mainHandler.removeCallbacksAndMessages(null)
-        mainHandler.postDelayed(
+        MAIN_HANDLER.removeCallbacksAndMessages(null)
+        MAIN_HANDLER.postDelayed(
             { camera?.updateParams { focusMode = config.focusMode.toCamera1() } },
             config.resetFocusDelay
         )
