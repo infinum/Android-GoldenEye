@@ -1,6 +1,6 @@
 @file:Suppress("DEPRECATION")
 
-package co.infinum.goldeneye.recorders.camera1
+package co.infinum.goldeneye.recorders
 
 import android.app.Activity
 import android.hardware.Camera

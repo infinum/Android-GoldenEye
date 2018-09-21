@@ -10,6 +10,8 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.os.Build
+import android.os.Handler
+import android.os.HandlerThread
 import android.support.annotation.RequiresApi
 import android.support.annotation.RequiresPermission
 import android.view.TextureView
@@ -22,7 +24,8 @@ import co.infinum.goldeneye.gesture.GestureManager
 import co.infinum.goldeneye.gesture.ZoomHandlerImpl
 import co.infinum.goldeneye.gesture.camera2.FocusHandlerImpl
 import co.infinum.goldeneye.models.*
-import co.infinum.goldeneye.recorders.camera2.PictureRecorder
+import co.infinum.goldeneye.sessions.PictureSession
+import co.infinum.goldeneye.sessions.SessionsManager
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.Intrinsics
 import co.infinum.goldeneye.utils.LogDelegate
@@ -33,15 +36,21 @@ internal class GoldenEye2Impl(
     private val activity: Activity,
     logger: Logger? = null
 ) : BaseGoldenEyeImpl() {
+    companion object {
+
+        val backgroundHandler: Handler by lazy {
+            val backgroundThread = HandlerThread("camera")
+            backgroundThread.start()
+            Handler(backgroundThread.looper)
+        }
+    }
 
     private val cameraManager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     private var cameraDevice: CameraDevice? = null
     private var lastCameraRequest: CameraRequest? = null
-    private var textureView: TextureView? = null
-    private var devicePreview: DevicePreview? = null
+    private var sessionsManager: SessionsManager? = null
     private var gestureManager: GestureManager? = null
     private var configUpdateHandler: ConfigUpdateHandler? = null
-    private var pictureRecorder: PictureRecorder? = null
     private val onConfigUpdateListener: (CameraProperty) -> Unit = { configUpdateHandler?.onPropertyUpdated(it) }
 
     private val _availableCameras = mutableListOf<Camera2ConfigImpl>()
@@ -61,9 +70,8 @@ internal class GoldenEye2Impl(
         Intrinsics.checkCameraPermission(activity)
         try {
             release()
-            this.textureView = textureView
             when (state) {
-                CameraState.CLOSED, CameraState.READY -> openCamera(cameraInfo, callback)
+                CameraState.CLOSED, CameraState.READY -> openCamera(cameraInfo, textureView, callback)
                 CameraState.INITIALIZING -> lastCameraRequest = CameraRequest(cameraInfo, callback)
                 CameraState.TAKING_PICTURE, CameraState.RECORDING -> throw CameraInUseException
             }
@@ -74,7 +82,7 @@ internal class GoldenEye2Impl(
 
     @RequiresPermission(Manifest.permission.CAMERA)
     @SuppressLint("MissingPermission")
-    private fun openCamera(cameraInfo: CameraInfo, callback: InitCallback) {
+    private fun openCamera(cameraInfo: CameraInfo, textureView: TextureView, callback: InitCallback) {
         cameraManager.openCamera(cameraInfo.id.toString(), object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice?) {
                 if (lastCameraRequest != null) {
@@ -83,12 +91,17 @@ internal class GoldenEye2Impl(
                 }
 
                 try {
-                    initDevicePreview(camera, cameraInfo)
-                    initGestureManager(textureView, devicePreview)
-                    initConfigUpdateHandler(devicePreview, textureView)
-                    initRecorders(devicePreview)
+                    initSessions(camera, textureView, cameraInfo)
+                    initGestureManager(textureView, sessionsManager)
+                    initConfigUpdateHandler(sessionsManager, textureView)
                     callback.onConfigReady()
-                    startPreview()
+                    textureView.onSurfaceUpdate(
+                        onAvailable = { _ ->
+                            sessionsManager?.startPreview()
+                            state = CameraState.READY
+                        },
+                        onSizeChanged = { applyMatrixTransformation(it) }
+                    )
                 } catch (t: Throwable) {
                     callback.onError(t)
                 }
@@ -121,43 +134,31 @@ internal class GoldenEye2Impl(
     }
 
     @Throws(CameraFailedToOpenException::class)
-    private fun initRecorders(devicePreview: DevicePreview?) {
-        if(devicePreview == null) throw CameraFailedToOpenException
-
-        this.pictureRecorder = PictureRecorder(activity, config, devicePreview)
-    }
-
-    @Throws(CameraFailedToOpenException::class)
-    private fun initConfigUpdateHandler(devicePreview: DevicePreview?, textureView: TextureView?) {
-        if (devicePreview == null || textureView == null) throw CameraFailedToOpenException
+    private fun initConfigUpdateHandler(sessionsSyncManager: SessionsManager?, textureView: TextureView?) {
+        if (sessionsSyncManager == null || textureView == null) throw CameraFailedToOpenException
 
         this.configUpdateHandler = ConfigUpdateHandler(
             activity = activity,
             textureView = textureView,
-            devicePreview = devicePreview,
+            sessionsSyncManager = sessionsSyncManager,
             config = config
         )
     }
 
     @Throws(CameraFailedToOpenException::class)
-    fun initDevicePreview(camera: CameraDevice?, cameraInfo: CameraInfo) {
+    fun initSessions(camera: CameraDevice?, textureView: TextureView, cameraInfo: CameraInfo) {
         if (camera == null) throw CameraFailedToOpenException
 
         this.cameraDevice = camera
         this._config = _availableCameras.first { it.id == cameraInfo.id }
         this._config.characteristics = cameraManager.getCameraCharacteristics(cameraDevice?.id)
-        this.devicePreview = DevicePreview(
-            activity = activity,
-            config = config,
-            cameraDevice = camera,
-            onStarted = { state = CameraState.READY },
-            onEnded = { state = CameraState.CLOSED }
-        )
+        val pictureSession = PictureSession(activity, config, camera)
+        this.sessionsManager = SessionsManager(textureView, pictureSession)
     }
 
     @Throws(CameraFailedToOpenException::class)
-    fun initGestureManager(textureView: TextureView?, devicePreview: DevicePreview?) {
-        if (textureView == null || devicePreview == null) throw CameraFailedToOpenException
+    fun initGestureManager(textureView: TextureView?, sessionsManager: SessionsManager?) {
+        if (textureView == null || sessionsManager == null) throw CameraFailedToOpenException
 
         val zoomHandler = ZoomHandlerImpl(
             activity = activity,
@@ -168,29 +169,21 @@ internal class GoldenEye2Impl(
             activity = activity,
             textureView = textureView,
             config = config,
-            devicePreview = devicePreview,
+            sessionsManager = sessionsManager,
             onFocusChanged = {}
         )
         this.gestureManager = GestureManager(activity, textureView, zoomHandler, focusHandler)
     }
 
-    private fun startPreview() {
-        textureView?.onSurfaceUpdate(
-            onAvailable = { it -> devicePreview?.startPreview(it) },
-            onSizeChanged = { applyMatrixTransformation(it) }
-        )
-    }
-
     override fun release() {
         try {
-            devicePreview?.release()
+            sessionsManager?.release()
             cameraDevice?.close()
         } catch (t: Throwable) {
             LogDelegate.log(t)
         } finally {
-            devicePreview = null
             cameraDevice = null
-            textureView = null
+            sessionsManager = null
         }
     }
 
@@ -201,7 +194,7 @@ internal class GoldenEye2Impl(
         }
 
         state = CameraState.TAKING_PICTURE
-        pictureRecorder?.takePicture(object: PictureCallback() {
+        sessionsManager?.takePicture(object : PictureCallback() {
             override fun onPictureTaken(picture: Bitmap) {
                 state = CameraState.READY
                 callback.onPictureTaken(picture)

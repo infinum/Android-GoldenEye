@@ -1,32 +1,28 @@
-package co.infinum.goldeneye.recorders.camera2
+@file:Suppress("DEPRECATION")
+
+package co.infinum.goldeneye.recorders
 
 import android.app.Activity
-import android.hardware.camera2.CaptureRequest
-import android.os.Build
-import android.support.annotation.RequiresApi
-import android.text.AndroidCharacter.mirror
+import android.hardware.Camera
 import co.infinum.goldeneye.PictureCallback
 import co.infinum.goldeneye.PictureConversionException
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.*
-import co.infinum.goldeneye.models.DevicePreview
 import co.infinum.goldeneye.models.Facing
 
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class PictureRecorder(
     private val activity: Activity,
-    private val config: CameraConfig,
-    private val devicePreview: DevicePreview
+    private val camera: Camera,
+    private val config: CameraConfig
 ) {
 
     fun takePicture(callback: PictureCallback) {
-        ifNotNull(devicePreview.imageReader, devicePreview.requestBuilder, devicePreview.session) { reader, builder, session ->
-            reader.setOnImageAvailableListener({ _ ->
+        try {
+            val shutterCallback = Camera.ShutterCallback { callback.onShutter() }
+            val pictureCallback = Camera.PictureCallback { data, _ ->
                 async(
                     task = {
-                        val image = reader.acquireLatestImage()
-                        val bitmap = image.toBitmap()
-                        image.close()
+                        val bitmap = data.toBitmap()
                         bitmap?.mutate {
                             reverseCameraRotation(
                                 activity = activity,
@@ -40,9 +36,6 @@ internal class PictureRecorder(
                         }
                     },
                     onResult = {
-                        reader.setOnImageAvailableListener(null, null)
-                        builder.removeTarget(reader.surface)
-                        session.setRepeatingRequest(builder.build(), null, null)
                         if (it != null) {
                             callback.onPictureTaken(it)
                         } else {
@@ -50,11 +43,10 @@ internal class PictureRecorder(
                         }
                     }
                 )
-            }, null)
-
-            session.stopRepeating()
-            builder.addTarget(reader.surface)
-            session.capture(builder.build(), null, null)
+            }
+            camera.takePicture(shutterCallback, null, pictureCallback)
+        } catch (t: Throwable) {
+            callback.onError(t)
         }
     }
 }

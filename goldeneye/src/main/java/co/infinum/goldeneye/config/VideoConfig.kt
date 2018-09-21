@@ -39,6 +39,7 @@ internal abstract class BaseVideoConfig<T>(
             .filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
 
     override var videoStabilizationEnabled = false
+        get() = isVideoStabilizationSupported && field
         set(value) {
             if (isVideoStabilizationSupported) {
                 field = value
