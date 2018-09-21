@@ -9,7 +9,7 @@ internal fun TextureView.onSurfaceUpdate(onAvailable: (TextureView) -> Unit, onS
         onAvailable(this)
     }
 
-    surfaceTextureListener = object : SimpleTextureListener() {
+    surfaceTextureListener = object : TextureView.SurfaceTextureListener() {
         override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
             onSizeChanged(this@onSurfaceUpdate)
         }
@@ -17,5 +17,10 @@ internal fun TextureView.onSurfaceUpdate(onAvailable: (TextureView) -> Unit, onS
         override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
             onAvailable(this@onSurfaceUpdate)
         }
+
+        override fun onSurfaceTextureUpdated(surface: SurfaceTexture?) {
+        }
+
+        override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?) = false
     }
 }
