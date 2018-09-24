@@ -8,7 +8,7 @@ import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
 import co.infinum.goldeneye.IllegalEnumException
 
-enum class WhiteBalance {
+enum class WhiteBalanceMode {
     OFF,
     AUTO,
     INCANDESCENT,

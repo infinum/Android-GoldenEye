@@ -2,11 +2,11 @@ package co.infinum.goldeneye.config.camera2
 
 import android.app.Activity
 import android.graphics.Rect
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.support.annotation.RequiresApi
 import android.view.TextureView
-import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.FlashMode
 import co.infinum.goldeneye.models.Size
@@ -18,7 +18,7 @@ internal class ConfigUpdateHandler(
     private val activity: Activity,
     private val textureView: TextureView,
     private val sessionsManager: SessionsManager,
-    private val config: CameraConfig
+    private val config: Camera2ConfigImpl
 ) {
 
     fun onPropertyUpdated(property: CameraProperty) {
@@ -30,16 +30,13 @@ internal class ConfigUpdateHandler(
                 updateFlashMode(this, config.flashMode)
             }
             CameraProperty.COLOR_EFFECT -> sessionsManager.updateSession {
-                set(CaptureRequest.CONTROL_EFFECT_MODE, config.colorEffect.toCamera2())
+                set(CaptureRequest.CONTROL_EFFECT_MODE, config.colorEffectMode.toCamera2())
             }
             CameraProperty.ANTIBANDING -> sessionsManager.updateSession {
-                set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, config.antibanding.toCamera2())
-            }
-            CameraProperty.SCENE_MODE -> sessionsManager.updateSession {
-                set(CaptureRequest.CONTROL_SCENE_MODE, config.sceneMode.toCamera2())
+                set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, config.antibandingMode.toCamera2())
             }
             CameraProperty.WHITE_BALANCE -> sessionsManager.updateSession {
-                set(CaptureRequest.CONTROL_AWB_MODE, config.whiteBalance.toCamera2())
+                set(CaptureRequest.CONTROL_AWB_MODE, config.whiteBalanceMode.toCamera2())
             }
             CameraProperty.PICTURE_SIZE -> sessionsManager.restartSession()
             CameraProperty.PREVIEW_SIZE -> sessionsManager.restartSession()
@@ -61,17 +58,17 @@ internal class ConfigUpdateHandler(
     }
 
     private fun updateZoom(requestBuilder: CaptureRequest.Builder, zoom: Int) {
-        val previewSize = config.previewSize
+        val activeRect = config.characteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return
         val zoomPercentage = zoom / 100f
-        val zoomedWidth = (previewSize.width / zoomPercentage).toInt()
-        val zoomedHeight = (previewSize.height / zoomPercentage).toInt()
-        val halfWidthDiff = (previewSize.width - zoomedWidth) / 2
-        val halfHeightDiff = (previewSize.height - zoomedHeight) / 2
+        val zoomedWidth = (activeRect.width() / zoomPercentage).toInt()
+        val zoomedHeight = (activeRect.height() / zoomPercentage).toInt()
+        val halfWidthDiff = (activeRect.width() - zoomedWidth) / 2
+        val halfHeightDiff = (activeRect.height() - zoomedHeight) / 2
         val zoomedRect = Rect(
-            halfWidthDiff,
-            halfHeightDiff,
-            previewSize.width - halfWidthDiff,
-            previewSize.height - halfHeightDiff
+            activeRect.left + halfWidthDiff,
+            activeRect.top + halfHeightDiff,
+            activeRect.right - halfWidthDiff,
+            activeRect.bottom - halfHeightDiff
         )
         requestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomedRect)
     }

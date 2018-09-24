@@ -1,5 +1,6 @@
 package co.infinum.goldeneye.config
 
+import android.media.CamcorderProfile
 import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.CameraState
@@ -15,13 +16,14 @@ interface SizeConfig {
     var pictureSize: Size
     val supportedPictureSizes: List<Size>
 
-    var videoSize: Size
-    val supportedVideoSizes: List<Size>
+    val videoSize: Size
 
     var previewScale: PreviewScale
 }
 
 internal abstract class BaseSizeConfig<T>(
+    private val cameraInfo: CameraInfo,
+    private val videoConfig: VideoConfig,
     private val onUpdateCallback: (CameraProperty) -> Unit
 ) : SizeConfig {
 
@@ -58,22 +60,22 @@ internal abstract class BaseSizeConfig<T>(
         set(value) {
             if (supportedPictureSizes.contains(value)) {
                 field = value
+                onUpdateCallback(CameraProperty.PICTURE_SIZE)
             } else {
                 LogDelegate.log("Unsupported PictureSize [$value]")
             }
         }
 
-    override var videoSize = Size.UNKNOWN
-        get() = when {
-            field != Size.UNKNOWN -> field
-            supportedVideoSizes.isNotEmpty() -> supportedVideoSizes[0]
-            else -> Size.UNKNOWN
-        }
-        set(value) {
-            if (supportedVideoSizes.contains(value)) {
-                field = value
+    override val videoSize: Size
+        get() {
+            return if (cameraInfo.id.toIntOrNull() != null) {
+                val profile = CamcorderProfile.get(cameraInfo.id.toInt(), videoConfig.videoQuality.key)
+                Size(
+                    if (cameraInfo.orientation % 180 == 0) profile.videoFrameWidth else profile.videoFrameHeight,
+                    if (cameraInfo.orientation % 180 == 0) profile.videoFrameHeight else profile.videoFrameWidth
+                )
             } else {
-                LogDelegate.log("Unsupported VideoSize [$value]")
+                Size.UNKNOWN
             }
         }
 

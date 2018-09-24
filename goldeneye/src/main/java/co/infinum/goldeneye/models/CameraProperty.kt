@@ -10,6 +10,5 @@ internal enum class CameraProperty {
     VIDEO_STABILIZATION,
     COLOR_EFFECT,
     ANTIBANDING,
-    SCENE_MODE,
     PREVIEW_SCALE
 }

@@ -11,7 +11,9 @@ import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.buildCamera1Instance
 import co.infinum.goldeneye.extensions.hasAudioPermission
 import co.infinum.goldeneye.extensions.ifNotNull
+import co.infinum.goldeneye.extensions.updateParams
 import co.infinum.goldeneye.models.Facing
+import co.infinum.goldeneye.models.FocusMode
 import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
@@ -34,12 +36,11 @@ internal class VideoRecorder(
             LogDelegate.log("Recording video without audio. Missing RECORD_AUDIO permission.")
         }
         try {
-            camera.unlock()
             mediaRecorder = MediaRecorder().buildCamera1Instance(activity, camera, config, file)
             mediaRecorder?.start()
         } catch (t: Throwable) {
-            camera.reconnect()
             callback.onError(t)
+            release()
         }
     }
 
@@ -52,8 +53,17 @@ internal class VideoRecorder(
         } catch (t: Throwable) {
             callback?.onError(t)
         } finally {
+            release()
+        }
+    }
+
+    fun release() {
+        try {
+            mediaRecorder?.reset()
             mediaRecorder?.release()
-            camera.reconnect()
+        } catch (t: Throwable) {
+            LogDelegate.log(t)
+        } finally {
             mediaRecorder = null
             callback = null
             file = null

@@ -20,6 +20,7 @@ fun MediaRecorder.buildCamera1Instance(
     file: File
 ): MediaRecorder {
     setCamera(camera)
+    setVideoSource(MediaRecorder.VideoSource.CAMERA)
     return buildInstance(activity, config, file)
 }
 
@@ -40,7 +41,7 @@ private fun MediaRecorder.buildInstance(activity: Activity, config: CameraConfig
     }
     setOutputFormat(profile.fileFormat)
     setVideoFrameRate(profile.videoFrameRate)
-    setVideoSize(config.videoSize.width, config.videoSize.height)
+    setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight)
     setVideoEncodingBitRate(profile.videoBitRate)
     setVideoEncoder(profile.videoCodec)
 
@@ -52,9 +53,8 @@ private fun MediaRecorder.buildInstance(activity: Activity, config: CameraConfig
     }
 
     setOutputFile(file.absolutePath)
-    setVideoSize(config.videoSize.width, config.videoSize.height)
     val cameraOrientation = CameraUtils.calculateDisplayOrientation(activity, config)
-    setOrientationHint(if (config.facing == Facing.BACK) cameraOrientation else -cameraOrientation)
+    setOrientationHint(if (config.facing == Facing.BACK) cameraOrientation else 360 - cameraOrientation)
     prepare()
     return this
 }

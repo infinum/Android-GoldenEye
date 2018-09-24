@@ -9,9 +9,6 @@ enum class VideoQuality(
 ) {
     LOW(CamcorderProfile.QUALITY_LOW),
     HIGH(CamcorderProfile.QUALITY_HIGH),
-    QCIF(CamcorderProfile.QUALITY_QCIF),
-    CIF(CamcorderProfile.QUALITY_CIF),
-    RESOLUTION_480(CamcorderProfile.QUALITY_480P),
     RESOLUTION_720P(CamcorderProfile.QUALITY_720P),
     RESOLUTION_1080P(CamcorderProfile.QUALITY_1080P),
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -28,5 +25,15 @@ enum class VideoQuality(
     HIGH_SPEED_1080P(CamcorderProfile.QUALITY_HIGH_SPEED_1080P),
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     HIGH_SPEED_2160P(CamcorderProfile.QUALITY_HIGH_SPEED_2160P),
-    UNKNOWN(-1)
+    UNKNOWN(-1);
+
+    fun isCamera2Required() = listOf(
+        RESOLUTION_2160P,
+        HIGH_SPEED_LOW,
+        HIGH_SPEED_HIGH,
+        HIGH_SPEED_480P,
+        HIGH_SPEED_720P,
+        HIGH_SPEED_1080P,
+        HIGH_SPEED_2160P
+    ).contains(this)
 }

@@ -7,7 +7,6 @@ import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.ThreadNotStartedException
 
 @Suppress("ObjectPropertyName")
-@RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 internal object AsyncUtils {
 
     private var backgroundThread: HandlerThread? = null
@@ -26,7 +25,11 @@ internal object AsyncUtils {
 
     fun stopBackgroundThread() {
         try {
-            backgroundThread?.quitSafely()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                backgroundThread?.quitSafely()
+            } else {
+                backgroundThread?.quit()
+            }
             backgroundThread?.join()
         } catch (t: Throwable) {
             LogDelegate.log(t)

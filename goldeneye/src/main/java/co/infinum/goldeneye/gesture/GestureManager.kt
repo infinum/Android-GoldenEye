@@ -7,7 +7,9 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.TextureView
+import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.extensions.MAIN_HANDLER
+import co.infinum.goldeneye.models.CameraState
 
 @SuppressLint("ClickableViewAccessibility")
 internal class GestureManager(
@@ -32,7 +34,7 @@ internal class GestureManager(
 
     private val tapDetector = GestureDetector(activity, object : GestureDetector.SimpleOnGestureListener() {
         override fun onSingleTapUp(e: MotionEvent?): Boolean {
-            if (e == null) return false
+            if (e == null || BaseGoldenEyeImpl.state == CameraState.RECORDING) return false
             focusHandler.requestFocus(PointF(e.x, e.y))
             return true
         }

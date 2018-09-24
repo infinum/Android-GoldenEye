@@ -21,6 +21,7 @@ import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.recorders.PictureRecorder
 import co.infinum.goldeneye.recorders.VideoRecorder
+import co.infinum.goldeneye.utils.AsyncUtils
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.Intrinsics
 import co.infinum.goldeneye.utils.LogDelegate
@@ -58,8 +59,9 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         Intrinsics.checkCameraPermission(activity)
         try {
-            state = CameraState.INITIALIZING
             release()
+            state = CameraState.INITIALIZING
+            AsyncUtils.startBackgroundThread()
             _config = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_config)
             initGestureManager(camera, textureView)
@@ -81,13 +83,20 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
     override fun release() {
         state = CameraState.CLOSED
-        camera?.let {
-            it.stopPreview()
-            it.release()
+        try {
+            camera?.stopPreview()
+            camera?.release()
+        } catch (t: Throwable) {
+            LogDelegate.log(t)
+        } finally {
+            camera = null
+            gestureHandler?.release()
+            gestureHandler = null
+            videoRecorder?.release()
+            videoRecorder = null
+            pictureRecorder?.release()
+            pictureRecorder = null
         }
-        camera = null
-        gestureHandler?.release()
-        gestureHandler = null
     }
 
     override fun takePicture(callback: PictureCallback) {
@@ -113,9 +122,14 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     }
 
     override fun startRecording(file: File, callback: VideoCallback) {
-        if (state != CameraState.READY) return
+        if (state != CameraState.READY) {
+            callback.onError(CameraNotReadyException())
+            return
+        }
 
         state = CameraState.RECORDING
+        applyConfig()
+        camera?.unlock()
         videoRecorder?.startRecording(file, object : VideoCallback {
             override fun onVideoRecorded(file: File) {
                 resetCameraPreview()
@@ -128,6 +142,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             }
 
             private fun resetCameraPreview() {
+                camera?.reconnect()
                 state = CameraState.READY
                 startPreview()
             }
@@ -233,20 +248,16 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                     flashMode = config.flashMode.toCamera1()
                 }
 
-                if (config.supportedAntibanding.contains(config.antibanding)) {
-                    antibanding = config.antibanding.toCamera1()
+                if (config.supportedAntibandingModes.contains(config.antibandingMode)) {
+                    antibanding = config.antibandingMode.toCamera1()
                 }
 
-                if (config.supportedColorEffects.contains(config.colorEffect)) {
-                    colorEffect = config.colorEffect.toCamera1()
+                if (config.supportedColorEffectModes.contains(config.colorEffectMode)) {
+                    colorEffect = config.colorEffectMode.toCamera1()
                 }
 
-                if (config.supportedSceneModes.contains(config.sceneMode)) {
-                    sceneMode = config.sceneMode.toCamera1()
-                }
-
-                if (config.supportedWhiteBalance.contains(config.whiteBalance)) {
-                    whiteBalance = config.whiteBalance.toCamera1()
+                if (config.supportedWhiteBalanceModes.contains(config.whiteBalanceMode)) {
+                    whiteBalance = config.whiteBalanceMode.toCamera1()
                 }
 
                 if (parameters.isZoomSupported) {
@@ -269,12 +280,13 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                 override val bestResolution = Size.UNKNOWN
             }
 
+            val videoConfig = VideoConfigImpl(id.toString(), onConfigUpdateListener)
             _availableCameras.add(
                 Camera1ConfigImpl(
                     cameraInfo = cameraInfo,
-                    videoConfig = VideoConfigImpl(id.toString(), onConfigUpdateListener),
+                    videoConfig = videoConfig,
                     featureConfig = FeatureConfigImpl(onConfigUpdateListener),
-                    sizeConfig = SizeConfigImpl(onConfigUpdateListener),
+                    sizeConfig = SizeConfigImpl(cameraInfo, videoConfig, onConfigUpdateListener),
                     zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
                 )
             )

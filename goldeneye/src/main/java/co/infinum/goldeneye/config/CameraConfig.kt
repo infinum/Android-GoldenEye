@@ -8,11 +8,11 @@ interface CameraConfig :
     ZoomConfig
 
 internal abstract class CameraConfigImpl<T>(
-    private val cameraInfo: CameraInfo,
-    private val videoConfig: BaseVideoConfig<T>,
-    private val featureConfig: BaseFeatureConfig<T>,
-    private val sizeConfig: BaseSizeConfig<T>,
-    private val zoomConfig: BaseZoomConfig<T>
+    var cameraInfo: CameraInfo,
+    var videoConfig: BaseVideoConfig<T>,
+    var featureConfig: BaseFeatureConfig<T>,
+    var sizeConfig: BaseSizeConfig<T>,
+    var zoomConfig: BaseZoomConfig<T>
 ) : CameraConfig,
     CameraInfo by cameraInfo,
     VideoConfig by videoConfig,

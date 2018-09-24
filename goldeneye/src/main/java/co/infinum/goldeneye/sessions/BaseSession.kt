@@ -37,11 +37,11 @@ internal abstract class BaseSession(
     }
 
     protected fun initTextureViewSurface(textureView: TextureView) {
+        textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
         val texture = textureView.surfaceTexture?.apply {
             val previewSize = config.previewSize
             setDefaultBufferSize(previewSize.width, previewSize.height)
         }
-        textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
         this.surface = Surface(texture)
     }
 

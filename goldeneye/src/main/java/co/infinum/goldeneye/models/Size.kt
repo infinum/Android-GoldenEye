@@ -19,6 +19,7 @@ data class Size internal constructor(
     }
 
     val aspectRatio = if (this.height != 0 && this.width != 0) this.width.toFloat() / this.height.toFloat() else -1f
+    fun isOver1080p() = this.width > 1080 && this.height > 1080
 }
 
 internal fun Camera.Size.toInternalSize() = Size(width, height)

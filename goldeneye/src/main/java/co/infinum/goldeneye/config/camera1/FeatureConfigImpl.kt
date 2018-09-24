@@ -27,31 +27,24 @@ internal class FeatureConfigImpl(
             ?.filter { it != FocusMode.UNKNOWN }
             ?: emptyList()
 
-    override val supportedWhiteBalance: List<WhiteBalance>
+    override val supportedWhiteBalanceModes: List<WhiteBalanceMode>
         get() = characteristics?.supportedWhiteBalance
-            ?.map { WhiteBalance.fromCamera1(it) }
+            ?.map { WhiteBalanceMode.fromCamera1(it) }
             ?.distinct()
-            ?.filter { it != WhiteBalance.UNKNOWN }
+            ?.filter { it != WhiteBalanceMode.UNKNOWN }
             ?: emptyList()
 
-    override val supportedSceneModes: List<SceneMode>
-        get() = characteristics?.supportedSceneModes
-            ?.map { SceneMode.fromCamera1(it) }
-            ?.distinct()
-            ?.filter { it != SceneMode.UNKNOWN }
-            ?: emptyList()
-
-    override val supportedColorEffects: List<ColorEffect>
+    override val supportedColorEffectModes: List<ColorEffectMode>
         get() = characteristics?.supportedColorEffects
-            ?.map { ColorEffect.fromCamera1(it) }
+            ?.map { ColorEffectMode.fromCamera1(it) }
             ?.distinct()
-            ?.filter { it != ColorEffect.UNKNOWN }
+            ?.filter { it != ColorEffectMode.UNKNOWN }
             ?: emptyList()
 
-    override val supportedAntibanding: List<Antibanding>
+    override val supportedAntibandingModes: List<AntibandingMode>
         get() = characteristics?.supportedAntibanding
-            ?.map { Antibanding.fromCamera1(it) }
+            ?.map { AntibandingMode.fromCamera1(it) }
             ?.distinct()
-            ?.filter { it != Antibanding.UNKNOWN }
+            ?.filter { it != AntibandingMode.UNKNOWN }
             ?: emptyList()
 }

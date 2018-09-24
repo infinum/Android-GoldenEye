@@ -25,10 +25,9 @@ internal class ConfigUpdateHandler(
         when (property) {
             CameraProperty.FOCUS -> camera.updateParams { focusMode = config.focusMode.toCamera1() }
             CameraProperty.FLASH -> camera.updateParams { flashMode = config.flashMode.toCamera1() }
-            CameraProperty.COLOR_EFFECT -> camera.updateParams { colorEffect = config.colorEffect.toCamera1() }
-            CameraProperty.ANTIBANDING -> camera.updateParams { antibanding = config.antibanding.toCamera1() }
-            CameraProperty.SCENE_MODE -> camera.updateParams { sceneMode = config.sceneMode.toCamera1() }
-            CameraProperty.WHITE_BALANCE -> camera.updateParams { whiteBalance = config.whiteBalance.toCamera1() }
+            CameraProperty.COLOR_EFFECT -> camera.updateParams { colorEffect = config.colorEffectMode.toCamera1() }
+            CameraProperty.ANTIBANDING -> camera.updateParams { antibanding = config.antibandingMode.toCamera1() }
+            CameraProperty.WHITE_BALANCE -> camera.updateParams { whiteBalance = config.whiteBalanceMode.toCamera1() }
             CameraProperty.PICTURE_SIZE -> updatePictureSize(config.pictureSize, config.previewSize)
             CameraProperty.PREVIEW_SIZE -> updatePreviewSize(config.previewSize)
             CameraProperty.ZOOM -> camera.updateParams { zoom = zoomRatios.indexOf(config.zoom) }

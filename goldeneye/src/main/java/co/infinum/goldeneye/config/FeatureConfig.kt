@@ -1,5 +1,6 @@
 package co.infinum.goldeneye.config
 
+import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.models.*
 import co.infinum.goldeneye.utils.LogDelegate
 
@@ -14,17 +15,14 @@ interface FeatureConfig {
     var focusMode: FocusMode
     val supportedFocusModes: List<FocusMode>
 
-    var whiteBalance: WhiteBalance
-    val supportedWhiteBalance: List<WhiteBalance>
+    var whiteBalanceMode: WhiteBalanceMode
+    val supportedWhiteBalanceModes: List<WhiteBalanceMode>
 
-    var sceneMode: SceneMode
-    val supportedSceneModes: List<SceneMode>
+    var colorEffectMode: ColorEffectMode
+    val supportedColorEffectModes: List<ColorEffectMode>
 
-    var colorEffect: ColorEffect
-    val supportedColorEffects: List<ColorEffect>
-
-    var antibanding: Antibanding
-    val supportedAntibanding: List<Antibanding>
+    var antibandingMode: AntibandingMode
+    val supportedAntibandingModes: List<AntibandingMode>
 
     var jpegQuality: Int
 }
@@ -91,15 +89,15 @@ internal abstract class BaseFeatureConfig<T>(
             }
         }
 
-    override var whiteBalance = WhiteBalance.UNKNOWN
+    override var whiteBalanceMode = WhiteBalanceMode.UNKNOWN
         get() = when {
-            field != WhiteBalance.UNKNOWN -> field
-            supportedWhiteBalance.contains(WhiteBalance.AUTO) -> WhiteBalance.AUTO
-            supportedWhiteBalance.contains(WhiteBalance.OFF) -> WhiteBalance.OFF
-            else -> WhiteBalance.UNKNOWN
+            field != WhiteBalanceMode.UNKNOWN -> field
+            supportedWhiteBalanceModes.contains(WhiteBalanceMode.AUTO) -> WhiteBalanceMode.AUTO
+            supportedWhiteBalanceModes.contains(WhiteBalanceMode.OFF) -> WhiteBalanceMode.OFF
+            else -> WhiteBalanceMode.UNKNOWN
         }
         set(value) {
-            if (supportedWhiteBalance.contains(value)) {
+            if (supportedWhiteBalanceModes.contains(value)) {
                 field = value
                 onUpdateCallback(CameraProperty.WHITE_BALANCE)
             } else {
@@ -107,30 +105,14 @@ internal abstract class BaseFeatureConfig<T>(
             }
         }
 
-    override var sceneMode = SceneMode.UNKNOWN
+    override var colorEffectMode = ColorEffectMode.UNKNOWN
         get() = when {
-            field != SceneMode.UNKNOWN -> field
-            supportedSceneModes.contains(SceneMode.AUTO) -> SceneMode.AUTO
-            supportedSceneModes.contains(SceneMode.OFF) -> SceneMode.OFF
-            else -> SceneMode.UNKNOWN
+            field != ColorEffectMode.UNKNOWN -> field
+            supportedColorEffectModes.contains(ColorEffectMode.NONE) -> ColorEffectMode.NONE
+            else -> ColorEffectMode.UNKNOWN
         }
         set(value) {
-            if (supportedSceneModes.contains(value)) {
-                field = value
-                onUpdateCallback(CameraProperty.SCENE_MODE)
-            } else {
-                LogDelegate.log("Unsupported SceneMode [$value]")
-            }
-        }
-
-    override var colorEffect = ColorEffect.UNKNOWN
-        get() = when {
-            field != ColorEffect.UNKNOWN -> field
-            supportedColorEffects.contains(ColorEffect.NONE) -> ColorEffect.NONE
-            else -> ColorEffect.UNKNOWN
-        }
-        set(value) {
-            if (supportedColorEffects.contains(value)) {
+            if (supportedColorEffectModes.contains(value)) {
                 field = value
                 onUpdateCallback(CameraProperty.COLOR_EFFECT)
             } else {
@@ -138,15 +120,15 @@ internal abstract class BaseFeatureConfig<T>(
             }
         }
 
-    override var antibanding = Antibanding.UNKNOWN
+    override var antibandingMode = AntibandingMode.UNKNOWN
         get() = when {
-            field != Antibanding.UNKNOWN -> field
-            supportedAntibanding.contains(Antibanding.AUTO) -> Antibanding.AUTO
-            supportedAntibanding.contains(Antibanding.OFF) -> Antibanding.OFF
-            else -> Antibanding.UNKNOWN
+            field != AntibandingMode.UNKNOWN -> field
+            supportedAntibandingModes.contains(AntibandingMode.AUTO) -> AntibandingMode.AUTO
+            supportedAntibandingModes.contains(AntibandingMode.OFF) -> AntibandingMode.OFF
+            else -> AntibandingMode.UNKNOWN
         }
         set(value) {
-            if (supportedAntibanding.contains(value)) {
+            if (supportedAntibandingModes.contains(value)) {
                 field = value
                 onUpdateCallback(CameraProperty.ANTIBANDING)
             } else {

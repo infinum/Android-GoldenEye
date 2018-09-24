@@ -3,8 +3,8 @@
 package co.infinum.goldeneye.recorders
 
 import android.app.Activity
+import android.graphics.Bitmap
 import android.hardware.Camera
-import android.text.AndroidCharacter.mirror
 import co.infinum.goldeneye.PictureCallback
 import co.infinum.goldeneye.PictureConversionException
 import co.infinum.goldeneye.config.CameraConfig
@@ -17,38 +17,52 @@ internal class PictureRecorder(
     private val config: CameraConfig
 ) {
 
+    private var pictureCallback: PictureCallback? = null
+
+    private val onShutter: () -> Unit = { pictureCallback?.onShutter() }
+
+    private val convertBitmapTask: (ByteArray) -> Bitmap? =
+        {
+            val bitmap = it.toBitmap()
+            bitmap?.applyMatrix {
+                reverseCameraRotation(
+                    activity = activity,
+                    info = config,
+                    cx = bitmap.width / 2f,
+                    cy = bitmap.height / 2f
+                )
+                if (config.facing == Facing.FRONT) {
+                    mirror()
+                }
+            }
+        }
+
+    private val onResult: (Bitmap?) -> Unit = {
+        if (it != null) {
+            pictureCallback?.onPictureTaken(it)
+        } else {
+            pictureCallback?.onError(PictureConversionException)
+        }
+    }
+
     fun takePicture(callback: PictureCallback) {
+        this.pictureCallback = callback
         try {
-            val shutterCallback = Camera.ShutterCallback { callback.onShutter() }
-            val pictureCallback = Camera.PictureCallback { data, _ ->
+            val cameraShutterCallback = Camera.ShutterCallback { onShutter() }
+            val cameraPictureCallback = Camera.PictureCallback { data, _ ->
                 async(
-                    task = {
-                        val bitmap = data.toBitmap()
-                        bitmap?.applyMatrix {
-                            reverseCameraRotation(
-                                activity = activity,
-                                info = config,
-                                cx = bitmap.width / 2f,
-                                cy = bitmap.height / 2f
-                            )
-                            if (config.facing == Facing.FRONT) {
-                                mirror()
-                            }
-                        }
-                    },
-                    onResult = {
-                        if (it != null) {
-                            callback.onPictureTaken(it)
-                        } else {
-                            callback.onError(PictureConversionException)
-                        }
-                    }
+                    task = { convertBitmapTask(data) },
+                    onResult = { onResult(it) }
                 )
             }
 
-            camera.takePicture(shutterCallback, null, pictureCallback)
+            camera.takePicture(cameraShutterCallback, null, cameraPictureCallback)
         } catch (t: Throwable) {
             callback.onError(t)
         }
+    }
+
+    fun release() {
+        this.pictureCallback = null
     }
 }

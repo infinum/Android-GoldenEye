@@ -8,6 +8,7 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import android.view.Surface
 import android.view.TextureView
+import co.infinum.goldeneye.CameraConfigurationFailedException
 import co.infinum.goldeneye.VideoCallback
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.applyConfig
@@ -42,12 +43,12 @@ internal class VideoSession(
                 session?.setRepeatingRequest(sessionBuilder?.build(), null, AsyncUtils.backgroundHandler)
                 mediaRecorder?.start()
             } catch (t: Throwable) {
-                LogDelegate.log(t)
+                callback?.onError(t)
             }
         }
 
         override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-            LogDelegate.log("Session configuration failed.")
+            callback?.onError(CameraConfigurationFailedException)
         }
     }
 
@@ -57,7 +58,7 @@ internal class VideoSession(
         try {
             createSession(textureView)
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            callback.onError(t)
         }
     }
 

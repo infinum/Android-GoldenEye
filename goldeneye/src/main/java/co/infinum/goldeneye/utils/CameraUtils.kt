@@ -60,7 +60,18 @@ internal object CameraUtils {
         /* scaleX and scaleY are used to reverse the process and scale is used to scale image according to PreviewScale */
         val (scaleX, scaleY, scale) = calculateScale(activity, textureView, config)
 
-        matrix.setScale(1 / scaleX * scale, 1 / scaleY * scale, textureView.width / 2f, textureView.height / 2f)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getDeviceOrientation(activity) % 180 != 0) {
+            matrix.postScale(
+                textureView.height / textureView.width.toFloat() / scaleY * scale,
+                textureView.width / textureView.height.toFloat() / scaleX * scale,
+                textureView.width / 2f,
+                textureView.height / 2f
+            )
+            matrix.postRotate(-config.orientation.toFloat(), textureView.width / 2f, textureView.height / 2f)
+        } else {
+            matrix.postScale(1 / scaleX * scale, 1 / scaleY * scale, textureView.width / 2f, textureView.height / 2f)
+        }
+
         return matrix
     }
 

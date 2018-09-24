@@ -8,7 +8,7 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.IllegalEnumException
 
-enum class ColorEffect {
+enum class ColorEffectMode {
     NONE,
     MONO,
     NEGATIVE,

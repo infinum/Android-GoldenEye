@@ -29,25 +29,42 @@ internal fun CaptureRequest.Builder?.applyConfig(config: CameraConfig?) {
         return
     }
 
-    set(CaptureRequest.CONTROL_AF_MODE, config.focusMode.toCamera2())
-    set(CaptureRequest.CONTROL_EFFECT_MODE, config.colorEffect.toCamera2())
-    set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, config.antibanding.toCamera2())
-    set(CaptureRequest.CONTROL_SCENE_MODE, config.sceneMode.toCamera2())
-    set(CaptureRequest.CONTROL_AWB_MODE, config.whiteBalance.toCamera2())
-    set(
-        CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-        if (config.videoStabilizationEnabled) {
-            CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON
-        } else {
-            CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF
+    with(config) {
+        if (supportedFocusModes.contains(focusMode)) {
+            set(CaptureRequest.CONTROL_AF_MODE, focusMode.toCamera2())
         }
-    )
 
-    if (config.flashMode == FlashMode.TORCH) {
-        set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
-        set(CaptureRequest.FLASH_MODE, config.flashMode.toCamera2())
-    } else {
-        set(CaptureRequest.CONTROL_AE_MODE, config.flashMode.toCamera2())
-        set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+        if (supportedColorEffectModes.contains(colorEffectMode)) {
+            set(CaptureRequest.CONTROL_EFFECT_MODE, colorEffectMode.toCamera2())
+        }
+
+        if (supportedAntibandingModes.contains(antibandingMode)) {
+            set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, antibandingMode.toCamera2())
+        }
+
+        if (supportedWhiteBalanceModes.contains(whiteBalanceMode)) {
+            set(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode.toCamera2())
+        }
+
+        if (videoStabilizationEnabled) {
+            set(
+                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                if (videoStabilizationEnabled) {
+                    CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON
+                } else {
+                    CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF
+                }
+            )
+        }
+
+        if (supportedFlashModes.contains(flashMode)) {
+            if (flashMode == FlashMode.TORCH) {
+                set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
+                set(CaptureRequest.FLASH_MODE, flashMode.toCamera2())
+            } else {
+                set(CaptureRequest.CONTROL_AE_MODE, flashMode.toCamera2())
+                set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+            }
+        }
     }
 }

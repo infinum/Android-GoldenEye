@@ -34,15 +34,6 @@ internal abstract class BaseVideoConfig<T>(
             }
         }
 
-    override val supportedVideoQualities: List<VideoQuality>
-        get() =
-            if (id.toIntOrNull() != null) {
-                VideoQuality.values()
-                    .filter { CamcorderProfile.hasProfile(id.toInt(), it.key) && it != VideoQuality.UNKNOWN }
-            } else {
-                listOf()
-            }
-
     override var videoStabilizationEnabled = false
         get() = isVideoStabilizationSupported && field
         set(value) {

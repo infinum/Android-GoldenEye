@@ -138,7 +138,7 @@ internal class GoldenEye2Impl(
             activity = activity,
             textureView = textureView,
             sessionsManager = sessionsSyncManager,
-            config = config
+            config = _config
         )
     }
 
@@ -258,11 +258,12 @@ internal class GoldenEye2Impl(
                 override val facing = facing
                 override val bestResolution = bestResolution
             }
+            val videoConfig = VideoConfigImpl(id, onConfigUpdateListener)
             val cameraConfig = Camera2ConfigImpl(
                 cameraInfo = cameraInfo,
-                videoConfig = VideoConfigImpl(id, onConfigUpdateListener),
+                videoConfig = videoConfig,
                 featureConfig = FeatureConfigImpl(onConfigUpdateListener),
-                sizeConfig = SizeConfigImpl(onConfigUpdateListener),
+                sizeConfig = SizeConfigImpl(cameraInfo, videoConfig, onConfigUpdateListener),
                 zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
             )
             cameraConfig.characteristics = info

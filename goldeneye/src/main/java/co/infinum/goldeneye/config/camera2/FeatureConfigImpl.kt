@@ -4,9 +4,7 @@ import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.config.BaseFeatureConfig
-import co.infinum.goldeneye.config.FeatureConfig
 import co.infinum.goldeneye.models.*
-import co.infinum.goldeneye.utils.LogDelegate
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class FeatureConfigImpl(
@@ -36,27 +34,21 @@ internal class FeatureConfigImpl(
             ?.filter { it != FocusMode.UNKNOWN }
             ?: emptyList()
 
-    override val supportedWhiteBalance: List<WhiteBalance>
+    override val supportedWhiteBalanceModes: List<WhiteBalanceMode>
         get() = characteristics?.get(CameraCharacteristics.CONTROL_AWB_AVAILABLE_MODES)
-            ?.map { WhiteBalance.fromCamera2(it) }
-            ?.filter { it != WhiteBalance.UNKNOWN }
+            ?.map { WhiteBalanceMode.fromCamera2(it) }
+            ?.filter { it != WhiteBalanceMode.UNKNOWN }
             ?: emptyList()
 
-    override val supportedSceneModes: List<SceneMode>
-        get() = characteristics?.get(CameraCharacteristics.CONTROL_AVAILABLE_SCENE_MODES)
-            ?.map { SceneMode.fromCamera2(it) }
-            ?.filter { it != SceneMode.UNKNOWN }
-            ?: emptyList()
-
-    override val supportedColorEffects: List<ColorEffect>
+    override val supportedColorEffectModes: List<ColorEffectMode>
         get() = characteristics?.get(CameraCharacteristics.CONTROL_AVAILABLE_EFFECTS)
-            ?.map { ColorEffect.fromCamera2(it) }
-            ?.filter { it != ColorEffect.UNKNOWN }
+            ?.map { ColorEffectMode.fromCamera2(it) }
+            ?.filter { it != ColorEffectMode.UNKNOWN }
             ?: emptyList()
 
-    override val supportedAntibanding: List<Antibanding>
+    override val supportedAntibandingModes: List<AntibandingMode>
         get() = characteristics?.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_ANTIBANDING_MODES)
-            ?.map { Antibanding.fromCamera2(it) }
-            ?.filter { it != Antibanding.UNKNOWN }
+            ?.map { AntibandingMode.fromCamera2(it) }
+            ?.filter { it != AntibandingMode.UNKNOWN }
             ?: emptyList()
 }
