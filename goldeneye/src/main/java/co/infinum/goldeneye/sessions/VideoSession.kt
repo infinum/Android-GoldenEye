@@ -68,10 +68,9 @@ internal class VideoSession(
             ifNotNull(callback, file) { callback, file ->
                 callback.onVideoRecorded(file)
             }
+            mediaRecorder?.reset()
         } catch (t: Throwable) {
             callback?.onError(t)
-        } finally {
-            release()
         }
     }
 
@@ -92,8 +91,9 @@ internal class VideoSession(
     override fun release() {
         super.release()
         try {
-            mediaRecorder?.release()
             mediaSurface?.release()
+            mediaRecorder?.reset()
+            mediaRecorder?.release()
         } catch (t: Throwable) {
             LogDelegate.log(t)
         } finally {

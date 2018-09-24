@@ -14,7 +14,7 @@ import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class SessionsManager(
-    private val textureView: TextureView,
+    val textureView: TextureView,
     private val pictureSession: PictureSession,
     private val videoSession: VideoSession
 ) {
@@ -78,7 +78,7 @@ internal class SessionsManager(
     fun stopRecording() {
         videoSession.stopRecording()
         videoSession.release()
-        activeSession
+        activeSession = pictureSession
         pictureSession.createSession(textureView)
     }
 

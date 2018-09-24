@@ -2,6 +2,7 @@
 
 package co.infinum.goldeneye
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.Bitmap
 import android.hardware.Camera
@@ -10,6 +11,7 @@ import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.camera1.*
+import co.infinum.goldeneye.extensions.CameraApi
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
 import co.infinum.goldeneye.gesture.GestureManager
@@ -34,7 +36,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     private val onZoomChangedCallback: OnZoomChangedCallback? = null,
     private val onFocusChangedCallback: OnFocusChangedCallback? = null,
     logger: Logger? = null
-) : BaseGoldenEyeImpl() {
+) : BaseGoldenEyeImpl(CameraApi.VERSION_1) {
 
     private var camera: Camera? = null
     private var textureView: TextureView? = null
@@ -59,9 +61,8 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         Intrinsics.checkCameraPermission(activity)
         try {
-            release()
+            releaseInternal()
             state = CameraState.INITIALIZING
-            AsyncUtils.startBackgroundThread()
             _config = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_config)
             initGestureManager(camera, textureView)
@@ -70,7 +71,10 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             callback.onConfigReady()
             this.textureView = textureView
             textureView.onSurfaceUpdate(
-                onAvailable = { startPreview() },
+                onAvailable = {
+                    state = CameraState.READY
+                    startPreview()
+                },
                 onSizeChanged = { it.setTransform(CameraUtils.calculateTextureMatrix(activity, it, config)) }
             )
         } catch (t: Throwable) {
@@ -82,6 +86,11 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     }
 
     override fun release() {
+        AsyncUtils.stopBackgroundThread()
+        releaseInternal()
+    }
+
+    private fun releaseInternal() {
         state = CameraState.CLOSED
         try {
             camera?.stopPreview()
@@ -129,6 +138,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
         state = CameraState.RECORDING
         applyConfig()
+        textureView?.let { it.setTransform(CameraUtils.calculateTextureMatrix(activity, it, config)) }
         camera?.unlock()
         videoRecorder?.startRecording(file, object : VideoCallback {
             override fun onVideoRecorded(file: File) {
@@ -141,10 +151,10 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                 callback.onError(t)
             }
 
+            @SuppressLint("MissingPermission")
             private fun resetCameraPreview() {
-                camera?.reconnect()
-                state = CameraState.READY
-                startPreview()
+                state = CameraState.CLOSED
+                open(textureView!!, config, {}, {})
             }
         })
     }
@@ -212,11 +222,10 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                 camera.apply {
                     stopPreview()
                     setPreviewTexture(textureView.surfaceTexture)
-                    setDisplayOrientation(CameraUtils.calculateDisplayOrientation(activity, config))
                     applyConfig()
                     textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
+                    setDisplayOrientation(CameraUtils.calculateDisplayOrientation(activity, config))
                     startPreview()
-                    state = CameraState.READY
                 }
             }
         } catch (e: IOException) {

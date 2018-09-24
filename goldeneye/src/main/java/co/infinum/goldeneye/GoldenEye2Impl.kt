@@ -16,6 +16,8 @@ import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.camera2.*
+import co.infinum.goldeneye.extensions.CameraApi
+import co.infinum.goldeneye.extensions.MAIN_HANDLER
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
 import co.infinum.goldeneye.gesture.GestureManager
@@ -37,7 +39,7 @@ internal class GoldenEye2Impl(
     private val onZoomChangedCallback: OnZoomChangedCallback?,
     private val onFocusChangedCallback: OnFocusChangedCallback?,
     logger: Logger? = null
-) : BaseGoldenEyeImpl() {
+) : BaseGoldenEyeImpl(CameraApi.VERSION_2) {
 
     private val cameraManager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     private var cameraDevice: CameraDevice? = null
@@ -63,7 +65,7 @@ internal class GoldenEye2Impl(
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         Intrinsics.checkCameraPermission(activity)
         try {
-            release()
+            releaseInternal()
             when (state) {
                 CameraState.CLOSED, CameraState.READY -> openCamera(textureView, cameraInfo, callback)
                 CameraState.INITIALIZING -> lastCameraRequest = CameraRequest(cameraInfo, callback)
@@ -79,7 +81,6 @@ internal class GoldenEye2Impl(
     @SuppressLint("MissingPermission")
     private fun openCamera(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         state = CameraState.INITIALIZING
-        AsyncUtils.startBackgroundThread()
         cameraManager.openCamera(cameraInfo.id, object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice?) {
                 if (lastCameraRequest != null) {
@@ -91,14 +92,16 @@ internal class GoldenEye2Impl(
                     initSessions(camera, textureView, cameraInfo)
                     initGestureManager(textureView, sessionsManager)
                     initConfigUpdateHandler(sessionsManager, textureView)
-                    callback.onConfigReady()
-                    textureView.onSurfaceUpdate(
-                        onAvailable = { _ ->
-                            sessionsManager?.startPreview()
-                            state = CameraState.READY
-                        },
-                        onSizeChanged = { applyMatrixTransformation(it) }
-                    )
+                    MAIN_HANDLER.post {
+                        callback.onConfigReady()
+                        textureView.onSurfaceUpdate(
+                            onAvailable = { _ ->
+                                sessionsManager?.startPreview()
+                                state = CameraState.READY
+                            },
+                            onSizeChanged = { applyMatrixTransformation(it) }
+                        )
+                    }
                 } catch (t: Throwable) {
                     state = CameraState.CLOSED
                     callback.onError(t)
@@ -174,6 +177,11 @@ internal class GoldenEye2Impl(
     }
 
     override fun release() {
+        AsyncUtils.stopBackgroundThread()
+        releaseInternal()
+    }
+
+    private fun releaseInternal() {
         state = CameraState.CLOSED
         try {
             sessionsManager?.release()
@@ -183,7 +191,6 @@ internal class GoldenEye2Impl(
         } finally {
             cameraDevice = null
             sessionsManager = null
-            AsyncUtils.stopBackgroundThread()
         }
     }
 

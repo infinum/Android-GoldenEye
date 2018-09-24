@@ -5,12 +5,22 @@ import android.graphics.Bitmap
 import android.support.annotation.RequiresPermission
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraInfo
+import co.infinum.goldeneye.extensions.CameraApi
 import co.infinum.goldeneye.models.CameraState
+import co.infinum.goldeneye.utils.AsyncUtils
 import java.io.File
 
-internal abstract class BaseGoldenEyeImpl : GoldenEye {
+internal abstract class BaseGoldenEyeImpl(
+    version: CameraApi
+) : GoldenEye {
     companion object {
+        lateinit var version: CameraApi
         var state = CameraState.CLOSED
+    }
+
+    init {
+        BaseGoldenEyeImpl.version = version
+        AsyncUtils.startBackgroundThread()
     }
 
     @RequiresPermission(Manifest.permission.CAMERA)

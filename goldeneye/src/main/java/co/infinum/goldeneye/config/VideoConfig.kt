@@ -1,6 +1,5 @@
 package co.infinum.goldeneye.config
 
-import android.media.CamcorderProfile
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.VideoQuality
 import co.infinum.goldeneye.utils.LogDelegate
@@ -22,6 +21,9 @@ internal abstract class BaseVideoConfig<T>(
     override var videoQuality = VideoQuality.UNKNOWN
         get() = when {
             field != VideoQuality.UNKNOWN -> field
+            supportedVideoQualities.contains(VideoQuality.RESOLUTION_2160P) -> VideoQuality.RESOLUTION_2160P
+            supportedVideoQualities.contains(VideoQuality.RESOLUTION_1080P) -> VideoQuality.RESOLUTION_1080P
+            supportedVideoQualities.contains(VideoQuality.RESOLUTION_720P) -> VideoQuality.RESOLUTION_720P
             supportedVideoQualities.contains(VideoQuality.HIGH) -> VideoQuality.HIGH
             supportedVideoQualities.contains(VideoQuality.LOW) -> VideoQuality.LOW
             else -> VideoQuality.UNKNOWN

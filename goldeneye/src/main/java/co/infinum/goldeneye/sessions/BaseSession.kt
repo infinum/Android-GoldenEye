@@ -8,6 +8,7 @@ import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.support.annotation.CallSuper
 import android.support.annotation.RequiresApi
+import android.system.Os.close
 import android.view.Surface
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
@@ -57,12 +58,12 @@ internal abstract class BaseSession(
     @CallSuper
     open fun release() {
         try {
+            surface?.release()
             session?.apply {
                 stopRepeating()
                 abortCaptures()
                 close()
             }
-            surface?.release()
         } catch (t: Throwable) {
             LogDelegate.log(t)
         } finally {

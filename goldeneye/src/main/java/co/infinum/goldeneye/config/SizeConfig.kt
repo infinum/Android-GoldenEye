@@ -70,10 +70,7 @@ internal abstract class BaseSizeConfig<T>(
         get() {
             return if (cameraInfo.id.toIntOrNull() != null) {
                 val profile = CamcorderProfile.get(cameraInfo.id.toInt(), videoConfig.videoQuality.key)
-                Size(
-                    if (cameraInfo.orientation % 180 == 0) profile.videoFrameWidth else profile.videoFrameHeight,
-                    if (cameraInfo.orientation % 180 == 0) profile.videoFrameHeight else profile.videoFrameWidth
-                )
+                Size(profile.videoFrameWidth, profile.videoFrameHeight)
             } else {
                 Size.UNKNOWN
             }

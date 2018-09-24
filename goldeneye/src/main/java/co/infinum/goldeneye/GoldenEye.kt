@@ -2,8 +2,11 @@ package co.infinum.goldeneye
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Point
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
 import android.os.Build
 import android.support.annotation.RequiresPermission
 import android.view.TextureView
@@ -60,7 +63,20 @@ interface GoldenEye {
         fun setOnFocusChangedCallback(callback: OnFocusChangedCallback) = apply { this.onFocusChangedCallback = callback }
 
         fun build(): GoldenEye {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                return GoldenEye1Impl(activity, onZoomChangedCallback, onFocusChangedCallback, logger)
+            }
+
+            val useCamera2Api = try {
+                val cameraManager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                val info = cameraManager.getCameraCharacteristics(cameraManager.cameraIdList.first())
+                val hardwareLevel = info.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL)
+                hardwareLevel != CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+            } catch (t: Throwable) {
+                false
+            }
+
+            return if (useCamera2Api) {
                 GoldenEye2Impl(activity, onZoomChangedCallback, onFocusChangedCallback, logger)
             } else {
                 GoldenEye1Impl(activity, onZoomChangedCallback, onFocusChangedCallback, logger)

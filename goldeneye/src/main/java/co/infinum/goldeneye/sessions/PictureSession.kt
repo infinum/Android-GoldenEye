@@ -169,14 +169,15 @@ internal class PictureSession(
     }
 
     override fun release() {
-        super.release()
         try {
             imageReader?.close()
         } catch (t: Throwable) {
             LogDelegate.log(t)
         } finally {
+            surface = null
             callback = null
             imageReader = null
         }
+        super.release()
     }
 }
