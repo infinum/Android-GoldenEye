@@ -10,18 +10,23 @@ import android.view.TextureView
 import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.PictureCallback
 import co.infinum.goldeneye.PictureConversionException
+import co.infinum.goldeneye.PictureTransformation
 import co.infinum.goldeneye.config.CameraConfig
-import co.infinum.goldeneye.extensions.*
+import co.infinum.goldeneye.extensions.applyConfig
+import co.infinum.goldeneye.extensions.async
+import co.infinum.goldeneye.extensions.copyParamsFrom
+import co.infinum.goldeneye.extensions.toBitmap
 import co.infinum.goldeneye.models.CameraState
-import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.utils.AsyncUtils
+import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class PictureSession(
     activity: Activity,
     cameraDevice: CameraDevice,
-    config: CameraConfig
+    config: CameraConfig,
+    private val pictureTransformation: PictureTransformation
 ) : BaseSession(activity, cameraDevice, config) {
 
     private var imageReader: ImageReader? = null
@@ -132,16 +137,11 @@ internal class PictureSession(
                     val image = reader.acquireLatestImage()
                     val bitmap = image.toBitmap()
                     image.close()
-                    bitmap?.applyMatrix {
-                        reverseCameraRotation(
-                            activity = activity,
-                            info = config,
-                            cx = bitmap.width / 2f,
-                            cy = bitmap.height / 2f
-                        )
-                        if (config.facing == Facing.FRONT) {
-                            mirror()
-                        }
+                    if (bitmap != null) {
+                        val orientationDifference = CameraUtils.calculateDisplayOrientation(activity, config).toFloat()
+                        pictureTransformation.transform(bitmap, config, orientationDifference)
+                    } else {
+                        null
                     }
                 },
                 onResult = {

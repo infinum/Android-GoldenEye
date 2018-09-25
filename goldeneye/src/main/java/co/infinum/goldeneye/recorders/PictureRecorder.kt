@@ -7,35 +7,32 @@ import android.graphics.Bitmap
 import android.hardware.Camera
 import co.infinum.goldeneye.PictureCallback
 import co.infinum.goldeneye.PictureConversionException
+import co.infinum.goldeneye.PictureTransformation
 import co.infinum.goldeneye.config.CameraConfig
-import co.infinum.goldeneye.extensions.*
-import co.infinum.goldeneye.models.Facing
+import co.infinum.goldeneye.extensions.async
+import co.infinum.goldeneye.extensions.toBitmap
+import co.infinum.goldeneye.utils.CameraUtils
 
 internal class PictureRecorder(
     private val activity: Activity,
     private val camera: Camera,
-    private val config: CameraConfig
+    private val config: CameraConfig,
+    private val pictureTransformation: PictureTransformation
 ) {
 
     private var pictureCallback: PictureCallback? = null
 
     private val onShutter: () -> Unit = { pictureCallback?.onShutter() }
 
-    private val convertBitmapTask: (ByteArray) -> Bitmap? =
-        {
-            val bitmap = it.toBitmap()
-            bitmap?.applyMatrix {
-                reverseCameraRotation(
-                    activity = activity,
-                    info = config,
-                    cx = bitmap.width / 2f,
-                    cy = bitmap.height / 2f
-                )
-                if (config.facing == Facing.FRONT) {
-                    mirror()
-                }
-            }
+    private val transformBitmapTask: (ByteArray) -> Bitmap? = {
+        val bitmap = it.toBitmap()
+        if (bitmap != null) {
+            val orientationDifference = CameraUtils.calculateDisplayOrientation(activity, config).toFloat()
+            pictureTransformation.transform(bitmap, config, orientationDifference)
+        } else {
+            null
         }
+    }
 
     private val onResult: (Bitmap?) -> Unit = {
         if (it != null) {
@@ -51,7 +48,7 @@ internal class PictureRecorder(
             val cameraShutterCallback = Camera.ShutterCallback { onShutter() }
             val cameraPictureCallback = Camera.PictureCallback { data, _ ->
                 async(
-                    task = { convertBitmapTask(data) },
+                    task = { transformBitmapTask(data) },
                     onResult = { onResult(it) }
                 )
             }

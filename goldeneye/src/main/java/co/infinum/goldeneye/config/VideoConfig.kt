@@ -12,7 +12,6 @@ interface VideoConfig {
 }
 
 internal abstract class BaseVideoConfig<T>(
-    private val id: String,
     private val onUpdateCallback: (CameraProperty) -> Unit
 ) : VideoConfig {
 

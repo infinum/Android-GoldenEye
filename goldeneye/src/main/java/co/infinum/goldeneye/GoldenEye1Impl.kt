@@ -20,7 +20,6 @@ import co.infinum.goldeneye.gesture.camera1.FocusHandlerImpl
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.CameraState
 import co.infinum.goldeneye.models.Facing
-import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.recorders.PictureRecorder
 import co.infinum.goldeneye.recorders.VideoRecorder
 import co.infinum.goldeneye.utils.AsyncUtils
@@ -35,6 +34,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     private val activity: Activity,
     private val onZoomChangedCallback: OnZoomChangedCallback? = null,
     private val onFocusChangedCallback: OnFocusChangedCallback? = null,
+    private val pictureTransformation: PictureTransformation,
     logger: Logger? = null
 ) : BaseGoldenEyeImpl(CameraApi.VERSION_1) {
 
@@ -204,7 +204,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         if (camera == null) throw CameraFailedToOpenException
 
         this.videoRecorder = VideoRecorder(activity, camera, _config)
-        this.pictureRecorder = PictureRecorder(activity, camera, _config)
+        this.pictureRecorder = PictureRecorder(activity, camera, _config, pictureTransformation)
     }
 
     @Throws(Throwable::class)
@@ -286,7 +286,6 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                 override val id = id.toString()
                 override val orientation = info.orientation
                 override val facing = facing
-                override val bestResolution = Size.UNKNOWN
             }
 
             val videoConfig = VideoConfigImpl(id.toString(), onConfigUpdateListener)

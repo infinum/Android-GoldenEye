@@ -7,5 +7,4 @@ interface CameraInfo {
     val id: String
     val orientation: Int
     val facing: Facing
-    val bestResolution: Size
 }

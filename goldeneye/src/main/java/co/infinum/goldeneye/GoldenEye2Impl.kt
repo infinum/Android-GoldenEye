@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
@@ -38,6 +37,7 @@ internal class GoldenEye2Impl(
     private val activity: Activity,
     private val onZoomChangedCallback: OnZoomChangedCallback?,
     private val onFocusChangedCallback: OnFocusChangedCallback?,
+    private val pictureTransformation: PictureTransformation,
     logger: Logger? = null
 ) : BaseGoldenEyeImpl(CameraApi.VERSION_2) {
 
@@ -152,7 +152,7 @@ internal class GoldenEye2Impl(
         this.cameraDevice = camera
         this._config = _availableCameras.first { it.id == cameraInfo.id }
         this._config.characteristics = cameraManager.getCameraCharacteristics(cameraDevice?.id)
-        val pictureSession = PictureSession(activity, camera, config)
+        val pictureSession = PictureSession(activity, camera, config, pictureTransformation)
         val videoSession = VideoSession(activity, camera, config)
         this.sessionsManager = SessionsManager(textureView, pictureSession, videoSession)
     }
@@ -253,17 +253,11 @@ internal class GoldenEye2Impl(
             val orientation = info[CameraCharacteristics.SENSOR_ORIENTATION]
             val facing =
                 if (info[CameraCharacteristics.LENS_FACING] == CameraCharacteristics.LENS_FACING_FRONT) Facing.FRONT else Facing.BACK
-            val bestResolution = info[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.getOutputSizes(ImageFormat.JPEG)
-                ?.map { it.toInternalSize() }
-                ?.sorted()
-                ?.firstOrNull()
-                ?: Size.UNKNOWN
 
             val cameraInfo = object : CameraInfo {
                 override val id = id
                 override val orientation = orientation
                 override val facing = facing
-                override val bestResolution = bestResolution
             }
             val videoConfig = VideoConfigImpl(id, onConfigUpdateListener)
             val cameraConfig = Camera2ConfigImpl(
@@ -273,6 +267,7 @@ internal class GoldenEye2Impl(
                 sizeConfig = SizeConfigImpl(cameraInfo, videoConfig, onConfigUpdateListener),
                 zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
             )
+            CameraCharacteristics.LENS_INFO_HYPERFOCAL_DISTANCE
             cameraConfig.characteristics = info
             _availableCameras.add(cameraConfig)
         }
