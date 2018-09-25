@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.app.ActivityCompat
@@ -26,13 +25,14 @@ import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.models.PreviewScale
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
+import kotlin.math.max
 
 @SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     lateinit var goldenEye: GoldenEye
-    lateinit var videoFile: File
+    private lateinit var videoFile: File
     private var isRecording = false
     private var settingsAdapter = SettingsAdapter(listOf())
 
@@ -42,6 +42,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onError(t: Throwable) {
+            toast("Init error - check log")
+            t.printStackTrace()
+        }
+    }
+
+    private val logger = object : Logger {
+        override fun log(message: String) {
+            Log.e("GoldenEye", message)
+        }
+
+        override fun log(t: Throwable) {
+            toast("GoldenEye error - check log")
             t.printStackTrace()
         }
     }
@@ -51,15 +63,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         goldenEye = GoldenEye.Builder(this)
-            .setLogger(object : Logger {
-                override fun log(message: String) {
-                    Log.e("GoldenEye", message)
-                }
-
-                override fun log(t: Throwable) {
-                    t.printStackTrace()
-                }
-            })
+            .setLogger(logger)
             .setOnZoomChangedCallback { zoomView.text = "Zoom: ${it.toPercentage()}" }
             .build()
         videoFile = File.createTempFile("vid", "")
@@ -76,16 +80,23 @@ class MainActivity : AppCompatActivity() {
         takePictureView.setOnClickListener { _ ->
             goldenEye.takePicture(
                 onPictureTaken = { bitmap ->
-                    previewPictureView.apply {
-                        setImageBitmap(bitmap)
-                        visibility = View.VISIBLE
+                    if (bitmap.width <= 4096 && bitmap.height <= 4096) {
+                        previewPictureView.apply {
+                            setImageBitmap(bitmap)
+                            visibility = View.VISIBLE
+                        }
+                        mainHandler.postDelayed(
+                            { previewPictureView.visibility = View.GONE },
+                            3_000
+                        )
+                    } else {
+                        toast("Bitmap too large to show in ImageView. Max is 4096x4096.")
                     }
-                    mainHandler.postDelayed(
-                        { previewPictureView.visibility = View.GONE },
-                        3_000
-                    )
                 },
-                onError = { it.printStackTrace() }
+                onError = {
+                    toast("TakePicture error - check log")
+                    it.printStackTrace()
+                }
             )
         }
 
@@ -120,7 +131,7 @@ class MainActivity : AppCompatActivity() {
         goldenEye.startRecording(
             file = videoFile,
             onVideoRecorded = {
-                previewVideoView.visibility = View.VISIBLE
+                previewVideoContainer.visibility = View.VISIBLE
                 if (previewVideoView.isAvailable) {
                     startVideo()
                 } else {
@@ -135,7 +146,10 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             },
-            onError = { it.printStackTrace() }
+            onError = {
+                toast("Recording error - check log")
+                it.printStackTrace()
+            }
         )
     }
 
@@ -180,11 +194,18 @@ class MainActivity : AppCompatActivity() {
         with(goldenEye.config) {
             val settingsItems = listOf(
                 SettingsItem("Preview size:", previewSize.convertToString()) {
-                    displayDialog(
-                        title = "Preview size",
-                        listItems = supportedPreviewSizes.map { ListItem(it, it.convertToString()) },
-                        onClick = { previewSize = it }
-                    )
+                    if (previewScale == PreviewScale.MANUAL
+                        || previewScale == PreviewScale.MANUAL_FIT
+                        || previewScale == PreviewScale.MANUAL_FILL
+                    ) {
+                        displayDialog(
+                            title = "Preview size",
+                            listItems = supportedPreviewSizes.map { ListItem(it, it.convertToString()) },
+                            onClick = { previewSize = it }
+                        )
+                    } else {
+                        toast("Preview scale is automatic so it picks preview size on its own.")
+                    }
                 },
                 SettingsItem("Picture size:", pictureSize.convertToString()) {
                     displayDialog(
@@ -208,11 +229,15 @@ class MainActivity : AppCompatActivity() {
                     )
                 },
                 SettingsItem("Video stabilization:", videoStabilizationEnabled.convertToString()) {
-                    displayDialog(
-                        title = "Video stabilization",
-                        listItems = boolList(),
-                        onClick = { videoStabilizationEnabled = it }
-                    )
+                    if (isVideoStabilizationSupported) {
+                        displayDialog(
+                            title = "Video stabilization",
+                            listItems = boolList(),
+                            onClick = { videoStabilizationEnabled = it }
+                        )
+                    } else {
+                        toast("Video stabilization not supported")
+                    }
                 },
                 SettingsItem("Flash mode:", flashMode.convertToString()) {
                     displayDialog(
@@ -250,40 +275,56 @@ class MainActivity : AppCompatActivity() {
                     )
                 },
                 SettingsItem("Tap to focus:", tapToFocusEnabled.convertToString()) {
-                    displayDialog(
-                        title = "Tap to focus",
-                        listItems = boolList(),
-                        onClick = { tapToFocusEnabled = it }
-                    )
+                    if (isTapToFocusSupported) {
+                        displayDialog(
+                            title = "Tap to focus",
+                            listItems = boolList(),
+                            onClick = { tapToFocusEnabled = it }
+                        )
+                    } else {
+                        toast("Tap to focus not supported.")
+                    }
                 },
                 SettingsItem("Tap to focus - reset focus delay:", resetFocusDelay.toString()) {
-                    displayDialog(
-                        title = "Reset delay",
-                        listItems = listOf(
-                            ListItem(2_500L, "2500"),
-                            ListItem(5_000L, "5000"),
-                            ListItem(7_500L, "7500")
-                        ),
-                        onClick = { resetFocusDelay = it }
-                    )
+                    if (isTapToFocusSupported) {
+                        displayDialog(
+                            title = "Reset delay",
+                            listItems = listOf(
+                                ListItem(2_500L, "2500"),
+                                ListItem(5_000L, "5000"),
+                                ListItem(7_500L, "7500")
+                            ),
+                            onClick = { resetFocusDelay = it }
+                        )
+                    } else {
+                        toast("Tap to focus not supported.")
+                    }
                 },
                 SettingsItem("Pinch to zoom:", pinchToZoomEnabled.convertToString()) {
-                    displayDialog(
-                        title = "Pinch to zoom",
-                        listItems = boolList(),
-                        onClick = { pinchToZoomEnabled = it }
-                    )
+                    if (isZoomSupported) {
+                        displayDialog(
+                            title = "Pinch to zoom",
+                            listItems = boolList(),
+                            onClick = { pinchToZoomEnabled = it }
+                        )
+                    } else {
+                        toast("Pinch to zoom not supported.")
+                    }
                 },
                 SettingsItem("Pinch to zoom friction:", "%.02f".format(pinchToZoomFriction)) {
-                    displayDialog(
-                        title = "Friction",
-                        listItems = listOf(
-                            ListItem(0.5f, "0.50"),
-                            ListItem(1f, "1.00"),
-                            ListItem(2f, "2.00")
-                        ),
-                        onClick = { pinchToZoomFriction = it }
-                    )
+                    if (isZoomSupported) {
+                        displayDialog(
+                            title = "Friction",
+                            listItems = listOf(
+                                ListItem(0.5f, "0.50"),
+                                ListItem(1f, "1.00"),
+                                ListItem(2f, "2.00")
+                            ),
+                            onClick = { pinchToZoomFriction = it }
+                        )
+                    } else {
+                        toast("Pinch to zoom not supported.")
+                    }
                 }
             )
             settingsAdapter.updateDataSet(settingsItems)
@@ -296,9 +337,21 @@ class MainActivity : AppCompatActivity() {
             setDataSource(videoFile.absolutePath)
             setOnCompletionListener {
                 mainHandler.postDelayed({
-                    previewVideoView.visibility = View.GONE
+                    previewVideoContainer.visibility = View.GONE
                     release()
                 }, 3000)
+            }
+            setOnVideoSizeChangedListener { _, width, height ->
+                previewVideoView.apply {
+                    layoutParams = layoutParams.apply {
+                        val scaleX = previewVideoContainer.width / width.toFloat()
+                        val scaleY = previewVideoContainer.height / height.toFloat()
+                        val scale = max(scaleX, scaleY)
+
+                        this.width = (width * scale).toInt()
+                        this.height = (height * scale).toInt()
+                    }
+                }
             }
             prepare()
             start()
@@ -306,6 +359,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun <T> displayDialog(title: String, listItems: List<ListItem<T>>, onClick: (T) -> Unit) {
+        if (listItems.isEmpty()) {
+            toast("$title not supported")
+            return
+        }
+
         val dialog = AlertDialog.Builder(this)
             .setView(R.layout.list)
             .setCancelable(true)

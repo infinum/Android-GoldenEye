@@ -15,16 +15,18 @@ internal class ZoomConfigImpl(
     override var zoom = 100
         set(value) {
             if (isZoomSupported) {
-                field = characteristics?.zoomRatios?.minBy { abs(it - value) } ?: 100
+                field = characteristics.zoomRatios?.minBy { abs(it - value) } ?: 100
                 onUpdateCallback(CameraProperty.ZOOM)
             } else {
                 LogDelegate.log("Unsupported ZoomLevel [$value]")
             }
         }
 
-    override val maxZoom
-        get() = characteristics?.zoomRatios?.getOrNull(characteristics?.maxZoom ?: -1) ?: 100
+    override val maxZoom by lazy {
+        characteristics.zoomRatios?.getOrNull(characteristics.maxZoom) ?: 100
+    }
 
-    override val isZoomSupported
-        get() = characteristics?.isZoomSupported == true
+    override val isZoomSupported by lazy {
+        characteristics.isZoomSupported
+    }
 }

@@ -1,5 +1,7 @@
 package co.infinum.goldeneye.config
 
+import co.infinum.goldeneye.IllegalCharacteristicsException
+
 interface CameraConfig :
     CameraInfo,
     VideoConfig,
@@ -7,7 +9,7 @@ interface CameraConfig :
     SizeConfig,
     ZoomConfig
 
-internal abstract class CameraConfigImpl<T>(
+internal abstract class CameraConfigImpl<T : Any>(
     var cameraInfo: CameraInfo,
     var videoConfig: BaseVideoConfig<T>,
     var featureConfig: BaseFeatureConfig<T>,
@@ -22,10 +24,14 @@ internal abstract class CameraConfigImpl<T>(
 
     var characteristics: T? = null
         set(value) {
-        field = value
-            sizeConfig.characteristics = value
-            videoConfig.characteristics = value
-            featureConfig.characteristics = value
-            zoomConfig.characteristics = value
-    }
+            field = value
+            if (value != null) {
+                sizeConfig.characteristics = value
+                videoConfig.characteristics = value
+                featureConfig.characteristics = value
+                zoomConfig.characteristics = value
+            } else {
+                throw IllegalCharacteristicsException
+            }
+        }
 }

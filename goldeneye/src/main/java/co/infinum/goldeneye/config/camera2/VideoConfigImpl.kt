@@ -17,15 +17,16 @@ internal class VideoConfigImpl(
     onUpdateCallback: (CameraProperty) -> Unit
 ) : BaseVideoConfig<CameraCharacteristics>(onUpdateCallback) {
 
-    override val isVideoStabilizationSupported: Boolean
-        get() = supportedVideoStabilizationModes.size > 1
+    override val isVideoStabilizationSupported: Boolean by lazy {
+        supportedVideoStabilizationModes.size > 1
+    }
 
-    private val supportedVideoStabilizationModes: List<Int>
-        get() = characteristics?.get(CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)?.toList() ?: emptyList()
+    private val supportedVideoStabilizationModes: List<Int> by lazy {
+        characteristics.get(CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)?.toList() ?: emptyList()
+    }
 
-    override val supportedVideoQualities: List<VideoQuality>
-        get() {
-            val id = this.id.toIntOrNull() ?: return emptyList()
-            return VideoQuality.values().filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
-        }
+    override val supportedVideoQualities: List<VideoQuality> by lazy {
+        val id = this.id.toIntOrNull() ?: return@lazy emptyList<VideoQuality>()
+        VideoQuality.values().filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
+    }
 }

@@ -25,18 +25,20 @@ internal class SizeConfigImpl(
     onUpdateCallback: (CameraProperty) -> Unit
 ) : BaseSizeConfig<CameraCharacteristics>(cameraInfo, videoConfig, onUpdateCallback) {
 
-    override val supportedPreviewSizes
-        get() = characteristics?.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+    override val supportedPreviewSizes by lazy {
+        characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
             ?.getOutputSizes(SurfaceTexture::class.java)
             ?.map { it.toInternalSize() }
             ?.filter { it.isOver1080p().not() }
             ?.sorted()
             ?: emptyList()
+    }
 
-    override val supportedPictureSizes
-        get() = characteristics?.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+    override val supportedPictureSizes by lazy {
+        characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
             ?.getOutputSizes(ImageFormat.JPEG)
             ?.map { it.toInternalSize() }
             ?.sorted()
             ?: emptyList()
+    }
 }

@@ -21,13 +21,13 @@ interface SizeConfig {
     var previewScale: PreviewScale
 }
 
-internal abstract class BaseSizeConfig<T>(
+internal abstract class BaseSizeConfig<T: Any>(
     private val cameraInfo: CameraInfo,
     private val videoConfig: VideoConfig,
     private val onUpdateCallback: (CameraProperty) -> Unit
 ) : SizeConfig {
 
-    var characteristics: T? = null
+    lateinit var characteristics: T
 
     override var previewSize = Size.UNKNOWN
         get() = when (previewScale) {

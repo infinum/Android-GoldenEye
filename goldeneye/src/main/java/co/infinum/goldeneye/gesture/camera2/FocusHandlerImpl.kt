@@ -12,6 +12,8 @@ import co.infinum.goldeneye.gesture.FocusHandler
 import co.infinum.goldeneye.models.FocusMode
 import co.infinum.goldeneye.sessions.SessionsManager
 import co.infinum.goldeneye.utils.CameraUtils
+import co.infinum.goldeneye.utils.LogDelegate
+import kotlin.system.measureTimeMillis
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class FocusHandlerImpl(

@@ -64,6 +64,7 @@ internal class GoldenEye2Impl(
     @RequiresPermission(Manifest.permission.CAMERA)
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         Intrinsics.checkCameraPermission(activity)
+        AsyncUtils.startBackgroundThread()
         try {
             releaseInternal()
             when (state) {
@@ -177,8 +178,8 @@ internal class GoldenEye2Impl(
     }
 
     override fun release() {
-        AsyncUtils.stopBackgroundThread()
         releaseInternal()
+        AsyncUtils.stopBackgroundThread()
     }
 
     private fun releaseInternal() {

@@ -9,7 +9,6 @@ import android.support.annotation.RequiresApi
 import android.view.TextureView
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.FlashMode
-import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.sessions.SessionsManager
 import co.infinum.goldeneye.utils.CameraUtils
 

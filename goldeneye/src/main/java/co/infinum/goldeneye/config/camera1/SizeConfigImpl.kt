@@ -20,9 +20,11 @@ internal class SizeConfigImpl(
     onUpdateCallback: (CameraProperty) -> Unit
 ) : BaseSizeConfig<Camera.Parameters>(cameraInfo, videoConfig, onUpdateCallback) {
 
-    override val supportedPreviewSizes
-        get() = characteristics?.supportedPreviewSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
+    override val supportedPreviewSizes: List<Size> by lazy {
+        characteristics.supportedPreviewSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
+    }
 
-    override val supportedPictureSizes
-        get() = characteristics?.supportedPictureSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
+    override val supportedPictureSizes: List<Size> by lazy {
+        characteristics.supportedPictureSizes?.map { it.toInternalSize() }?.sorted() ?: emptyList()
+    }
 }

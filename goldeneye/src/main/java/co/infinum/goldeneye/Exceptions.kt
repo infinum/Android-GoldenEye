@@ -9,4 +9,5 @@ object IllegalEnumException: Exception("Trying to convert illegal enum to Camera
 object ThreadNotStartedException: Exception("Trying to fetch [backgroundHandler] but background Thread is not started.")
 object CameraConfigurationFailedException: Exception("For some unknown reason, camera configuration failed.")
 object ExternalVideoRecordingNotSupportedException: Exception("GoldenEye does not support video recording for external cameras.")
+object IllegalCharacteristicsException: Exception("Camera Characteristics are [NULL]")
 class CameraNotReadyException: Exception("Camera is currently not ready. State = [${BaseGoldenEyeImpl.state}]")

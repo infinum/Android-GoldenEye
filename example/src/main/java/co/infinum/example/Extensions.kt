@@ -1,5 +1,8 @@
 package co.infinum.example
 
+import android.app.Activity
+import android.content.Context
+import android.widget.Toast
 import co.infinum.goldeneye.models.*
 
 fun FocusMode.convertToString() = name.toLowerCase()
@@ -18,3 +21,5 @@ fun boolList() = listOf(
     ListItem(true, "Enabled"),
     ListItem(false, "Disabled")
 )
+
+fun Context.toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()

@@ -27,11 +27,11 @@ interface FeatureConfig {
     var jpegQuality: Int
 }
 
-internal abstract class BaseFeatureConfig<T>(
+internal abstract class BaseFeatureConfig<T: Any>(
     private val onUpdateCallback: (CameraProperty) -> Unit
 ) : FeatureConfig {
 
-    var characteristics: T? = null
+    lateinit var characteristics: T
 
     override var tapToFocusEnabled = true
         get() = field && isTapToFocusSupported

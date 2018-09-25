@@ -20,7 +20,6 @@ internal abstract class BaseGoldenEyeImpl(
 
     init {
         BaseGoldenEyeImpl.version = version
-        AsyncUtils.startBackgroundThread()
     }
 
     @RequiresPermission(Manifest.permission.CAMERA)

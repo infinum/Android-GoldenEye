@@ -95,13 +95,20 @@
         android:focusableInTouchMode="true"
         android:visibility="gone"/>
 
-    <TextureView
-        android:id="@+id/previewVideoView"
+    <FrameLayout
+        android:id="@+id/previewVideoContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clickable="true"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:visibility="gone"/>
+        android:background="#000"
+        android:visibility="gone">
 
+        <TextureView
+            android:id="@+id/previewVideoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true"/>
+
+    </FrameLayout>
 </FrameLayout>

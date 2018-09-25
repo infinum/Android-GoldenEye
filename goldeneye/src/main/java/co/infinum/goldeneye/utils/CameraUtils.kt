@@ -19,6 +19,7 @@ import co.infinum.goldeneye.extensions.isNotMeasured
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.PreviewScale
 import co.infinum.goldeneye.models.Size
+import co.infinum.goldeneye.utils.CameraUtils.calculateDisplayOrientation
 import kotlin.math.max
 import kotlin.math.min
 
@@ -69,7 +70,11 @@ internal object CameraUtils {
                 textureView.width / 2f,
                 textureView.height / 2f
             )
-            matrix.postRotate(-config.orientation.toFloat(), textureView.width / 2f, textureView.height / 2f)
+            matrix.postRotate(
+                calculateDisplayOrientation(activity, config).toFloat() - config.orientation,
+                textureView.width / 2f,
+                textureView.height / 2f
+            )
         } else {
             matrix.postScale(1 / scaleX * scale, 1 / scaleY * scale, textureView.width / 2f, textureView.height / 2f)
         }
@@ -85,7 +90,6 @@ internal object CameraUtils {
         x: Float,
         y: Float
     ): Array<MeteringRectangle> {
-
         val rect = calculateFocusRect(activity, textureView, config, x, y)
         return arrayOf(MeteringRectangle(rect, MeteringRectangle.METERING_WEIGHT_MAX - 1))
     }
@@ -128,7 +132,7 @@ internal object CameraUtils {
     }
 
     fun findBestMatchingSize(referenceSize: Size, availableSizes: List<Size>): Size =
-        availableSizes.find { it.aspectRatio == referenceSize.aspectRatio } ?: (availableSizes.getOrNull(0) ?: Size.UNKNOWN)
+        availableSizes.find { it.aspectRatio == referenceSize.aspectRatio } ?: availableSizes.getOrNull(0) ?: Size.UNKNOWN
 
     private fun touchNotInPreview(
         rotatedTextureViewX: Int,
@@ -169,6 +173,7 @@ internal object CameraUtils {
                 PreviewScale.AUTO_FIT -> min(scaleX, scaleY)
                 PreviewScale.MANUAL -> 1f
             }
+
         return Triple(scaleX, scaleY, scale)
     }
 
@@ -191,26 +196,26 @@ internal object CameraUtils {
 
         val (_, _, scale) = calculateScale(activity, textureView, config)
         val displayOrientation = calculateDisplayOrientation(activity, config)
-
         val previewSize = config.previewSize
+        val textureViewSize = Size(textureView.width, textureView.height)
         /* Calculate real scaled preview size */
         val scaledPreviewX = previewSize.width * scale
         val scaledPreviewY = previewSize.height * scale
 
         /* Sync texture view orientation with camera orientation */
-        val rotatedTextureViewX = if (displayOrientation % 180 == 0) textureView.width else textureView.height
-        val rotatedTextureViewY = if (displayOrientation % 180 == 0) textureView.height else textureView.width
+        val rotatedTextureViewX = if (displayOrientation % 180 == 0) textureViewSize.width else textureViewSize.height
+        val rotatedTextureViewY = if (displayOrientation % 180 == 0) textureViewSize.height else textureViewSize.width
 
         /* Convert texture view x,y into camera x,y */
         val rotatedX = when (displayOrientation) {
             90 -> y
-            180 -> textureView.width - x
-            270 -> textureView.height - y
+            180 -> textureViewSize.width - x
+            270 -> textureViewSize.height - y
             else -> x
         }
         val rotatedY = when (displayOrientation) {
-            90 -> textureView.width - x
-            180 -> textureView.height - y
+            90 -> textureViewSize.width - x
+            180 -> textureViewSize.height - y
             270 -> x
             else -> y
         }

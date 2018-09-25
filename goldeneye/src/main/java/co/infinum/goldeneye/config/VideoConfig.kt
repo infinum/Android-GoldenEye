@@ -11,11 +11,11 @@ interface VideoConfig {
     val isVideoStabilizationSupported: Boolean
 }
 
-internal abstract class BaseVideoConfig<T>(
+internal abstract class BaseVideoConfig<T: Any>(
     private val onUpdateCallback: (CameraProperty) -> Unit
 ) : VideoConfig {
 
-    var characteristics: T? = null
+    lateinit var characteristics: T
 
     override var videoQuality = VideoQuality.UNKNOWN
         get() = when {

@@ -11,11 +11,11 @@ interface ZoomConfig {
     var pinchToZoomFriction: Float
 }
 
-internal abstract class BaseZoomConfig<T>(
+internal abstract class BaseZoomConfig<T: Any>(
     protected val onUpdateCallback: (CameraProperty) -> Unit
 ) : ZoomConfig {
 
-    var characteristics: T? = null
+    lateinit var characteristics: T
 
     override var pinchToZoomEnabled = true
         get() = field && isZoomSupported

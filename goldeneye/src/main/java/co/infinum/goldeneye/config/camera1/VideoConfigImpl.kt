@@ -14,15 +14,14 @@ internal class VideoConfigImpl(
     onUpdateCallback: (CameraProperty) -> Unit
 ) : BaseVideoConfig<Camera.Parameters>(onUpdateCallback) {
 
-    override val isVideoStabilizationSupported: Boolean
-        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
-            && characteristics?.isVideoStabilizationSupported == true
+    override val isVideoStabilizationSupported: Boolean by lazy {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1 && characteristics.isVideoStabilizationSupported
+    }
 
-    override val supportedVideoQualities: List<VideoQuality>
-        get() {
-            val id = id.toIntOrNull() ?: return emptyList()
-            return VideoQuality.values()
-                .filter { it.isCamera2Required().not() }
-                .filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
-        }
+    override val supportedVideoQualities: List<VideoQuality> by lazy {
+        val id = id.toIntOrNull() ?: return@lazy emptyList<VideoQuality>()
+        VideoQuality.values()
+            .filter { it.isCamera2Required().not() }
+            .filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
+    }
 }

@@ -22,9 +22,11 @@ internal class ZoomConfigImpl(
             }
         }
 
-    override val maxZoom: Int
-        get() = ((characteristics?.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) ?: 1f) * 100).toInt()
+    override val maxZoom: Int by lazy {
+        ((characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) ?: 1f) * 100).toInt()
+    }
 
-    override val isZoomSupported: Boolean
-        get() = maxZoom != 100
+    override val isZoomSupported: Boolean by lazy {
+        maxZoom != 100
+    }
 }

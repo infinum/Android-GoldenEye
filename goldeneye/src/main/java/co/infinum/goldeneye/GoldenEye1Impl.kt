@@ -60,6 +60,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         Intrinsics.checkCameraPermission(activity)
+        AsyncUtils.startBackgroundThread()
         try {
             releaseInternal()
             state = CameraState.INITIALIZING
@@ -86,8 +87,8 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     }
 
     override fun release() {
-        AsyncUtils.stopBackgroundThread()
         releaseInternal()
+        AsyncUtils.stopBackgroundThread()
     }
 
     private fun releaseInternal() {
