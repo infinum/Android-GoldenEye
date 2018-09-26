@@ -12,6 +12,10 @@ import co.infinum.goldeneye.models.FocusMode
 import co.infinum.goldeneye.utils.LogDelegate
 import java.io.File
 
+/**
+ * Picture and Video session wrapper. Delegates calls to picture
+ * or video session depending on current camera state.
+ */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class SessionsManager(
     val textureView: TextureView,
@@ -21,6 +25,10 @@ internal class SessionsManager(
 
     private var activeSession: BaseSession = pictureSession
 
+    /**
+     * Update both session parameters and apply them only to currently
+     * active session.
+     */
     fun updateSession(update: CaptureRequest.Builder.() -> Unit) {
         pictureSession.updateRequest(update)
         videoSession.updateRequest(update)
@@ -32,6 +40,13 @@ internal class SessionsManager(
         }
     }
 
+    /**
+     * Restart session only if session is [PictureSession].
+     *
+     * This can happen if preview or picture size is updated.
+     * If Video session is active, we want to completely ignore
+     * that update and apply it only after recording is finished.
+     */
     fun restartSession() {
         try {
             if (activeSession is PictureSession) {
@@ -42,6 +57,9 @@ internal class SessionsManager(
         }
     }
 
+    /**
+     * Used to lock focus for tap to focus functionality.
+     */
     fun lockFocus(region: Array<MeteringRectangle>) {
         activeSession.cancelFocus()
 
@@ -52,6 +70,9 @@ internal class SessionsManager(
         }
     }
 
+    /**
+     * Used to unlock focus after tap to focus is finished.
+     */
     fun unlockFocus(focus: FocusMode) {
         updateSession {
             set(CaptureRequest.CONTROL_AF_MODE, focus.toCamera2())
@@ -83,6 +104,7 @@ internal class SessionsManager(
     }
 
     fun release() {
-        activeSession.release()
+        pictureSession.release()
+        videoSession.release()
     }
 }

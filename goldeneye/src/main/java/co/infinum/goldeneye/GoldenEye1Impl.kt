@@ -11,7 +11,7 @@ import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.camera1.*
-import co.infinum.goldeneye.extensions.CameraApi
+import co.infinum.goldeneye.models.CameraApi
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
 import co.infinum.goldeneye.gesture.GestureManager

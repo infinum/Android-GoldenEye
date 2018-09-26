@@ -7,10 +7,7 @@ import android.media.ImageReader
 import android.os.Build
 import android.support.annotation.RequiresApi
 import android.view.TextureView
-import co.infinum.goldeneye.BaseGoldenEyeImpl
-import co.infinum.goldeneye.PictureCallback
-import co.infinum.goldeneye.PictureConversionException
-import co.infinum.goldeneye.PictureTransformation
+import co.infinum.goldeneye.*
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.applyConfig
 import co.infinum.goldeneye.extensions.async
@@ -21,6 +18,31 @@ import co.infinum.goldeneye.utils.AsyncUtils
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
 
+/**
+ * Class handles Preview and Picture capturing session.
+ *
+ * When preview session is created, [imageReader] is initialized which is later
+ * used to capture picture. Session properties can be updated dynamically
+ * except preview and picture size. If any of those is updated, session
+ * must be recreated.
+ *
+ * Steps to take picture are:
+ * 1) Lock focus and trigger AF and AE with
+ * [CaptureRequest.CONTROL_AF_TRIGGER_START], [CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START]
+ *
+ * 2) As soon as AF and AE is triggered, flags must be reset
+ *
+ * 3) After first callback is received in [captureCallback], repeat capture request until
+ * AF and AE are both ready. Once they are ready, trigger picture capture.
+ *
+ * 4) To capture picture create new request. New request MUST contain [imageReader] surface!
+ * After capture is successful, [imageReader] will receive callback. Fetch bitmap from the
+ * callback and voila.
+ *
+ * 5) Restart preview session
+ *
+ * @see ImageReader
+ */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class PictureSession(
     activity: Activity,
@@ -56,10 +78,13 @@ internal class PictureSession(
             val awbMode = result.get(CaptureResult.CONTROL_AWB_MODE)
             val awbState = result.get(CaptureResult.CONTROL_AWB_STATE)
 
+            /* Wait for all states to be ready, if they are not ready repeat basic capture while camera is preparing for capture */
             if (isExposureReady(aeMode, aeState) && isFocusReady(afMode, afState) && isAwbReady(awbMode, awbState)) {
+                /* Take picture */
                 locked = true
                 capture()
             } else {
+                /* Wait while camera is preparing */
                 session?.capture(sessionBuilder?.build(), this, AsyncUtils.backgroundHandler)
             }
         }
@@ -67,9 +92,14 @@ internal class PictureSession(
         private fun capture() {
             cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
                 copyParamsFrom(sessionBuilder)
+                /* Set picture quality */
+                set(CaptureRequest.JPEG_QUALITY, config.jpegQuality.toByte())
+                /* Add surface target that will receive capture */
                 addTarget(imageReader?.surface)
                 session?.apply {
+                    /* Freeze preview session */
                     stopRepeating()
+                    /* Take dat picture */
                     capture(build(), null, AsyncUtils.backgroundHandler)
                 }
             }
@@ -114,7 +144,7 @@ internal class PictureSession(
 
         override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
             BaseGoldenEyeImpl.state = CameraState.CLOSED
-            LogDelegate.log("Preview configuration failed.")
+            LogDelegate.log(CameraConfigurationFailedException)
         }
     }
 
@@ -160,15 +190,18 @@ internal class PictureSession(
     fun takePicture(callback: PictureCallback) {
         this.callback = callback
         sessionBuilder?.apply {
+            /* Trigger AF and AE */
             set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START)
             set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
             session?.capture(build(), captureCallback, AsyncUtils.backgroundHandler)
+            /* Immediately remove trigger flags to avoid recursive triggering */
             set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
             set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE)
         }
     }
 
     override fun release() {
+        super.release()
         try {
             imageReader?.close()
         } catch (t: Throwable) {
@@ -178,6 +211,5 @@ internal class PictureSession(
             callback = null
             imageReader = null
         }
-        super.release()
     }
 }

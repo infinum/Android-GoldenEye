@@ -1,4 +1,4 @@
-package co.infinum.goldeneye.extensions
+package co.infinum.goldeneye.models
 
 internal enum class CameraApi {
     VERSION_1,

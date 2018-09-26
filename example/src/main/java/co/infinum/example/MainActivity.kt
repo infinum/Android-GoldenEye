@@ -285,7 +285,7 @@ class MainActivity : AppCompatActivity() {
                         toast("Tap to focus not supported.")
                     }
                 },
-                SettingsItem("Tap to focus - reset focus delay:", resetFocusDelay.toString()) {
+                SettingsItem("Tap to focus - reset focus delay:", tapToFocusResetDelay.toString()) {
                     if (isTapToFocusSupported) {
                         displayDialog(
                             title = "Reset delay",
@@ -294,7 +294,7 @@ class MainActivity : AppCompatActivity() {
                                 ListItem(5_000L, "5000"),
                                 ListItem(7_500L, "7500")
                             ),
-                            onClick = { resetFocusDelay = it }
+                            onClick = { tapToFocusResetDelay = it }
                         )
                     } else {
                         toast("Tap to focus not supported.")

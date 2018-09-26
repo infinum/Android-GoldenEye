@@ -1,6 +1,5 @@
 package co.infinum.example
 
-import android.app.Activity
 import android.content.Context
 import android.widget.Toast
 import co.infinum.goldeneye.models.*
@@ -14,8 +13,6 @@ fun Int.toPercentage() = "%.02fx".format(this / 100f)
 fun Boolean.convertToString() = if (this) "Enabled" else "Disabled"
 fun AntibandingMode.convertToString() = name.toLowerCase()
 fun ColorEffectMode.convertToString() = name.toLowerCase()
-fun SceneMode.convertToString() = name.toLowerCase()
-fun Float.convertToString() = "%.02f".format(this)
 fun VideoQuality.convertToString() = name.toLowerCase()
 fun boolList() = listOf(
     ListItem(true, "Enabled"),

@@ -15,6 +15,7 @@ internal class ZoomConfigImpl(
     override var zoom = 100
         set(value) {
             if (isZoomSupported) {
+                /* Camera1 has random zoom ratios. Find zoom ratio that is closest to given value */
                 field = characteristics.zoomRatios?.minBy { abs(it - value) } ?: 100
                 onUpdateCallback(CameraProperty.ZOOM)
             } else {

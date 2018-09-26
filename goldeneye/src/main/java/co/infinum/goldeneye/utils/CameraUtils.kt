@@ -14,12 +14,12 @@ import android.view.TextureView
 import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
-import co.infinum.goldeneye.extensions.CameraApi
+import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
 import co.infinum.goldeneye.extensions.isNotMeasured
+import co.infinum.goldeneye.models.CameraApi
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.models.PreviewScale
 import co.infinum.goldeneye.models.Size
-import co.infinum.goldeneye.utils.CameraUtils.calculateDisplayOrientation
 import kotlin.math.max
 import kotlin.math.min
 
@@ -86,10 +86,11 @@ internal object CameraUtils {
     fun calculateCamera2FocusArea(
         activity: Activity,
         textureView: TextureView,
-        config: CameraConfig,
+        config: Camera2ConfigImpl,
         x: Float,
         y: Float
     ): Array<MeteringRectangle> {
+        //TODO scale to available array size rectdamn nigga
         val rect = calculateFocusRect(activity, textureView, config, x, y)
         return arrayOf(MeteringRectangle(rect, MeteringRectangle.METERING_WEIGHT_MAX - 1))
     }

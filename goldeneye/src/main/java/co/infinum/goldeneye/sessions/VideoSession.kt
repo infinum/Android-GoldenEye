@@ -19,6 +19,9 @@ import co.infinum.goldeneye.utils.AsyncUtils
 import co.infinum.goldeneye.utils.LogDelegate
 import java.io.File
 
+/**
+ * Class handles video recording session.
+ */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class VideoSession(
     activity: Activity,
@@ -35,11 +38,14 @@ internal class VideoSession(
         override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
             session = cameraCaptureSession
             try {
+                /* Create new recording request */
                 sessionBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD)?.apply {
                     applyConfig(config)
                     addTarget(surface)
+                    /* Important to add media recorder surface as output target */
                     addTarget(mediaSurface)
                 }
+                /* Start recording */
                 session?.setRepeatingRequest(sessionBuilder?.build(), null, AsyncUtils.backgroundHandler)
                 mediaRecorder?.start()
             } catch (t: Throwable) {
@@ -84,6 +90,10 @@ internal class VideoSession(
     override fun createSession(textureView: TextureView) {
         initTextureViewSurface(textureView)
         initMediaRecorder(file!!)
+        /*
+         * mediaRecorder.getSurface() returns new surface on every getter call.
+         * That is why it is a must to save it to a variable and reuse it.
+        */
         mediaSurface = mediaRecorder?.surface
         cameraDevice.createCaptureSession(listOf(surface, mediaSurface), stateCallback, AsyncUtils.backgroundHandler)
     }

@@ -11,6 +11,14 @@ import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.extensions.MAIN_HANDLER
 import co.infinum.goldeneye.models.CameraState
 
+/**
+ * Delegate class that encapsulates gesture handling - pinch to zoom and tap to focus.
+ *
+ * It detects those gestures and then dispatches event to [FocusHandler] or [ZoomHandler].
+ *
+ * @see ZoomHandler
+ * @see FocusHandler
+ */
 @SuppressLint("ClickableViewAccessibility")
 internal class GestureManager(
     activity: Activity,
@@ -34,6 +42,7 @@ internal class GestureManager(
 
     private val tapDetector = GestureDetector(activity, object : GestureDetector.SimpleOnGestureListener() {
         override fun onSingleTapUp(e: MotionEvent?): Boolean {
+            /* Tap to focus is disabled while video recording is in progress */
             if (e == null || BaseGoldenEyeImpl.state == CameraState.RECORDING) return false
             focusHandler.requestFocus(PointF(e.x, e.y))
             return true

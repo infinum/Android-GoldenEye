@@ -18,7 +18,3 @@ internal fun <T> async(task: () -> T?, onResult: (T?) -> Unit) {
         MAIN_HANDLER.post { onResult(result) }
     }
 }
-
-internal fun async(task: () -> Unit) {
-    AsyncUtils.backgroundHandler.post(task)
-}

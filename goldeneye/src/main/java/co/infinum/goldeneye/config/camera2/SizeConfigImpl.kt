@@ -29,6 +29,7 @@ internal class SizeConfigImpl(
         characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
             ?.getOutputSizes(SurfaceTexture::class.java)
             ?.map { it.toInternalSize() }
+            /* Preview sizes that are too big can crash the camera. Filter only 1080p and below to keep it in order. */
             ?.filter { it.isOver1080p().not() }
             ?.sorted()
             ?: emptyList()

@@ -1,33 +1,143 @@
 package co.infinum.goldeneye.config
 
-import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.models.*
 import co.infinum.goldeneye.utils.LogDelegate
 
 interface FeatureConfig {
-    var tapToFocusEnabled: Boolean
-    val isTapToFocusSupported: Boolean
-    var resetFocusDelay: Long
 
+    /**
+     * Returns current JPEG quality. The value must be Integer between 1 and 100 (inclusive).
+     * It is dynamically applied to Picture session when capture is triggered.
+     *
+     * Default value is 100.
+     */
+    var jpegQuality: Int
+
+    /**
+     * Tap to focus toggle. [co.infinum.goldeneye.OnFocusChangedCallback] is triggered
+     * every time focus change happens.
+     *
+     * If tap to focus is supported, default value is true, otherwise false.
+     *
+     * @see co.infinum.goldeneye.OnFocusChangedCallback
+     */
+    var tapToFocusEnabled: Boolean
+
+    /**
+     * Return whether Tap to focus is even supported for current camera.
+     *
+     * Some cameras do not support [FocusMode.AUTO], so tap to focus
+     * is not supported for those devices.
+     */
+    val isTapToFocusSupported: Boolean
+
+    /**
+     * While [FocusMode.CONTINUOUS_PICTURE] or [FocusMode.CONTINUOUS_VIDEO] is active, tap to focus
+     * must hijack its focus. After [tapToFocusResetDelay] milliseconds, Focus handling
+     * will be given back to Camera.
+     *
+     * Delay is measured in milliseconds!
+     *
+     * Default value is 7_500.
+     */
+    var tapToFocusResetDelay: Long
+
+    /**
+     * Returns currently active Flash mode.
+     * When new Flash mode is set, it is automatically updated on current camera.
+     *
+     * Default value is the first supported mode of [FlashMode.AUTO], [FlashMode.OFF].
+     * If none is supported [FlashMode.UNKNOWN] is used.
+     *
+     * @see FlashMode
+     */
     var flashMode: FlashMode
+
+    /**
+     * Returns list of available Flash modes. In case Flash is not supported,
+     * empty list will be returned.
+     *
+     * @see FlashMode
+     */
     val supportedFlashModes: List<FlashMode>
 
+    /**
+     * Returns currently active Focus mode.
+     * When new Focus mode is set, it is automatically updated on current camera.
+     *
+     * Default value is the first supported mode of [FocusMode.CONTINUOUS_PICTURE], [FocusMode.AUTO].
+     * If none is supported [FocusMode.UNKNOWN] is used.
+     *
+     * @see FocusMode
+     */
     var focusMode: FocusMode
+
+    /**
+     * Returns list of available Focus modes. In case Focus is not supported,
+     * empty list will be returned.
+     *
+     * @see FocusMode
+     */
     val supportedFocusModes: List<FocusMode>
 
+    /**
+     * Returns currently active White balance mode.
+     * When new White balance mode is set, it is automatically updated on current camera.
+     *
+     * Default value is the first supported mode of [WhiteBalanceMode.AUTO], [WhiteBalanceMode.OFF].
+     * If none is supported [WhiteBalanceMode.UNKNOWN] is used.
+     *
+     * @see WhiteBalanceMode
+     */
     var whiteBalanceMode: WhiteBalanceMode
+
+    /**
+     * Returns list of available White balance modes. In case White balance is not supported,
+     * empty list will be returned.
+     *
+     * @see WhiteBalanceMode
+     */
     val supportedWhiteBalanceModes: List<WhiteBalanceMode>
 
+    /**
+     * Returns currently active Color effect mode.
+     * When new Color effect mode is set, it is automatically updated on current camera.
+     *
+     * Default value is [ColorEffectMode.NONE] if supported, otherwise [ColorEffectMode.UNKNOWN].
+     *
+     * @see ColorEffectMode
+     */
     var colorEffectMode: ColorEffectMode
+
+    /**
+     * Returns list of available Color effect modes. In case Color effect is not supported,
+     * empty list will be returned.
+     *
+     * @see ColorEffectMode
+     */
     val supportedColorEffectModes: List<ColorEffectMode>
 
+    /**
+     * Returns currently active Antibanding mode.
+     * When new Antibanding mode is set, it is automatically updated on current camera.
+     *
+     * Default value is the first supported mode of [AntibandingMode.AUTO], [AntibandingMode.OFF].
+     * If none is supported [AntibandingMode.UNKNOWN] is used.
+     *
+     * @see AntibandingMode
+     */
     var antibandingMode: AntibandingMode
-    val supportedAntibandingModes: List<AntibandingMode>
 
-    var jpegQuality: Int
+    /**
+     * Returns list of available Antibanding modes. In case Antibanding is not supported,
+     * empty list will be returned.
+     *
+     * @see AntibandingMode
+     */
+    val supportedAntibandingModes: List<AntibandingMode>
 }
 
-internal abstract class BaseFeatureConfig<T: Any>(
+internal abstract class BaseFeatureConfig<T : Any>(
     private val onUpdateCallback: (CameraProperty) -> Unit
 ) : FeatureConfig {
 
@@ -43,7 +153,7 @@ internal abstract class BaseFeatureConfig<T: Any>(
             }
         }
 
-    override var resetFocusDelay = 7_500L
+    override var tapToFocusResetDelay = 7_500L
         set(value) {
             if (value > 0) {
                 field = value

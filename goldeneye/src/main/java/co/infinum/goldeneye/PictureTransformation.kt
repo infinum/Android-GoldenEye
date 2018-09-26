@@ -15,7 +15,7 @@ interface PictureTransformation {
             picture.applyMatrix {
                 val cx = picture.width / 2f
                 val cy = picture.height / 2f
-                val degrees = if (config.facing == Facing.BACK) orientationDifference else -orientationDifference
+                val degrees = if (config.facing == Facing.FRONT) -orientationDifference else orientationDifference
                 rotate(degrees, cx, cy)
                 if (config.facing == Facing.FRONT) {
                     mirror()

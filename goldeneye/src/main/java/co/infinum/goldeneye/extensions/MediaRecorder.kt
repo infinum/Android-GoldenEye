@@ -13,7 +13,7 @@ import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.utils.CameraUtils
 import java.io.File
 
-fun MediaRecorder.buildCamera1Instance(
+internal fun MediaRecorder.buildCamera1Instance(
     activity: Activity,
     camera: Camera,
     config: CameraConfig,
@@ -25,7 +25,7 @@ fun MediaRecorder.buildCamera1Instance(
 }
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-fun MediaRecorder.buildCamera2Instance(
+internal fun MediaRecorder.buildCamera2Instance(
     activity: Activity,
     config: CameraConfig,
     file: File
@@ -54,7 +54,7 @@ private fun MediaRecorder.buildInstance(activity: Activity, config: CameraConfig
 
     setOutputFile(file.absolutePath)
     val cameraOrientation = CameraUtils.calculateDisplayOrientation(activity, config)
-    setOrientationHint(if (config.facing == Facing.BACK) cameraOrientation else 360 - cameraOrientation)
+    setOrientationHint(if (config.facing == Facing.FRONT) 360 - cameraOrientation else cameraOrientation)
     prepare()
     return this
 }

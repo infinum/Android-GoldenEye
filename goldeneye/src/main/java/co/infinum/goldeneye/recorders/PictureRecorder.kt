@@ -13,6 +13,11 @@ import co.infinum.goldeneye.extensions.async
 import co.infinum.goldeneye.extensions.toBitmap
 import co.infinum.goldeneye.utils.CameraUtils
 
+/**
+ * Camera1 wrapper around picture taking logic. The only reason
+ * this is used is to not have this whole implementation inside
+ * [co.infinum.goldeneye.GoldenEye1Impl] class.
+ */
 internal class PictureRecorder(
     private val activity: Activity,
     private val camera: Camera,

@@ -12,6 +12,9 @@ import co.infinum.goldeneye.models.FlashMode
 import co.infinum.goldeneye.sessions.SessionsManager
 import co.infinum.goldeneye.utils.CameraUtils
 
+/**
+ * Handles property updates. Syncs CameraConfig with active Camera2 session.
+ */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class ConfigUpdateHandler(
     private val activity: Activity,
@@ -56,22 +59,37 @@ internal class ConfigUpdateHandler(
         }
     }
 
+    /**
+     * Update Camera2 zoom by measuring ZoomRect.
+     */
     private fun updateZoom(requestBuilder: CaptureRequest.Builder, zoom: Int) {
+        /* Get active Rect size. This corresponds to actual camera size seen by Camera2 API */
         val activeRect = config.characteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return
         val zoomPercentage = zoom / 100f
+
+        /* Measure actual zoomed width and zoomed height */
         val zoomedWidth = (activeRect.width() / zoomPercentage).toInt()
         val zoomedHeight = (activeRect.height() / zoomPercentage).toInt()
         val halfWidthDiff = (activeRect.width() - zoomedWidth) / 2
         val halfHeightDiff = (activeRect.height() - zoomedHeight) / 2
+
+        /* Create zoomed rect */
         val zoomedRect = Rect(
             activeRect.left + halfWidthDiff,
             activeRect.top + halfHeightDiff,
             activeRect.right - halfWidthDiff,
             activeRect.bottom - halfHeightDiff
         )
+
+        /* BAM */
         requestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomedRect)
     }
 
+    /**
+     * Update Flash mode. Edge case is if it is FlashMode.TORCH is applied.
+     * Flash mode is handled by AE_MODE except FlashMode.TORCH. If TORCH is
+     * set, make sure to disable AE_MODE, otherwise they clash.
+     */
     private fun updateFlashMode(requestBuilder: CaptureRequest.Builder, flashMode: FlashMode) {
         if (flashMode == FlashMode.TORCH) {
             requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)

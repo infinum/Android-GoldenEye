@@ -1,5 +1,6 @@
 package co.infinum.goldeneye.sessions
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
@@ -8,7 +9,6 @@ import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.support.annotation.CallSuper
 import android.support.annotation.RequiresApi
-import android.system.Os.close
 import android.view.Surface
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
@@ -29,6 +29,9 @@ internal abstract class BaseSession(
 
     abstract fun createSession(textureView: TextureView)
 
+    /**
+     * Apply config changes to [sessionBuilder].
+     */
     fun updateRequest(update: CaptureRequest.Builder.() -> Unit) {
         try {
             sessionBuilder?.apply(update)
@@ -37,6 +40,7 @@ internal abstract class BaseSession(
         }
     }
 
+    @SuppressLint("Recycle")
     protected fun initTextureViewSurface(textureView: TextureView) {
         textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
         val texture = textureView.surfaceTexture?.apply {
@@ -50,6 +54,11 @@ internal abstract class BaseSession(
         session?.setRepeatingRequest(sessionBuilder?.build(), null, AsyncUtils.backgroundHandler)
     }
 
+    /**
+     * Cancel existing focus with [CameraMetadata.CONTROL_AF_TRIGGER_CANCEL] flag.
+     *
+     * This method is used before locking focus with tap to focus functionality.
+     */
     fun cancelFocus() {
         sessionBuilder?.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
         session?.capture(sessionBuilder?.build(), null, AsyncUtils.backgroundHandler)

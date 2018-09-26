@@ -6,6 +6,9 @@ import android.os.HandlerThread
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.ThreadNotStartedException
 
+/**
+ * Background thread handler.
+ */
 @Suppress("ObjectPropertyName")
 internal object AsyncUtils {
 

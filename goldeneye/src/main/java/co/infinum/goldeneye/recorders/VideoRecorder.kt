@@ -19,6 +19,11 @@ import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
 import java.io.File
 
+/**
+ * Camera1 wrapper around video recording logic. The only reason
+ * this is used is to not have this whole implementation inside
+ * [co.infinum.goldeneye.GoldenEye1Impl] class.
+ */
 internal class VideoRecorder(
     private val activity: Activity,
     private val camera: Camera,

@@ -1,4 +1,4 @@
-@file:Suppress("DEPRECATION")
+@file:Suppress("DEPRECATION", "ConvertCallChainIntoSequence")
 
 package co.infinum.goldeneye.config.camera1
 

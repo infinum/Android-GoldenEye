@@ -11,9 +11,13 @@ import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.updateParams
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.CameraState
+import co.infinum.goldeneye.models.PreviewScale
 import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.utils.CameraUtils
 
+/**
+ * Handles property updates. Syncs CameraConfig with active Camera.
+ */
 internal class ConfigUpdateHandler(
     private val activity: Activity,
     private val camera: Camera,
@@ -38,7 +42,10 @@ internal class ConfigUpdateHandler(
 
     private fun updatePictureSize(pictureSize: Size, previewSize: Size) {
         camera.updateParams { setPictureSize(pictureSize.width, pictureSize.height) }
-        if (BaseGoldenEyeImpl.state != CameraState.RECORDING) {
+        if (
+            (config.previewScale == PreviewScale.AUTO_FILL || config.previewScale == PreviewScale.AUTO_FIT)
+            && BaseGoldenEyeImpl.state != CameraState.RECORDING
+        ) {
             updatePreviewSize(previewSize)
         }
     }

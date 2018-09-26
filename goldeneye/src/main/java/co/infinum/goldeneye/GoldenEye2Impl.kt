@@ -15,7 +15,6 @@ import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.camera2.*
-import co.infinum.goldeneye.extensions.CameraApi
 import co.infinum.goldeneye.extensions.MAIN_HANDLER
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
@@ -252,9 +251,11 @@ internal class GoldenEye2Impl(
         cameraManager.cameraIdList?.forEach { id ->
             val info = cameraManager.getCameraCharacteristics(id)
             val orientation = info[CameraCharacteristics.SENSOR_ORIENTATION]
-            val facing =
-                if (info[CameraCharacteristics.LENS_FACING] == CameraCharacteristics.LENS_FACING_FRONT) Facing.FRONT else Facing.BACK
-
+            val facing = when (info[CameraCharacteristics.LENS_FACING]) {
+                CameraCharacteristics.LENS_FACING_FRONT -> Facing.FRONT
+                CameraCharacteristics.LENS_FACING_EXTERNAL -> Facing.EXTERNAL
+                else -> Facing.BACK
+            }
             val cameraInfo = object : CameraInfo {
                 override val id = id
                 override val orientation = orientation

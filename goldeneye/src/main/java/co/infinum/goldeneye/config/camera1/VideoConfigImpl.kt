@@ -21,6 +21,7 @@ internal class VideoConfigImpl(
     override val supportedVideoQualities: List<VideoQuality> by lazy {
         val id = id.toIntOrNull() ?: return@lazy emptyList<VideoQuality>()
         VideoQuality.values()
+            /* This check is must have! Otherwise Camera1 would have false positive VideoQualities that crash the camera. */
             .filter { it.isCamera2Required().not() }
             .filter { CamcorderProfile.hasProfile(id, it.key) && it != VideoQuality.UNKNOWN }
     }

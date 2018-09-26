@@ -10,18 +10,45 @@ import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
 
 interface SizeConfig {
+
+    /**
+     * Returns currently active preview size. Preview size depends on current [previewScale].
+     * Preview size is not the size of the TextureView that is used for preview! Preview has
+     * its own size that is then scaled inside of the TextureView via Matrix.
+     *
+     * @see PreviewScale
+     */
     var previewSize: Size
+
+    /**
+     * List of supported preview sizes. Empty list is returned in case of error.
+     */
     val supportedPreviewSizes: List<Size>
 
+    /**
+     * Defines the size of taken picture.
+     *
+     * Returns currently active picture size.
+     */
     var pictureSize: Size
+
+    /**
+     * List of supported picture sizes. Empty list is returned in case of error.
+     */
     val supportedPictureSizes: List<Size>
 
+    /**
+     * Returns current video size defined by [VideoConfig.videoQuality].
+     */
     val videoSize: Size
 
+    /**
+     * @see PreviewScale
+     */
     var previewScale: PreviewScale
 }
 
-internal abstract class BaseSizeConfig<T: Any>(
+internal abstract class BaseSizeConfig<T : Any>(
     private val cameraInfo: CameraInfo,
     private val videoConfig: VideoConfig,
     private val onUpdateCallback: (CameraProperty) -> Unit

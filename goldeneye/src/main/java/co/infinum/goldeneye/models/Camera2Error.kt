@@ -2,6 +2,9 @@ package co.infinum.goldeneye.models
 
 import android.hardware.camera2.CameraDevice
 
+/**
+ * Camera2 error wrapper.
+ */
 enum class Camera2Error(
     val message: String
 ) {
