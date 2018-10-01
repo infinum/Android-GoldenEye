@@ -18,7 +18,7 @@ import co.infinum.goldeneye.utils.CameraUtils
 internal class FocusHandlerImpl(
     private val activity: Activity,
     private val textureView: TextureView,
-    private val config: CameraConfig,
+    private val config: Camera2ConfigImpl,
     private val sessionsManager: SessionsManager,
     private val onFocusChanged: (Point) -> Unit
 ) : FocusHandler {

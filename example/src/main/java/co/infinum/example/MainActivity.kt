@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.SurfaceTexture
+import android.media.Image
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
@@ -21,7 +22,9 @@ import android.view.View
 import co.infinum.goldeneye.GoldenEye
 import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.Logger
+import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
+import co.infinum.goldeneye.models.FlashMode
 import co.infinum.goldeneye.models.PreviewScale
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
@@ -36,9 +39,9 @@ class MainActivity : AppCompatActivity() {
     private var isRecording = false
     private var settingsAdapter = SettingsAdapter(listOf())
 
-    private val initCallback = object : InitCallback {
-        override fun onConfigReady() {
-            zoomView.text = "Zoom: ${goldenEye.config.zoom.toPercentage()}"
+    private val initCallback = object : InitCallback() {
+        override fun onReady(config: CameraConfig) {
+            zoomView.text = "Zoom: ${config.zoom.toPercentage()}"
         }
 
         override fun onError(t: Throwable) {

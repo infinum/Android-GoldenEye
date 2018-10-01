@@ -51,7 +51,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
     private lateinit var _config: Camera1ConfigImpl
     override val config: CameraConfig
-        get() = _config
+        get() = if (isConfigAvailable) _config else throw CameraConfigNotAvailableException
 
     init {
         LogDelegate.logger = logger
@@ -60,27 +60,24 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         Intrinsics.checkCameraPermission(activity)
+        state = CameraState.INITIALIZING
         AsyncUtils.startBackgroundThread()
         try {
             releaseInternal()
-            state = CameraState.INITIALIZING
             _config = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_config)
             initGestureManager(camera, textureView)
             initRecorders(camera)
             initConfigUpdateHandler(camera, textureView)
-            callback.onConfigReady()
+            state = CameraState.READY
+            callback.onReady(config)
             this.textureView = textureView
             textureView.onSurfaceUpdate(
-                onAvailable = {
-                    state = CameraState.READY
-                    startPreview()
-                },
+                onAvailable = { startPreview(callback) },
                 onSizeChanged = { it.setTransform(CameraUtils.calculateTextureMatrix(activity, it, config)) }
             )
         } catch (t: Throwable) {
-            state = CameraState.CLOSED
-            camera = null
+            releaseInternal()
             callback.onError(t)
         }
 
@@ -97,7 +94,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             camera?.stopPreview()
             camera?.release()
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            log(t)
         } finally {
             camera = null
             gestureHandler?.release()
@@ -110,7 +107,10 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     }
 
     override fun takePicture(callback: PictureCallback) {
-        if (state != CameraState.READY) return
+        if (state != CameraState.ACTIVE) {
+            callback.onError(CameraNotActiveException())
+            return
+        }
 
         state = CameraState.TAKING_PICTURE
         pictureRecorder?.takePicture(object : PictureCallback() {
@@ -125,19 +125,19 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             }
 
             private fun resetCameraPreview() {
-                state = CameraState.READY
+                state = CameraState.ACTIVE
                 camera?.startPreview()
             }
         })
     }
 
     override fun startRecording(file: File, callback: VideoCallback) {
-        if (state != CameraState.READY) {
-            callback.onError(CameraNotReadyException())
+        if (state != CameraState.ACTIVE) {
+            callback.onError(CameraNotActiveException())
             return
         }
 
-        state = CameraState.RECORDING
+        state = CameraState.RECORDING_VIDEO
         applyConfig()
         textureView?.let { it.setTransform(CameraUtils.calculateTextureMatrix(activity, it, config)) }
         camera?.unlock()
@@ -155,7 +155,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             @SuppressLint("MissingPermission")
             private fun resetCameraPreview() {
                 state = CameraState.CLOSED
-                open(textureView!!, config, {}, {})
+                open(textureView!!, config, onError = {})
             }
         })
     }
@@ -217,7 +217,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         }
     }
 
-    private fun startPreview() {
+    private fun startPreview(initCallback: InitCallback) {
         try {
             ifNotNull(camera, textureView) { camera, textureView ->
                 camera.apply {
@@ -228,6 +228,8 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                     setDisplayOrientation(CameraUtils.calculateDisplayOrientation(activity, config))
                     startPreview()
                 }
+                state = CameraState.ACTIVE
+                initCallback.onActive()
             }
         } catch (e: IOException) {
             state = CameraState.CLOSED
@@ -243,6 +245,8 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
                 val previewSize = config.previewSize
                 setPreviewSize(previewSize.width, previewSize.height)
+
+                jpegQuality = config.jpegQuality
 
                 if (config.isVideoStabilizationSupported
                     && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1

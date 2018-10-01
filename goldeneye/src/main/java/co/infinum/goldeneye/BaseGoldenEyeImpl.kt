@@ -4,6 +4,7 @@ import android.Manifest
 import android.graphics.Bitmap
 import android.support.annotation.RequiresPermission
 import android.view.TextureView
+import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.models.CameraApi
 import co.infinum.goldeneye.models.CameraState
@@ -21,11 +22,28 @@ internal abstract class BaseGoldenEyeImpl(
         BaseGoldenEyeImpl.version = version
     }
 
+    override val isConfigAvailable: Boolean
+        get() = when (state) {
+            CameraState.CLOSED,
+            CameraState.INITIALIZING -> false
+            CameraState.READY,
+            CameraState.ACTIVE,
+            CameraState.TAKING_PICTURE,
+            CameraState.RECORDING_VIDEO -> true
+        }
+
     @RequiresPermission(Manifest.permission.CAMERA)
-    override fun open(textureView: TextureView, cameraInfo: CameraInfo, onSuccess: () -> Unit, onError: (Throwable) -> Unit) {
-        open(textureView, cameraInfo, object : InitCallback {
-            override fun onConfigReady() {
-                onSuccess()
+    override fun open(textureView: TextureView, cameraInfo: CameraInfo,
+        onReady: ((CameraConfig) -> Unit)?, onActive: (() -> Unit)?, onError: (Throwable) -> Unit
+    ) {
+        open(textureView, cameraInfo, object : InitCallback() {
+
+            override fun onReady(config: CameraConfig) {
+                onReady?.invoke(config)
+            }
+
+            override fun onActive() {
+                onActive?.invoke()
             }
 
             override fun onError(t: Throwable) {

@@ -6,6 +6,7 @@ import android.hardware.camera2.params.MeteringRectangle
 import android.os.Build
 import android.support.annotation.RequiresApi
 import android.view.TextureView
+import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.PictureCallback
 import co.infinum.goldeneye.VideoCallback
 import co.infinum.goldeneye.models.FocusMode
@@ -81,9 +82,9 @@ internal class SessionsManager(
         }
     }
 
-    fun startPreview() {
+    fun startPreview(callback: InitCallback) {
         activeSession = pictureSession
-        pictureSession.createSession(textureView)
+        pictureSession.createInitialPreviewSession(textureView, callback)
     }
 
     fun takePicture(callback: PictureCallback) {

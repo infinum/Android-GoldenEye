@@ -44,7 +44,7 @@ internal class ConfigUpdateHandler(
         camera.updateParams { setPictureSize(pictureSize.width, pictureSize.height) }
         if (
             (config.previewScale == PreviewScale.AUTO_FILL || config.previewScale == PreviewScale.AUTO_FIT)
-            && BaseGoldenEyeImpl.state != CameraState.RECORDING
+            && BaseGoldenEyeImpl.state != CameraState.RECORDING_VIDEO
         ) {
             updatePreviewSize(previewSize)
         }

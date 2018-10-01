@@ -6,6 +6,8 @@ import android.app.Activity
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.hardware.Camera
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import android.os.Build
 import android.support.annotation.RequiresApi
@@ -44,11 +46,13 @@ internal object CameraUtils {
     /**
      * This is needed to transform Preview so that it is not distorted.
      *
-     * When camera is given a texture view, it will scale its preview to take full width and height
-     * of given texture view. So if you have Preview size of 50x50, and texture view of 100x200, it
-     * will automatically scale width 2x and height 4x. Different width and height scale will lead
-     * to distorted images. To fix this issue we have to calculate this automatic scaling and reverse
-     * the process.
+     * See pictures/ directory
+     * 1) Default behavior is that CameraPreview will scale to fill given View
+     * CameraPreview that is 100x100 will scale to 100x200 and that will lead to distorted image
+     *
+     * 2) We have to negate default scale behavior to get real preview size that is not distorted
+     *
+     * 3) Apply GoldenEye scale
      *
      * After we reverse the process, we can scale our preview however we want regarding to PreviewScale
      * of current config.
@@ -90,9 +94,19 @@ internal object CameraUtils {
         x: Float,
         y: Float
     ): Array<MeteringRectangle> {
-        //TODO scale to available array size rectdamn nigga
-        val rect = calculateFocusRect(activity, textureView, config, x, y)
-        return arrayOf(MeteringRectangle(rect, MeteringRectangle.METERING_WEIGHT_MAX - 1))
+        val rect = calculateFocusRect(activity, textureView, config, x, y) ?: return emptyArray()
+        /* Get active Rect size. This corresponds to actual camera size seen by Camera2 API */
+        val activeRect = config.characteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return emptyArray()
+        val scaleX = activeRect.width().toFloat() / config.previewSize.width
+        val scaleY = activeRect.height().toFloat() / config.previewSize.height
+        val meteringRect = Rect(
+            (activeRect.left + scaleX * rect.left).toInt(),
+            (activeRect.top + scaleY * rect.top).toInt(),
+            (activeRect.left + scaleX * rect.right).toInt(),
+            (activeRect.top + scaleY * rect.bottom).toInt()
+        )
+
+        return arrayOf(MeteringRectangle(meteringRect, MeteringRectangle.METERING_WEIGHT_MAX - 1))
     }
 
     /**

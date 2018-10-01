@@ -52,7 +52,8 @@ internal class PictureSession(
 ) : BaseSession(activity, cameraDevice, config) {
 
     private var imageReader: ImageReader? = null
-    private var callback: PictureCallback? = null
+    private var pictureCallback: PictureCallback? = null
+    private var initCallback: InitCallback? = null
     private var locked = false
 
     private val captureCallback = object : CameraCaptureSession.CaptureCallback() {
@@ -136,16 +137,25 @@ internal class PictureSession(
                     addTarget(surface)
                 }
                 startSession()
+                initCallback?.onActive()
+                initCallback = null
             } catch (t: Throwable) {
-                BaseGoldenEyeImpl.state = CameraState.CLOSED
                 LogDelegate.log(t)
+                initCallback?.onError(t)
+                initCallback = null
             }
         }
 
         override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-            BaseGoldenEyeImpl.state = CameraState.CLOSED
             LogDelegate.log(CameraConfigurationFailedException)
+            initCallback?.onError(CameraConfigurationFailedException)
+            initCallback = null
         }
+    }
+
+    fun createInitialPreviewSession(textureView: TextureView, callback: InitCallback) {
+        this.initCallback = callback
+        createSession(textureView)
     }
 
     override fun createSession(textureView: TextureView) {
@@ -154,8 +164,9 @@ internal class PictureSession(
             initImageReader()
             cameraDevice.createCaptureSession(listOf(surface, imageReader?.surface), stateCallback, AsyncUtils.backgroundHandler)
         } catch (t: Throwable) {
-            BaseGoldenEyeImpl.state = CameraState.CLOSED
             LogDelegate.log(t)
+            initCallback?.onError(t)
+            initCallback = null
         }
     }
 
@@ -178,9 +189,9 @@ internal class PictureSession(
                     locked = false
                     startSession()
                     if (it != null) {
-                        callback?.onPictureTaken(it)
+                        pictureCallback?.onPictureTaken(it)
                     } else {
-                        callback?.onError(PictureConversionException)
+                        pictureCallback?.onError(PictureConversionException)
                     }
                 }
             )
@@ -188,7 +199,7 @@ internal class PictureSession(
     }
 
     fun takePicture(callback: PictureCallback) {
-        this.callback = callback
+        this.pictureCallback = callback
         sessionBuilder?.apply {
             /* Trigger AF and AE */
             set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START)
@@ -208,7 +219,8 @@ internal class PictureSession(
             LogDelegate.log(t)
         } finally {
             surface = null
-            callback = null
+            pictureCallback = null
+            initCallback = null
             imageReader = null
         }
     }

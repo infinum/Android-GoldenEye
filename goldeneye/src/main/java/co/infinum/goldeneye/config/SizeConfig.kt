@@ -63,7 +63,7 @@ internal abstract class BaseSizeConfig<T : Any>(
             PreviewScale.MANUAL_FILL -> field
             PreviewScale.AUTO_FIT,
             PreviewScale.AUTO_FILL ->
-                if (BaseGoldenEyeImpl.state == CameraState.RECORDING) {
+                if (BaseGoldenEyeImpl.state == CameraState.RECORDING_VIDEO) {
                     CameraUtils.findBestMatchingSize(videoSize, supportedPreviewSizes)
                 } else {
                     CameraUtils.findBestMatchingSize(pictureSize, supportedPreviewSizes)

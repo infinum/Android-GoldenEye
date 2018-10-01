@@ -7,6 +7,9 @@ import co.infinum.goldeneye.extensions.mirror
 import co.infinum.goldeneye.extensions.rotate
 import co.infinum.goldeneye.models.Facing
 
+/**
+ *
+ */
 interface PictureTransformation {
     fun transform(picture: Bitmap, config: CameraConfig, orientationDifference: Float): Bitmap
 

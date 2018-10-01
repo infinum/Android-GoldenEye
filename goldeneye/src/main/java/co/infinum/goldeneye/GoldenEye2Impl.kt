@@ -16,7 +16,6 @@ import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.camera2.*
 import co.infinum.goldeneye.extensions.MAIN_HANDLER
-import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
 import co.infinum.goldeneye.gesture.GestureManager
 import co.infinum.goldeneye.gesture.ZoomHandlerImpl
@@ -53,7 +52,7 @@ internal class GoldenEye2Impl(
 
     private lateinit var _config: Camera2ConfigImpl
     override val config: CameraConfig
-        get() = _config
+        get() = if (isConfigAvailable) _config else throw CameraConfigNotAvailableException
 
     init {
         LogDelegate.logger = logger
@@ -63,74 +62,91 @@ internal class GoldenEye2Impl(
     @RequiresPermission(Manifest.permission.CAMERA)
     override fun open(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         Intrinsics.checkCameraPermission(activity)
+        if (state == CameraState.INITIALIZING) {
+            lastCameraRequest = CameraRequest(cameraInfo, callback)
+            return
+        }
+
+        state = CameraState.INITIALIZING
         AsyncUtils.startBackgroundThread()
         try {
             releaseInternal()
-            when (state) {
-                CameraState.CLOSED, CameraState.READY -> openCamera(textureView, cameraInfo, callback)
-                CameraState.INITIALIZING -> lastCameraRequest = CameraRequest(cameraInfo, callback)
-                CameraState.TAKING_PICTURE, CameraState.RECORDING -> throw CameraInUseException
-            }
+            openCamera(textureView, cameraInfo, callback)
         } catch (t: Throwable) {
-            state = CameraState.CLOSED
+            releaseInternal()
             callback.onError(t)
         }
     }
 
-    @RequiresPermission(Manifest.permission.CAMERA)
     @SuppressLint("MissingPermission")
     private fun openCamera(textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
-        state = CameraState.INITIALIZING
         cameraManager.openCamera(cameraInfo.id, object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice?) {
                 if (lastCameraRequest != null) {
-                    openLastRequestedCamera()
+                    openLastRequestedCamera(lastCameraRequest!!)
                     return
                 }
-
-                try {
-                    initSessions(camera, textureView, cameraInfo)
-                    initGestureManager(textureView, sessionsManager)
-                    initConfigUpdateHandler(sessionsManager, textureView)
-                    MAIN_HANDLER.post {
-                        callback.onConfigReady()
-                        textureView.onSurfaceUpdate(
-                            onAvailable = { _ ->
-                                sessionsManager?.startPreview()
-                                state = CameraState.READY
-                            },
-                            onSizeChanged = { applyMatrixTransformation(it) }
-                        )
-                    }
-                } catch (t: Throwable) {
-                    state = CameraState.CLOSED
-                    callback.onError(t)
-                }
+                initInternal(camera, textureView, cameraInfo, callback)
             }
 
-            fun openLastRequestedCamera() {
-                ifNotNull(textureView, lastCameraRequest) { textureView, request ->
-                    open(textureView, request.cameraInfo, request.callback)
-                }
+            fun openLastRequestedCamera(request: CameraRequest) {
+                releaseInternal()
                 lastCameraRequest = null
+                open(textureView, request.cameraInfo, request.callback)
             }
 
             override fun onDisconnected(camera: CameraDevice?) {
-                if (lastCameraRequest == null) {
-                    release()
-                } else {
-                    openLastRequestedCamera()
-                }
+                releaseInternal()
             }
 
             override fun onError(camera: CameraDevice?, error: Int) {
+                val currentState = state
                 if (lastCameraRequest == null) {
+                    releaseInternal()
                     LogDelegate.log(Camera2Error.fromInt(error).message)
+                    if (currentState == CameraState.INITIALIZING) {
+                        MAIN_HANDLER.post { callback.onError(CameraFailedToOpenException) }
+                    }
                 } else {
-                    openLastRequestedCamera()
+                    openLastRequestedCamera(lastCameraRequest!!)
                 }
             }
         }, AsyncUtils.backgroundHandler)
+    }
+
+    private fun initInternal(camera: CameraDevice?, textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
+        try {
+            initSessions(camera, textureView, cameraInfo)
+            initGestureManager(textureView, sessionsManager)
+            initConfigUpdateHandler(sessionsManager, textureView)
+            MAIN_HANDLER.post {
+                state = CameraState.READY
+                callback.onReady(config)
+                startPreview(textureView, callback)
+            }
+        } catch (t: Throwable) {
+            releaseInternal()
+            MAIN_HANDLER.post { callback.onError(t) }
+        }
+    }
+
+    private fun startPreview(textureView: TextureView, callback: InitCallback) {
+        textureView.onSurfaceUpdate(
+            onAvailable = {
+                sessionsManager?.startPreview(object : InitCallback() {
+                    override fun onActive() {
+                        state = CameraState.ACTIVE
+                        callback.onActive()
+                    }
+
+                    override fun onError(t: Throwable) {
+                        releaseInternal()
+                        callback.onError(t)
+                    }
+                })
+            },
+            onSizeChanged = { applyMatrixTransformation(it) }
+        )
     }
 
     @Throws(CameraFailedToOpenException::class)
@@ -169,7 +185,7 @@ internal class GoldenEye2Impl(
         val focusHandler = FocusHandlerImpl(
             activity = activity,
             textureView = textureView,
-            config = config,
+            config = _config,
             sessionsManager = sessionsManager,
             onFocusChanged = { onFocusChangedCallback?.onFocusChanged(it) }
         )
@@ -184,31 +200,35 @@ internal class GoldenEye2Impl(
     private fun releaseInternal() {
         state = CameraState.CLOSED
         try {
-            sessionsManager?.release()
             cameraDevice?.close()
         } catch (t: Throwable) {
             LogDelegate.log(t)
         } finally {
+            lastCameraRequest = null
             cameraDevice = null
+            sessionsManager?.release()
             sessionsManager = null
+            gestureManager?.release()
+            gestureManager = null
+            configUpdateHandler = null
         }
     }
 
     override fun takePicture(callback: PictureCallback) {
-        if (state != CameraState.READY) {
-            callback.onError(CameraNotReadyException())
+        if (state != CameraState.ACTIVE) {
+            callback.onError(CameraNotActiveException())
             return
         }
 
         state = CameraState.TAKING_PICTURE
         sessionsManager?.takePicture(object : PictureCallback() {
             override fun onPictureTaken(picture: Bitmap) {
-                state = CameraState.READY
+                state = CameraState.ACTIVE
                 callback.onPictureTaken(picture)
             }
 
             override fun onError(t: Throwable) {
-                state = CameraState.READY
+                state = CameraState.ACTIVE
                 callback.onError(t)
             }
 
@@ -219,25 +239,25 @@ internal class GoldenEye2Impl(
     }
 
     override fun startRecording(file: File, callback: VideoCallback) {
-        if (config.id.toIntOrNull() == null) {
+        if (config.facing == Facing.EXTERNAL) {
             callback.onError(ExternalVideoRecordingNotSupportedException)
             return
         }
 
-        if (BaseGoldenEyeImpl.state != CameraState.READY) {
-            callback.onError(CameraNotReadyException())
+        if (state != CameraState.ACTIVE) {
+            callback.onError(CameraNotActiveException())
             return
         }
 
-        BaseGoldenEyeImpl.state = CameraState.RECORDING
+        state = CameraState.RECORDING_VIDEO
         sessionsManager?.startRecording(file, object : VideoCallback {
             override fun onVideoRecorded(file: File) {
-                BaseGoldenEyeImpl.state = CameraState.READY
+                state = CameraState.ACTIVE
                 callback.onVideoRecorded(file)
             }
 
             override fun onError(t: Throwable) {
-                BaseGoldenEyeImpl.state = CameraState.READY
+                state = CameraState.ACTIVE
                 callback.onError(t)
             }
         })
@@ -269,7 +289,6 @@ internal class GoldenEye2Impl(
                 sizeConfig = SizeConfigImpl(cameraInfo, videoConfig, onConfigUpdateListener),
                 zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
             )
-            CameraCharacteristics.LENS_INFO_HYPERFOCAL_DISTANCE
             cameraConfig.characteristics = info
             _availableCameras.add(cameraConfig)
         }

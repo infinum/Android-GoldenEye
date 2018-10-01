@@ -5,6 +5,7 @@ package co.infinum.goldeneye.extensions
 import android.app.Activity
 import android.hardware.Camera
 import android.media.CamcorderProfile
+import android.media.MediaCodec
 import android.media.MediaRecorder
 import android.os.Build
 import android.support.annotation.RequiresApi

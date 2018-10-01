@@ -42,8 +42,7 @@ internal class GestureManager(
 
     private val tapDetector = GestureDetector(activity, object : GestureDetector.SimpleOnGestureListener() {
         override fun onSingleTapUp(e: MotionEvent?): Boolean {
-            /* Tap to focus is disabled while video recording is in progress */
-            if (e == null || BaseGoldenEyeImpl.state == CameraState.RECORDING) return false
+            if (e == null) return false
             focusHandler.requestFocus(PointF(e.x, e.y))
             return true
         }
