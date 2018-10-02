@@ -11,12 +11,12 @@ import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.camera1.*
-import co.infinum.goldeneye.models.CameraApi
 import co.infinum.goldeneye.extensions.ifNotNull
 import co.infinum.goldeneye.extensions.onSurfaceUpdate
 import co.infinum.goldeneye.gesture.GestureManager
 import co.infinum.goldeneye.gesture.ZoomHandlerImpl
 import co.infinum.goldeneye.gesture.camera1.FocusHandlerImpl
+import co.infinum.goldeneye.models.CameraApi
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.CameraState
 import co.infinum.goldeneye.models.Facing
@@ -28,13 +28,12 @@ import co.infinum.goldeneye.utils.Intrinsics
 import co.infinum.goldeneye.utils.LogDelegate
 import co.infinum.goldeneye.utils.LogDelegate.log
 import java.io.File
-import java.io.IOException
 
 internal class GoldenEye1Impl @JvmOverloads constructor(
     private val activity: Activity,
-    private val onZoomChangedCallback: OnZoomChangedCallback? = null,
-    private val onFocusChangedCallback: OnFocusChangedCallback? = null,
-    private val pictureTransformation: PictureTransformation,
+    private val onZoomChangedCallback: OnZoomChangedCallback?,
+    private val onFocusChangedCallback: OnFocusChangedCallback?,
+    private val pictureTransformation: PictureTransformation?,
     logger: Logger? = null
 ) : BaseGoldenEyeImpl(CameraApi.VERSION_1) {
 
@@ -50,8 +49,8 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     override val availableCameras: List<CameraInfo> = _availableCameras
 
     private lateinit var _config: Camera1ConfigImpl
-    override val config: CameraConfig
-        get() = if (isConfigAvailable) _config else throw CameraConfigNotAvailableException
+    override val config: CameraConfig?
+        get() = if (isConfigAvailable) _config else null
 
     init {
         LogDelegate.logger = logger
@@ -66,15 +65,15 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             releaseInternal()
             _config = _availableCameras.first { it.id == cameraInfo.id }
             openCamera(_config)
+            state = CameraState.READY
             initGestureManager(camera, textureView)
             initRecorders(camera)
             initConfigUpdateHandler(camera, textureView)
-            state = CameraState.READY
-            callback.onReady(config)
+            callback.onReady(_config)
             this.textureView = textureView
             textureView.onSurfaceUpdate(
                 onAvailable = { startPreview(callback) },
-                onSizeChanged = { it.setTransform(CameraUtils.calculateTextureMatrix(activity, it, config)) }
+                onSizeChanged = { startPreview() }
             )
         } catch (t: Throwable) {
             releaseInternal()
@@ -139,7 +138,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
         state = CameraState.RECORDING_VIDEO
         applyConfig()
-        textureView?.let { it.setTransform(CameraUtils.calculateTextureMatrix(activity, it, config)) }
+        startPreview()
         camera?.unlock()
         videoRecorder?.startRecording(file, object : VideoCallback {
             override fun onVideoRecorded(file: File) {
@@ -155,7 +154,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             @SuppressLint("MissingPermission")
             private fun resetCameraPreview() {
                 state = CameraState.CLOSED
-                open(textureView!!, config, onError = {})
+                open(textureView!!, _config, onError = {})
             }
         })
     }
@@ -169,10 +168,14 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         if (camera == null || textureView == null) throw CameraFailedToOpenException
 
         this.configUpdateHandler = ConfigUpdateHandler(
-            activity = activity,
             camera = camera,
-            textureView = textureView,
-            config = config
+            config = _config,
+            restartPreview = {
+                textureView.onSurfaceUpdate(
+                    onAvailable = { startPreview() },
+                    onSizeChanged = { startPreview() }
+                )
+            }
         )
     }
 
@@ -182,14 +185,14 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
         val zoomHandler = ZoomHandlerImpl(
             activity = activity,
-            config = config,
+            config = _config,
             onZoomChanged = { onZoomChangedCallback?.onZoomChanged(it) }
         )
         val focusHandler = FocusHandlerImpl(
             activity = activity,
             camera = camera,
             textureView = textureView,
-            config = config,
+            config = _config,
             onFocusChanged = { onFocusChangedCallback?.onFocusChanged(it) }
         )
         this.gestureHandler = GestureManager(
@@ -217,65 +220,63 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         }
     }
 
-    private fun startPreview(initCallback: InitCallback) {
+    private fun startPreview(initCallback: InitCallback? = null) {
         try {
             ifNotNull(camera, textureView) { camera, textureView ->
                 camera.apply {
                     stopPreview()
                     setPreviewTexture(textureView.surfaceTexture)
                     applyConfig()
-                    textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
-                    setDisplayOrientation(CameraUtils.calculateDisplayOrientation(activity, config))
+                    textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, _config))
+                    setDisplayOrientation(CameraUtils.calculateDisplayOrientation(activity, _config))
                     startPreview()
                 }
                 state = CameraState.ACTIVE
-                initCallback.onActive()
+                initCallback?.onActive()
             }
-        } catch (e: IOException) {
-            state = CameraState.CLOSED
-            log(e)
+        } catch (t: Throwable) {
+            releaseInternal()
+            initCallback?.onError(t)
         }
     }
 
     private fun applyConfig() {
         camera?.apply {
             parameters = parameters.apply {
-                val pictureSize = config.pictureSize
+                val pictureSize = _config.pictureSize
                 setPictureSize(pictureSize.width, pictureSize.height)
 
-                val previewSize = config.previewSize
+                val previewSize = _config.previewSize
                 setPreviewSize(previewSize.width, previewSize.height)
 
-                jpegQuality = config.jpegQuality
+                jpegQuality = _config.jpegQuality
 
-                if (config.isVideoStabilizationSupported
-                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
-                ) {
-                    videoStabilization = config.videoStabilizationEnabled
+                if (_config.isVideoStabilizationSupported) {
+                    videoStabilization = _config.videoStabilizationEnabled
                 }
 
-                if (config.supportedFocusModes.contains(config.focusMode)) {
-                    focusMode = config.focusMode.toCamera1()
+                if (_config.supportedFocusModes.contains(_config.focusMode)) {
+                    focusMode = _config.focusMode.toCamera1()
                 }
 
-                if (config.supportedFlashModes.contains(config.flashMode)) {
-                    flashMode = config.flashMode.toCamera1()
+                if (_config.supportedFlashModes.contains(_config.flashMode)) {
+                    flashMode = _config.flashMode.toCamera1()
                 }
 
-                if (config.supportedAntibandingModes.contains(config.antibandingMode)) {
-                    antibanding = config.antibandingMode.toCamera1()
+                if (_config.supportedAntibandingModes.contains(_config.antibandingMode)) {
+                    antibanding = _config.antibandingMode.toCamera1()
                 }
 
-                if (config.supportedColorEffectModes.contains(config.colorEffectMode)) {
-                    colorEffect = config.colorEffectMode.toCamera1()
+                if (_config.supportedColorEffectModes.contains(_config.colorEffectMode)) {
+                    colorEffect = _config.colorEffectMode.toCamera1()
                 }
 
-                if (config.supportedWhiteBalanceModes.contains(config.whiteBalanceMode)) {
-                    whiteBalance = config.whiteBalanceMode.toCamera1()
+                if (_config.supportedWhiteBalanceModes.contains(_config.whiteBalanceMode)) {
+                    whiteBalance = _config.whiteBalanceMode.toCamera1()
                 }
 
                 if (parameters.isZoomSupported) {
-                    zoom = zoomRatios.indexOf(config.zoom)
+                    zoom = zoomRatios.indexOf(_config.zoom)
                 }
             }
         }

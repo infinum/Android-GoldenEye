@@ -6,6 +6,7 @@ import android.app.Activity
 import android.hardware.Camera
 import android.media.CamcorderProfile
 import android.media.MediaRecorder
+import co.infinum.goldeneye.MediaRecorderDeadException
 import co.infinum.goldeneye.VideoCallback
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.buildCamera1Instance
@@ -41,7 +42,12 @@ internal class VideoRecorder(
             LogDelegate.log("Recording video without audio. Missing RECORD_AUDIO permission.")
         }
         try {
-            mediaRecorder = MediaRecorder().buildCamera1Instance(activity, camera, config, file)
+            mediaRecorder = MediaRecorder().buildCamera1Instance(activity, camera, config, file).also {
+                it.setOnErrorListener { _, _, _ ->
+                    this.callback?.onError(MediaRecorderDeadException)
+                }
+            }
+
             mediaRecorder?.start()
         } catch (t: Throwable) {
             callback.onError(t)

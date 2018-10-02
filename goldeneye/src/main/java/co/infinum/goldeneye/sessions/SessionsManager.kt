@@ -62,24 +62,14 @@ internal class SessionsManager(
      * Used to lock focus for tap to focus functionality.
      */
     fun lockFocus(region: Array<MeteringRectangle>) {
-        activeSession.cancelFocus()
-
-        updateSession {
-            set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
-            set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START)
-            set(CaptureRequest.CONTROL_AF_REGIONS, region)
-        }
+        activeSession.lockFocus(region)
     }
 
     /**
      * Used to unlock focus after tap to focus is finished.
      */
     fun unlockFocus(focus: FocusMode) {
-        updateSession {
-            set(CaptureRequest.CONTROL_AF_MODE, focus.toCamera2())
-            set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE)
-            set(CaptureRequest.CONTROL_AF_REGIONS, null)
-        }
+        activeSession.unlockFocus(focus)
     }
 
     fun startPreview(callback: InitCallback) {

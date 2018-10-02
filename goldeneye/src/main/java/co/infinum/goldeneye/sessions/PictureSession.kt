@@ -8,12 +8,8 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import android.view.TextureView
 import co.infinum.goldeneye.*
-import co.infinum.goldeneye.config.CameraConfig
-import co.infinum.goldeneye.extensions.applyConfig
-import co.infinum.goldeneye.extensions.async
-import co.infinum.goldeneye.extensions.copyParamsFrom
-import co.infinum.goldeneye.extensions.toBitmap
-import co.infinum.goldeneye.models.CameraState
+import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
+import co.infinum.goldeneye.extensions.*
 import co.infinum.goldeneye.utils.AsyncUtils
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
@@ -47,8 +43,8 @@ import co.infinum.goldeneye.utils.LogDelegate
 internal class PictureSession(
     activity: Activity,
     cameraDevice: CameraDevice,
-    config: CameraConfig,
-    private val pictureTransformation: PictureTransformation
+    config: Camera2ConfigImpl,
+    private val pictureTransformation: PictureTransformation?
 ) : BaseSession(activity, cameraDevice, config) {
 
     private var imageReader: ImageReader? = null
@@ -63,24 +59,11 @@ internal class PictureSession(
             }
         }
 
-        override fun onCaptureProgressed(session: CameraCaptureSession?, request: CaptureRequest?, partialResult: CaptureResult?) {
-            if (partialResult != null) {
-                process(partialResult)
-            }
-        }
-
         private fun process(result: CaptureResult) {
             if (locked) return
 
-            val aeMode = result.get(CaptureResult.CONTROL_AE_MODE)
-            val aeState = result.get(CaptureResult.CONTROL_AE_STATE)
-            val afMode = result.get(CaptureResult.CONTROL_AF_MODE)
-            val afState = result.get(CaptureResult.CONTROL_AF_STATE)
-            val awbMode = result.get(CaptureResult.CONTROL_AWB_MODE)
-            val awbState = result.get(CaptureResult.CONTROL_AWB_STATE)
-
             /* Wait for all states to be ready, if they are not ready repeat basic capture while camera is preparing for capture */
-            if (isExposureReady(aeMode, aeState) && isFocusReady(afMode, afState) && isAwbReady(awbMode, awbState)) {
+            if (result.isLocked()) {
                 /* Take picture */
                 locked = true
                 capture()
@@ -105,27 +88,6 @@ internal class PictureSession(
                 }
             }
         }
-
-        private fun isAwbReady(awbMode: Int?, awbState: Int?) =
-            awbMode != CaptureResult.CONTROL_AWB_MODE_AUTO
-                || awbState == null
-                || awbState == CaptureResult.CONTROL_AWB_STATE_CONVERGED
-                || awbState == CaptureResult.CONTROL_AWB_STATE_LOCKED
-
-        private fun isExposureReady(aeMode: Int?, aeState: Int?) =
-            aeMode == CaptureResult.CONTROL_AE_MODE_OFF
-                || aeState == null
-                || aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED
-                || aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED
-                || aeState == CaptureResult.CONTROL_AE_STATE_LOCKED
-
-        private fun isFocusReady(afMode: Int?, afState: Int?) =
-            afMode == CaptureResult.CONTROL_AF_MODE_OFF
-                || afState == null
-                || afState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
-                || afState == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED
-                || afState == CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED
-                || afState == CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED
     }
 
     private val stateCallback = object : CameraCaptureSession.StateCallback() {
@@ -180,7 +142,7 @@ internal class PictureSession(
                     image.close()
                     if (bitmap != null) {
                         val orientationDifference = CameraUtils.calculateDisplayOrientation(activity, config).toFloat()
-                        pictureTransformation.transform(bitmap, config, orientationDifference)
+                        pictureTransformation?.transform(bitmap, config, orientationDifference) ?: bitmap
                     } else {
                         null
                     }
@@ -203,24 +165,28 @@ internal class PictureSession(
         sessionBuilder?.apply {
             /* Trigger AF and AE */
             set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START)
-            set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
+            if (config.isHardwareAtLeastLimited()) {
+                set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
+            }
             session?.capture(build(), captureCallback, AsyncUtils.backgroundHandler)
             /* Immediately remove trigger flags to avoid recursive triggering */
             set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
-            set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE)
+            if (config.isHardwareAtLeastLimited()) {
+                set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE)
+            }
         }
     }
 
     override fun release() {
         super.release()
+        surface = null
+        pictureCallback = null
+        initCallback = null
         try {
             imageReader?.close()
         } catch (t: Throwable) {
             LogDelegate.log(t)
         } finally {
-            surface = null
-            pictureCallback = null
-            initCallback = null
             imageReader = null
         }
     }

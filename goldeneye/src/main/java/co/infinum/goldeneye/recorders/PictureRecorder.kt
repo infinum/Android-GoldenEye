@@ -12,6 +12,7 @@ import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.async
 import co.infinum.goldeneye.extensions.toBitmap
 import co.infinum.goldeneye.utils.CameraUtils
+import co.infinum.goldeneye.utils.LogDelegate
 
 /**
  * Camera1 wrapper around picture taking logic. The only reason
@@ -22,19 +23,24 @@ internal class PictureRecorder(
     private val activity: Activity,
     private val camera: Camera,
     private val config: CameraConfig,
-    private val pictureTransformation: PictureTransformation
+    private val pictureTransformation: PictureTransformation?
 ) {
 
     private var pictureCallback: PictureCallback? = null
 
     private val onShutter: () -> Unit = { pictureCallback?.onShutter() }
 
-    private val transformBitmapTask: (ByteArray) -> Bitmap? = {
-        val bitmap = it.toBitmap()
-        if (bitmap != null) {
-            val orientationDifference = CameraUtils.calculateDisplayOrientation(activity, config).toFloat()
-            pictureTransformation.transform(bitmap, config, orientationDifference)
-        } else {
+    private val transformBitmapTask: (ByteArray?) -> Bitmap? = {
+        try {
+            val bitmap = it?.toBitmap()
+            if (bitmap != null) {
+                val orientationDifference = CameraUtils.calculateDisplayOrientation(activity, config).toFloat()
+                pictureTransformation?.transform(bitmap, config, orientationDifference) ?: bitmap
+            } else {
+                null
+            }
+        } catch (t: Throwable) {
+            LogDelegate.log(t)
             null
         }
     }

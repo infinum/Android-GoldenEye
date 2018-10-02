@@ -17,8 +17,6 @@ import co.infinum.goldeneye.utils.CameraUtils
  */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class ConfigUpdateHandler(
-    private val activity: Activity,
-    private val textureView: TextureView,
     private val sessionsManager: SessionsManager,
     private val config: Camera2ConfigImpl
 ) {
@@ -44,7 +42,7 @@ internal class ConfigUpdateHandler(
             CameraProperty.PREVIEW_SIZE -> sessionsManager.restartSession()
             CameraProperty.ZOOM -> sessionsManager.updateSession { updateZoom(this, config.zoom) }
             CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization()
-            CameraProperty.PREVIEW_SCALE -> textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
+            CameraProperty.PREVIEW_SCALE -> sessionsManager.restartSession()
         }
     }
 

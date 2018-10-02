@@ -27,9 +27,11 @@ internal class FocusHandlerImpl(
         if (config.tapToFocusEnabled.not() || config.supportedFocusModes.contains(FocusMode.AUTO).not()) return
 
         val region = CameraUtils.calculateCamera2FocusArea(activity, textureView, config, point.x, point.y)
-        sessionsManager.lockFocus(region)
-        onFocusChanged(Point(point.x.toInt(), point.y.toInt()))
-        resetFocusWithDelay()
+        if (region.isNotEmpty()) {
+            sessionsManager.lockFocus(region)
+            onFocusChanged(Point(point.x.toInt(), point.y.toInt()))
+            resetFocusWithDelay()
+        }
     }
 
     /**

@@ -3,16 +3,16 @@ apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.dokka'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion sdk.target
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 27
+        minSdkVersion sdk.min
+        targetSdkVersion sdk.target
     }
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:${versions.kotlin}"
-    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation "com.android.support:appcompat-v7:${versions.google}"
 }
 
 apply from: '../tasks.gradle'

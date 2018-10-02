@@ -38,7 +38,7 @@ interface GoldenEye {
      * @throws CameraConfigNotAvailableException when trying to access it when
      * it is not available
      */
-    val config: CameraConfig
+    val config: CameraConfig?
 
     /**
      * @see config
@@ -110,7 +110,7 @@ interface GoldenEye {
         private var logger: Logger? = null
         private var onZoomChangedCallback: OnZoomChangedCallback? = null
         private var onFocusChangedCallback: OnFocusChangedCallback? = null
-        private var pictureTransformation: PictureTransformation? = null
+        private var pictureTransformation: PictureTransformation? = PictureTransformation.Default
 
         /**
          * @see Logger
@@ -185,12 +185,10 @@ interface GoldenEye {
          */
         @SuppressLint("NewApi")
         fun build(): GoldenEye {
-            val pictureTransformationImpl = pictureTransformation ?: PictureTransformation.Default
-
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && isLegacyCamera().not()) {
-                GoldenEye2Impl(activity, onZoomChangedCallback, onFocusChangedCallback, pictureTransformationImpl, logger)
+                GoldenEye2Impl(activity, onZoomChangedCallback, onFocusChangedCallback, pictureTransformation, logger)
             } else {
-                GoldenEye1Impl(activity, onZoomChangedCallback, onFocusChangedCallback, pictureTransformationImpl, logger)
+                GoldenEye1Impl(activity, onZoomChangedCallback, onFocusChangedCallback, pictureTransformation, logger)
             }
         }
 

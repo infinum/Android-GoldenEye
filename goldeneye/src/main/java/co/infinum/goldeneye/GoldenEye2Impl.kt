@@ -25,7 +25,6 @@ import co.infinum.goldeneye.sessions.PictureSession
 import co.infinum.goldeneye.sessions.SessionsManager
 import co.infinum.goldeneye.sessions.VideoSession
 import co.infinum.goldeneye.utils.AsyncUtils
-import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.Intrinsics
 import co.infinum.goldeneye.utils.LogDelegate
 import java.io.File
@@ -35,7 +34,7 @@ internal class GoldenEye2Impl(
     private val activity: Activity,
     private val onZoomChangedCallback: OnZoomChangedCallback?,
     private val onFocusChangedCallback: OnFocusChangedCallback?,
-    private val pictureTransformation: PictureTransformation,
+    private val pictureTransformation: PictureTransformation?,
     logger: Logger? = null
 ) : BaseGoldenEyeImpl(CameraApi.VERSION_2) {
 
@@ -51,8 +50,8 @@ internal class GoldenEye2Impl(
     override val availableCameras: List<CameraInfo> = _availableCameras
 
     private lateinit var _config: Camera2ConfigImpl
-    override val config: CameraConfig
-        get() = if (isConfigAvailable) _config else throw CameraConfigNotAvailableException
+    override val config: CameraConfig?
+        get() = if (isConfigAvailable) _config else null
 
     init {
         LogDelegate.logger = logger
@@ -116,12 +115,12 @@ internal class GoldenEye2Impl(
 
     private fun initInternal(camera: CameraDevice?, textureView: TextureView, cameraInfo: CameraInfo, callback: InitCallback) {
         try {
+            state = CameraState.READY
             initSessions(camera, textureView, cameraInfo)
             initGestureManager(textureView, sessionsManager)
             initConfigUpdateHandler(sessionsManager, textureView)
             MAIN_HANDLER.post {
-                state = CameraState.READY
-                callback.onReady(config)
+                callback.onReady(_config)
                 startPreview(textureView, callback)
             }
         } catch (t: Throwable) {
@@ -145,7 +144,7 @@ internal class GoldenEye2Impl(
                     }
                 })
             },
-            onSizeChanged = { applyMatrixTransformation(it) }
+            onSizeChanged = { sessionsManager?.restartSession() }
         )
     }
 
@@ -154,8 +153,6 @@ internal class GoldenEye2Impl(
         if (sessionsSyncManager == null || textureView == null) throw CameraFailedToOpenException
 
         this.configUpdateHandler = ConfigUpdateHandler(
-            activity = activity,
-            textureView = textureView,
             sessionsManager = sessionsSyncManager,
             config = _config
         )
@@ -168,8 +165,8 @@ internal class GoldenEye2Impl(
         this.cameraDevice = camera
         this._config = _availableCameras.first { it.id == cameraInfo.id }
         this._config.characteristics = cameraManager.getCameraCharacteristics(cameraDevice?.id)
-        val pictureSession = PictureSession(activity, camera, config, pictureTransformation)
-        val videoSession = VideoSession(activity, camera, config)
+        val pictureSession = PictureSession(activity, camera, _config, pictureTransformation)
+        val videoSession = VideoSession(activity, camera, _config)
         this.sessionsManager = SessionsManager(textureView, pictureSession, videoSession)
     }
 
@@ -179,7 +176,7 @@ internal class GoldenEye2Impl(
 
         val zoomHandler = ZoomHandlerImpl(
             activity = activity,
-            config = config,
+            config = _config,
             onZoomChanged = { onZoomChangedCallback?.onZoomChanged(it) }
         )
         val focusHandler = FocusHandlerImpl(
@@ -200,13 +197,13 @@ internal class GoldenEye2Impl(
     private fun releaseInternal() {
         state = CameraState.CLOSED
         try {
+            sessionsManager?.release()
             cameraDevice?.close()
         } catch (t: Throwable) {
             LogDelegate.log(t)
         } finally {
             lastCameraRequest = null
             cameraDevice = null
-            sessionsManager?.release()
             sessionsManager = null
             gestureManager?.release()
             gestureManager = null
@@ -239,7 +236,7 @@ internal class GoldenEye2Impl(
     }
 
     override fun startRecording(file: File, callback: VideoCallback) {
-        if (config.facing == Facing.EXTERNAL) {
+        if (_config.facing == Facing.EXTERNAL) {
             callback.onError(ExternalVideoRecordingNotSupportedException)
             return
         }
@@ -292,9 +289,5 @@ internal class GoldenEye2Impl(
             cameraConfig.characteristics = info
             _availableCameras.add(cameraConfig)
         }
-    }
-
-    private fun applyMatrixTransformation(textureView: TextureView?) {
-        textureView?.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
     }
 }

@@ -9,8 +9,10 @@ import android.support.annotation.RequiresApi
 import android.view.Surface
 import android.view.TextureView
 import co.infinum.goldeneye.CameraConfigurationFailedException
+import co.infinum.goldeneye.MediaRecorderDeadException
 import co.infinum.goldeneye.VideoCallback
 import co.infinum.goldeneye.config.CameraConfig
+import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
 import co.infinum.goldeneye.extensions.applyConfig
 import co.infinum.goldeneye.extensions.buildCamera2Instance
 import co.infinum.goldeneye.extensions.hasAudioPermission
@@ -26,7 +28,7 @@ import java.io.File
 internal class VideoSession(
     activity: Activity,
     cameraDevice: CameraDevice,
-    config: CameraConfig
+    config: Camera2ConfigImpl
 ) : BaseSession(activity, cameraDevice, config) {
 
     private var mediaRecorder: MediaRecorder? = null
@@ -84,7 +86,9 @@ internal class VideoSession(
         if (activity.hasAudioPermission().not()) {
             LogDelegate.log("Recording video without audio. Missing RECORD_AUDIO permission.")
         }
-        mediaRecorder = MediaRecorder().buildCamera2Instance(activity, config, file)
+        mediaRecorder = MediaRecorder().buildCamera2Instance(activity, config, file).apply {
+            setOnErrorListener { _, _, _ -> callback?.onError(MediaRecorderDeadException) }
+        }
     }
 
     override fun createSession(textureView: TextureView) {
@@ -100,6 +104,8 @@ internal class VideoSession(
 
     override fun release() {
         super.release()
+        callback = null
+        file = null
         try {
             mediaSurface?.release()
             mediaRecorder?.reset()
@@ -107,8 +113,6 @@ internal class VideoSession(
         } catch (t: Throwable) {
             LogDelegate.log(t)
         } finally {
-            callback = null
-            file = null
             mediaRecorder = null
             mediaSurface = null
         }

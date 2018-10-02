@@ -2,10 +2,7 @@
 
 package co.infinum.goldeneye.config.camera1
 
-import android.app.Activity
 import android.hardware.Camera
-import android.os.Build
-import android.view.TextureView
 import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.updateParams
@@ -13,16 +10,14 @@ import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.CameraState
 import co.infinum.goldeneye.models.PreviewScale
 import co.infinum.goldeneye.models.Size
-import co.infinum.goldeneye.utils.CameraUtils
 
 /**
  * Handles property updates. Syncs CameraConfig with active Camera.
  */
 internal class ConfigUpdateHandler(
-    private val activity: Activity,
     private val camera: Camera,
-    private val textureView: TextureView,
-    private val config: CameraConfig
+    private val config: CameraConfig,
+    private val restartPreview: () -> Unit
 ) {
 
     fun onPropertyUpdated(property: CameraProperty) {
@@ -36,7 +31,7 @@ internal class ConfigUpdateHandler(
             CameraProperty.PREVIEW_SIZE -> updatePreviewSize(config.previewSize)
             CameraProperty.ZOOM -> camera.updateParams { zoom = zoomRatios.indexOf(config.zoom) }
             CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization(config.videoStabilizationEnabled)
-            CameraProperty.PREVIEW_SCALE -> textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
+            CameraProperty.PREVIEW_SCALE -> restartPreview()
         }
     }
 
@@ -52,14 +47,12 @@ internal class ConfigUpdateHandler(
 
     private fun updatePreviewSize(previewSize: Size) {
         camera.updateParams { setPreviewSize(previewSize.width, previewSize.height) }
-        textureView.setTransform(CameraUtils.calculateTextureMatrix(activity, textureView, config))
+        restartPreview()
     }
 
     private fun updateVideoStabilization(enabled: Boolean) {
         camera.updateParams {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-                videoStabilization = enabled
-            }
+            videoStabilization = enabled
         }
     }
 }

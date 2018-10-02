@@ -9,8 +9,8 @@ object PictureConversionException :
 object TaskOnMainThreadException :
     Exception("Heavy tasks must not be handled on MainThread!")
 
-object CameraInUseException :
-    Exception("Camera is currently in active use and cannot be switched.")
+object MediaRecorderDeadException:
+    Exception("Media recorder died for unknown reason.")
 
 object CameraFailedToOpenException :
     Exception("For some unknown reason, camera failed to open.")

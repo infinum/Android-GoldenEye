@@ -2,16 +2,16 @@ package co.infinum.goldeneye.sessions
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.hardware.camera2.CameraCaptureSession
-import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.CameraMetadata
-import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.*
+import android.hardware.camera2.params.MeteringRectangle
 import android.os.Build
 import android.support.annotation.CallSuper
 import android.support.annotation.RequiresApi
 import android.view.Surface
 import android.view.TextureView
-import co.infinum.goldeneye.config.CameraConfig
+import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
+import co.infinum.goldeneye.extensions.isLocked
+import co.infinum.goldeneye.models.FocusMode
 import co.infinum.goldeneye.utils.AsyncUtils
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
@@ -20,7 +20,7 @@ import co.infinum.goldeneye.utils.LogDelegate
 internal abstract class BaseSession(
     protected val activity: Activity,
     protected val cameraDevice: CameraDevice,
-    protected val config: CameraConfig
+    protected val config: Camera2ConfigImpl
 ) {
 
     protected var sessionBuilder: CaptureRequest.Builder? = null
@@ -59,8 +59,34 @@ internal abstract class BaseSession(
      *
      * This method is used before locking focus with tap to focus functionality.
      */
+    fun lockFocus(region: Array<MeteringRectangle>) {
+        cancelFocus()
+        sessionBuilder?.apply {
+            set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
+            set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START)
+            set(CaptureRequest.CONTROL_AF_REGIONS, region)
+        }
+        session?.stopRepeating()
+        session?.capture(sessionBuilder?.build(), object : CameraCaptureSession.CaptureCallback() {
+            override fun onCaptureCompleted(session: CameraCaptureSession?, request: CaptureRequest?, result: TotalCaptureResult?) {
+                if (result?.isLocked() == true) {
+                } else {
+                    session?.capture(sessionBuilder?.build(), this, AsyncUtils.backgroundHandler)
+                }
+            }
+
+            override fun onCaptureFailed(session: CameraCaptureSession?, request: CaptureRequest?, failure: CaptureFailure?) {
+            }
+        }, AsyncUtils.backgroundHandler)
+        sessionBuilder?.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
+        startSession()
+    }
+
     fun cancelFocus() {
-        sessionBuilder?.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
+        sessionBuilder?.apply {
+            set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
+            set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+        }
         session?.capture(sessionBuilder?.build(), null, AsyncUtils.backgroundHandler)
     }
 
@@ -80,5 +106,15 @@ internal abstract class BaseSession(
             session = null
             surface = null
         }
+    }
+
+    fun unlockFocus(focus: FocusMode) {
+        cancelFocus()
+        sessionBuilder?.apply {
+            set(CaptureRequest.CONTROL_AF_MODE, focus.toCamera2())
+            set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
+            set(CaptureRequest.CONTROL_AF_REGIONS, null)
+        }
+        startSession()
     }
 }

@@ -1,7 +1,7 @@
 buildscript {
 
     ext.sdk = [
-        min   : 1,
+        min   : 16,
         target: 27,
     ]
 
@@ -10,8 +10,7 @@ buildscript {
         google   : '27.1.1',
         junit    : '4.12',
         mockito  : '2.10.0',
-        rxjava   : '2.1.13',
-        kotlin   : '1.2.61'
+        kotlin   : '1.2.71'
     ]
 
     repositories {

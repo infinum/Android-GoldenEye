@@ -74,8 +74,9 @@ internal object CameraUtils {
                 textureView.width / 2f,
                 textureView.height / 2f
             )
+            val rotation = calculateDisplayOrientation(activity, config).toFloat() - config.orientation
             matrix.postRotate(
-                calculateDisplayOrientation(activity, config).toFloat() - config.orientation,
+                if (config.facing == Facing.FRONT) -rotation else rotation,
                 textureView.width / 2f,
                 textureView.height / 2f
             )
@@ -100,10 +101,10 @@ internal object CameraUtils {
         val scaleX = activeRect.width().toFloat() / config.previewSize.width
         val scaleY = activeRect.height().toFloat() / config.previewSize.height
         val meteringRect = Rect(
-            (activeRect.left + scaleX * rect.left).toInt(),
-            (activeRect.top + scaleY * rect.top).toInt(),
-            (activeRect.left + scaleX * rect.right).toInt(),
-            (activeRect.top + scaleY * rect.bottom).toInt()
+            (scaleX * rect.left).toInt(),
+            (scaleY * rect.top).toInt(),
+            (scaleX * rect.right).toInt(),
+            (scaleY * rect.bottom).toInt()
         )
 
         return arrayOf(MeteringRectangle(meteringRect, MeteringRectangle.METERING_WEIGHT_MAX - 1))

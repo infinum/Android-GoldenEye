@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.SurfaceTexture
-import android.media.Image
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
@@ -24,11 +23,10 @@ import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.Logger
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
-import co.infinum.goldeneye.models.FlashMode
 import co.infinum.goldeneye.models.PreviewScale
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
-import kotlin.math.max
+import kotlin.math.min
 
 @SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
@@ -114,7 +112,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         switchCameraView.setOnClickListener { _ ->
-            val currentIndex = goldenEye.availableCameras.indexOfFirst { goldenEye.config.id == it.id }
+            val currentIndex = goldenEye.availableCameras.indexOfFirst { goldenEye.config?.id == it.id }
             val nextIndex = (currentIndex + 1) % goldenEye.availableCameras.size
             openCamera(goldenEye.availableCameras[nextIndex])
         }
@@ -181,20 +179,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onStart() {
+        super.onStart()
         if (goldenEye.availableCameras.isNotEmpty()) {
             openCamera(goldenEye.availableCameras[0])
         }
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onStop() {
+        super.onStop()
         goldenEye.release()
     }
 
     private fun prepareItems() {
-        with(goldenEye.config) {
+        goldenEye.config?.apply {
             val settingsItems = listOf(
                 SettingsItem("Preview size:", previewSize.convertToString()) {
                     if (previewScale == PreviewScale.MANUAL
@@ -349,7 +347,7 @@ class MainActivity : AppCompatActivity() {
                     layoutParams = layoutParams.apply {
                         val scaleX = previewVideoContainer.width / width.toFloat()
                         val scaleY = previewVideoContainer.height / height.toFloat()
-                        val scale = max(scaleX, scaleY)
+                        val scale = min(scaleX, scaleY)
 
                         this.width = (width * scale).toInt()
                         this.height = (height * scale).toInt()
