@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun log(t: Throwable) {
-            toast("GoldenEye error - check log")
+            toast(t.message ?: "GoldenEye error - check log")
             t.printStackTrace()
         }
     }
@@ -63,12 +63,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
-        goldenEye = GoldenEye.Builder(this)
-            .setLogger(logger)
-            .setOnZoomChangedCallback { zoomView.text = "Zoom: ${it.toPercentage()}" }
-            .build()
+        initGoldenEye()
         videoFile = File.createTempFile("vid", "")
+        initListeners()
+    }
 
+    private fun initListeners() {
         settingsView.setOnClickListener {
             prepareItems()
             settingsRecyclerView.apply {
@@ -118,6 +118,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun initGoldenEye() {
+        goldenEye = GoldenEye.Builder(this)
+            .setLogger(logger)
+            .setOnZoomChangedCallback { zoomView.text = "Zoom: ${it.toPercentage()}" }
+            .build()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (goldenEye.availableCameras.isNotEmpty()) {
+            openCamera(goldenEye.availableCameras[0])
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        goldenEye.release()
+    }
+
+    private fun openCamera(cameraInfo: CameraInfo) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            goldenEye.open(textureView, cameraInfo, initCallback)
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 0x1)
+        }
+    }
+
     private fun startRecording() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             record()
@@ -154,14 +181,6 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun openCamera(cameraInfo: CameraInfo) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            goldenEye.open(textureView, cameraInfo, initCallback)
-        } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 0x1)
-        }
-    }
-
     @SuppressLint("MissingPermission")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (requestCode == 0x1 && grantResults.getOrNull(0) == PackageManager.PERMISSION_GRANTED) {
@@ -179,156 +198,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        if (goldenEye.availableCameras.isNotEmpty()) {
-            openCamera(goldenEye.availableCameras[0])
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        goldenEye.release()
-    }
-
     private fun prepareItems() {
         goldenEye.config?.apply {
-            val settingsItems = listOf(
-                SettingsItem("Preview size:", previewSize.convertToString()) {
-                    if (previewScale == PreviewScale.MANUAL
-                        || previewScale == PreviewScale.MANUAL_FIT
-                        || previewScale == PreviewScale.MANUAL_FILL
-                    ) {
-                        displayDialog(
-                            title = "Preview size",
-                            listItems = supportedPreviewSizes.map { ListItem(it, it.convertToString()) },
-                            onClick = { previewSize = it }
-                        )
-                    } else {
-                        toast("Preview scale is automatic so it picks preview size on its own.")
-                    }
-                },
-                SettingsItem("Picture size:", pictureSize.convertToString()) {
-                    displayDialog(
-                        title = "Picture size",
-                        listItems = supportedPictureSizes.map { ListItem(it, it.convertToString()) },
-                        onClick = { pictureSize = it }
-                    )
-                },
-                SettingsItem("Preview scale", previewScale.convertToString()) {
-                    displayDialog(
-                        title = "Preview scale",
-                        listItems = PreviewScale.values().map { ListItem(it, it.convertToString()) },
-                        onClick = { previewScale = it }
-                    )
-                },
-                SettingsItem("Video quality:", videoQuality.convertToString()) {
-                    displayDialog(
-                        title = "Video quality",
-                        listItems = supportedVideoQualities.map { ListItem(it, it.convertToString()) },
-                        onClick = { videoQuality = it }
-                    )
-                },
-                SettingsItem("Video stabilization:", videoStabilizationEnabled.convertToString()) {
-                    if (isVideoStabilizationSupported) {
-                        displayDialog(
-                            title = "Video stabilization",
-                            listItems = boolList(),
-                            onClick = { videoStabilizationEnabled = it }
-                        )
-                    } else {
-                        toast("Video stabilization not supported")
-                    }
-                },
-                SettingsItem("Flash mode:", flashMode.convertToString()) {
-                    displayDialog(
-                        title = "Flash mode",
-                        listItems = supportedFlashModes.map { ListItem(it, it.convertToString()) },
-                        onClick = { flashMode = it }
-                    )
-                },
-                SettingsItem("Focus mode:", focusMode.convertToString()) {
-                    displayDialog(
-                        title = "Focus mode",
-                        listItems = supportedFocusModes.map { ListItem(it, it.convertToString()) },
-                        onClick = { focusMode = it }
-                    )
-                },
-                SettingsItem("White Balance:", whiteBalanceMode.convertToString()) {
-                    displayDialog(
-                        title = "White Balance",
-                        listItems = supportedWhiteBalanceModes.map { ListItem(it, it.convertToString()) },
-                        onClick = { whiteBalanceMode = it }
-                    )
-                },
-                SettingsItem("Color Effect:", colorEffectMode.convertToString()) {
-                    displayDialog(
-                        title = "Color Effect",
-                        listItems = supportedColorEffectModes.map { ListItem(it, it.convertToString()) },
-                        onClick = { colorEffectMode = it }
-                    )
-                },
-                SettingsItem("Antibanding:", antibandingMode.convertToString()) {
-                    displayDialog(
-                        title = "Antibanding",
-                        listItems = supportedAntibandingModes.map { ListItem(it, it.convertToString()) },
-                        onClick = { antibandingMode = it }
-                    )
-                },
-                SettingsItem("Tap to focus:", tapToFocusEnabled.convertToString()) {
-                    if (isTapToFocusSupported) {
-                        displayDialog(
-                            title = "Tap to focus",
-                            listItems = boolList(),
-                            onClick = { tapToFocusEnabled = it }
-                        )
-                    } else {
-                        toast("Tap to focus not supported.")
-                    }
-                },
-                SettingsItem("Tap to focus - reset focus delay:", tapToFocusResetDelay.toString()) {
-                    if (isTapToFocusSupported) {
-                        displayDialog(
-                            title = "Reset delay",
-                            listItems = listOf(
-                                ListItem(2_500L, "2500"),
-                                ListItem(5_000L, "5000"),
-                                ListItem(7_500L, "7500")
-                            ),
-                            onClick = { tapToFocusResetDelay = it }
-                        )
-                    } else {
-                        toast("Tap to focus not supported.")
-                    }
-                },
-                SettingsItem("Pinch to zoom:", pinchToZoomEnabled.convertToString()) {
-                    if (isZoomSupported) {
-                        displayDialog(
-                            title = "Pinch to zoom",
-                            listItems = boolList(),
-                            onClick = { pinchToZoomEnabled = it }
-                        )
-                    } else {
-                        toast("Pinch to zoom not supported.")
-                    }
-                },
-                SettingsItem("Pinch to zoom friction:", "%.02f".format(pinchToZoomFriction)) {
-                    if (isZoomSupported) {
-                        displayDialog(
-                            title = "Friction",
-                            listItems = listOf(
-                                ListItem(0.5f, "0.50"),
-                                ListItem(1f, "1.00"),
-                                ListItem(2f, "2.00")
-                            ),
-                            onClick = { pinchToZoomFriction = it }
-                        )
-                    } else {
-                        toast("Pinch to zoom not supported.")
-                    }
-                }
-            )
-            settingsAdapter.updateDataSet(settingsItems)
+            settingsAdapter.updateDataSet(prepareItems(this@MainActivity))
         }
     }
 
@@ -356,28 +228,6 @@ class MainActivity : AppCompatActivity() {
             }
             prepare()
             start()
-        }
-    }
-
-    private fun <T> displayDialog(title: String, listItems: List<ListItem<T>>, onClick: (T) -> Unit) {
-        if (listItems.isEmpty()) {
-            toast("$title not supported")
-            return
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setView(R.layout.list)
-            .setCancelable(true)
-            .setTitle(title)
-            .show()
-
-        dialog.findViewById<RecyclerView>(R.id.recyclerView)?.apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = ListItemAdapter(listItems) {
-                onClick(it)
-                dialog.dismiss()
-                prepareItems()
-            }
         }
     }
 }

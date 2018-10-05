@@ -19,9 +19,9 @@ val goldenEye = GoldenEye.Builder(activity).build()
 #### Open camera
 
 ```kotlin
-if (ContextCompat.checkSelfPermission(context, Manifest.permissions.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
   /* Find back camera */
-  val backCamera = goldenEye.availableCameras().find { it.facing == Facing.BACK }
+  val backCamera = goldenEye.availableCameras.find { it.facing == Facing.BACK }
   /* Open back camera */
   goldenEye.open(textureView, backCamera, initCallback)
 }

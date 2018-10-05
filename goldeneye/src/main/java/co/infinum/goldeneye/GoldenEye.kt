@@ -32,9 +32,6 @@ interface GoldenEye {
      * Currently opened camera configuration. Be sure to access it only after
      * [InitCallback.onReady] is received.
      *
-     * Use [isConfigAvailable] in case you are unsure whether configuration is
-     * available.
-     *
      * If camera is in CLOSED or INITIALIZING state, null is returned.
      */
     val config: CameraConfig?
@@ -42,9 +39,11 @@ interface GoldenEye {
     /**
      * Asynchronously opens the camera.
      *
-     * @param textureView the view that will display camera preview
-     * @param cameraInfo camera that should be opened
+     * @param textureView that will display camera preview
+     * @param cameraInfo of the camera that should be opened
      * @param callback used to notify whether camera successfully initialized
+     *
+     * @see InitCallback
      *
      * @throws MissingCameraPermissionException if camera permission is missing
      */
