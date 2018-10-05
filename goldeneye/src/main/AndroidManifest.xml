@@ -1,2 +1,1 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="co.infinum.goldeneye"/>
+<manifest package="co.infinum.goldeneye"/>

@@ -35,15 +35,9 @@ interface GoldenEye {
      * Use [isConfigAvailable] in case you are unsure whether configuration is
      * available.
      *
-     * @throws CameraConfigNotAvailableException when trying to access it when
-     * it is not available
+     * If camera is in CLOSED or INITIALIZING state, null is returned.
      */
     val config: CameraConfig?
-
-    /**
-     * @see config
-     */
-    val isConfigAvailable: Boolean
 
     /**
      * Asynchronously opens the camera.

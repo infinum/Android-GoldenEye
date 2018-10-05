@@ -35,6 +35,9 @@ internal fun MediaRecorder.buildCamera2Instance(
     return buildInstance(activity, config, file)
 }
 
+/**
+ * Reusable build instance method to apply given config to [MediaRecorder].
+ */
 private fun MediaRecorder.buildInstance(activity: Activity, config: CameraConfig, file: File): MediaRecorder {
     val profile = CamcorderProfile.get(config.id.toInt(), config.videoQuality.key)
     if (activity.hasAudioPermission()) {

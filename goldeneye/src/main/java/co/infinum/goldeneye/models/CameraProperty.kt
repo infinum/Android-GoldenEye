@@ -1,5 +1,9 @@
 package co.infinum.goldeneye.models
 
+/**
+ * Defines CameraProperties that can be changed. Used in config
+ * to let Config update handler know which property is updated.
+ */
 internal enum class CameraProperty {
     FOCUS,
     FLASH,

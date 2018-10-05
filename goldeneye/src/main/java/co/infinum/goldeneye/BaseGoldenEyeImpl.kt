@@ -22,7 +22,7 @@ internal abstract class BaseGoldenEyeImpl(
         BaseGoldenEyeImpl.version = version
     }
 
-    override val isConfigAvailable: Boolean
+    protected val isConfigAvailable: Boolean
         get() = when (state) {
             CameraState.CLOSED,
             CameraState.INITIALIZING -> false

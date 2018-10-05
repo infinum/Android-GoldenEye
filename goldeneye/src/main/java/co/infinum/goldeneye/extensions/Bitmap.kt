@@ -10,6 +10,10 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.utils.Intrinsics
 
+/**
+ * Directly apply new matrix to bitmap and return new Bitmap.
+ * Old bitmap is recycled to clear memory.
+ */
 internal fun Bitmap.applyMatrix(configure: Matrix.() -> Unit): Bitmap {
     Intrinsics.checkMainThread()
     val newBitmap = Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply(configure), false)
@@ -30,6 +34,9 @@ internal fun ByteArray.toBitmap() =
         null
     }
 
+/**
+ * Convert Camera2 API [Image] to [Bitmap]
+ */
 @RequiresApi(Build.VERSION_CODES.KITKAT)
 internal fun Image.toBitmap(): Bitmap? {
     val buffer = planes[0].buffer

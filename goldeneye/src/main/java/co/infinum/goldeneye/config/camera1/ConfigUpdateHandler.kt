@@ -13,6 +13,9 @@ import co.infinum.goldeneye.models.Size
 
 /**
  * Handles property updates. Syncs CameraConfig with active Camera.
+ *
+ * Sometimes we have to restart the preview so we have to pass function
+ * that does that because it is not accessible from this class otherwise.
  */
 internal class ConfigUpdateHandler(
     private val camera: Camera,
@@ -30,15 +33,15 @@ internal class ConfigUpdateHandler(
             CameraProperty.PICTURE_SIZE -> updatePictureSize(config.pictureSize, config.previewSize)
             CameraProperty.PREVIEW_SIZE -> updatePreviewSize(config.previewSize)
             CameraProperty.ZOOM -> camera.updateParams { zoom = zoomRatios.indexOf(config.zoom) }
-            CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization(config.videoStabilizationEnabled)
+            CameraProperty.VIDEO_STABILIZATION -> camera.updateParams { videoStabilization = config.videoStabilizationEnabled }
             CameraProperty.PREVIEW_SCALE -> restartPreview()
         }
     }
 
     private fun updatePictureSize(pictureSize: Size, previewSize: Size) {
         camera.updateParams { setPictureSize(pictureSize.width, pictureSize.height) }
-        if (
-            (config.previewScale == PreviewScale.AUTO_FILL || config.previewScale == PreviewScale.AUTO_FIT)
+        /* Update preview if AUTO_* mode is active and video is not being recorded */
+        if ((config.previewScale == PreviewScale.AUTO_FILL || config.previewScale == PreviewScale.AUTO_FIT)
             && BaseGoldenEyeImpl.state != CameraState.RECORDING_VIDEO
         ) {
             updatePreviewSize(previewSize)
@@ -48,11 +51,5 @@ internal class ConfigUpdateHandler(
     private fun updatePreviewSize(previewSize: Size) {
         camera.updateParams { setPreviewSize(previewSize.width, previewSize.height) }
         restartPreview()
-    }
-
-    private fun updateVideoStabilization(enabled: Boolean) {
-        camera.updateParams {
-            videoStabilization = enabled
-        }
     }
 }

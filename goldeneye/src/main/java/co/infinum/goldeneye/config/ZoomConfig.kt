@@ -4,6 +4,7 @@ import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.utils.LogDelegate
 
 interface ZoomConfig {
+
     /**
      * Defines current zoom ratio. [zoom] value is equal to zoom ratio * 100.
      * Value must be integer between 100 and [maxZoom].

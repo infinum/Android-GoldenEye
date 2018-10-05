@@ -60,16 +60,21 @@ internal class PictureSession(
         }
 
         private fun process(result: CaptureResult) {
-            if (locked) return
+            try {
+                if (locked) return
 
-            /* Wait for all states to be ready, if they are not ready repeat basic capture while camera is preparing for capture */
-            if (result.isLocked()) {
-                /* Take picture */
-                locked = true
-                capture()
-            } else {
-                /* Wait while camera is preparing */
-                session?.capture(sessionBuilder?.build(), this, AsyncUtils.backgroundHandler)
+                /* Wait for all states to be ready, if they are not ready repeat basic capture while camera is preparing for capture */
+                if (result.isLocked()) {
+                    /* Take picture */
+                    locked = true
+                    capture()
+                } else {
+                    /* Wait while camera is preparing */
+                    session?.capture(sessionBuilder?.build()!!, this, AsyncUtils.backgroundHandler)
+                }
+            } catch (t: Throwable) {
+                LogDelegate.log(t)
+                pictureCallback?.onError(t)
             }
         }
 
@@ -79,7 +84,7 @@ internal class PictureSession(
                 /* Set picture quality */
                 set(CaptureRequest.JPEG_QUALITY, config.jpegQuality.toByte())
                 /* Add surface target that will receive capture */
-                addTarget(imageReader?.surface)
+                addTarget(imageReader?.surface!!)
                 session?.apply {
                     /* Freeze preview session */
                     stopRepeating()
@@ -94,9 +99,9 @@ internal class PictureSession(
         override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
             session = cameraCaptureSession
             try {
-                sessionBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)?.apply {
+                sessionBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
                     applyConfig(config)
-                    addTarget(surface)
+                    addTarget(surface!!)
                 }
                 startSession()
                 initCallback?.onActive()
@@ -149,7 +154,11 @@ internal class PictureSession(
                 },
                 onResult = {
                     locked = false
-                    startSession()
+                    try {
+                        startSession()
+                    } catch (t: Throwable) {
+                        LogDelegate.log(t)
+                    }
                     if (it != null) {
                         pictureCallback?.onPictureTaken(it)
                     } else {

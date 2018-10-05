@@ -11,7 +11,6 @@ import android.view.TextureView
 import co.infinum.goldeneye.CameraConfigurationFailedException
 import co.infinum.goldeneye.MediaRecorderDeadException
 import co.infinum.goldeneye.VideoCallback
-import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
 import co.infinum.goldeneye.extensions.applyConfig
 import co.infinum.goldeneye.extensions.buildCamera2Instance
@@ -41,14 +40,14 @@ internal class VideoSession(
             session = cameraCaptureSession
             try {
                 /* Create new recording request */
-                sessionBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD)?.apply {
+                sessionBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
                     applyConfig(config)
-                    addTarget(surface)
+                    addTarget(surface!!)
                     /* Important to add media recorder surface as output target */
-                    addTarget(mediaSurface)
+                    addTarget(mediaSurface!!)
                 }
                 /* Start recording */
-                session?.setRepeatingRequest(sessionBuilder?.build(), null, AsyncUtils.backgroundHandler)
+                session?.setRepeatingRequest(sessionBuilder?.build()!!, null, AsyncUtils.backgroundHandler)
                 mediaRecorder?.start()
             } catch (t: Throwable) {
                 callback?.onError(t)

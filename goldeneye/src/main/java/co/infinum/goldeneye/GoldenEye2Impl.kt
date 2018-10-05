@@ -164,7 +164,7 @@ internal class GoldenEye2Impl(
 
         this.cameraDevice = camera
         this._config = _availableCameras.first { it.id == cameraInfo.id }
-        this._config.characteristics = cameraManager.getCameraCharacteristics(cameraDevice?.id)
+        this._config.characteristics = cameraManager.getCameraCharacteristics(camera.id)
         val pictureSession = PictureSession(activity, camera, _config, pictureTransformation)
         val videoSession = VideoSession(activity, camera, _config)
         this.sessionsManager = SessionsManager(textureView, pictureSession, videoSession)
@@ -265,7 +265,7 @@ internal class GoldenEye2Impl(
     }
 
     private fun initAvailableCameras() {
-        cameraManager.cameraIdList?.forEach { id ->
+        cameraManager.cameraIdList.forEach { id ->
             val info = cameraManager.getCameraCharacteristics(id)
             val orientation = info[CameraCharacteristics.SENSOR_ORIENTATION]
             val facing = when (info[CameraCharacteristics.LENS_FACING]) {

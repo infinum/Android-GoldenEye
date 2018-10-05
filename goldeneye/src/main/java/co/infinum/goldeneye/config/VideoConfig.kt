@@ -8,9 +8,9 @@ interface VideoConfig {
     /**
      * Defines the quality of recorded video.
      *
-     * Default value is the first supported of [VideoQuality.RESOLUTION_2160P], [VideoQuality.RESOLUTION_1080P],
-     * [VideoQuality.RESOLUTION_720P], [VideoQuality.HIGH], [VideoQuality.LOW].
-     * If none is supported, [VideoQuality.UNKNOWN] is used.
+     * Default value is the first supported of [VideoQuality.RESOLUTION_2160P],
+     * [VideoQuality.RESOLUTION_1080P], [VideoQuality.RESOLUTION_720P], [VideoQuality.HIGH],
+     * [VideoQuality.LOW]. If none is supported, [VideoQuality.UNKNOWN] is used.
      *
      * @see VideoQuality
      */
@@ -21,7 +21,7 @@ interface VideoConfig {
      *
      * Empty list is returned in case of error or for external cameras.
      *
-     * For now, video recording via external cameras is disabled because
+     * IMPORTANT: For now, video recording via external cameras is disabled because
      * it is impossible to fetch available video qualities via current API.
      */
     val supportedVideoQualities: List<VideoQuality>

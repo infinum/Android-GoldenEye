@@ -94,20 +94,18 @@ internal object CameraUtils {
         config: Camera2ConfigImpl,
         x: Float,
         y: Float
-    ): Array<MeteringRectangle> {
-        val rect = calculateFocusRect(activity, textureView, config, x, y) ?: return emptyArray()
+    ): Rect? {
+        val rect = calculateFocusRect(activity, textureView, config, x, y) ?: return null
         /* Get active Rect size. This corresponds to actual camera size seen by Camera2 API */
-        val activeRect = config.characteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return emptyArray()
+        val activeRect = config.characteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return null
         val scaleX = activeRect.width().toFloat() / config.previewSize.width
         val scaleY = activeRect.height().toFloat() / config.previewSize.height
-        val meteringRect = Rect(
+        return Rect(
             (scaleX * rect.left).toInt(),
             (scaleY * rect.top).toInt(),
             (scaleX * rect.right).toInt(),
             (scaleY * rect.bottom).toInt()
         )
-
-        return arrayOf(MeteringRectangle(meteringRect, MeteringRectangle.METERING_WEIGHT_MAX - 1))
     }
 
     /**

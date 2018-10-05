@@ -12,6 +12,14 @@ internal fun <T1, T2> ifNotNull(p1: T1?, p2: T2?, action: (T1, T2) -> Unit) {
     }
 }
 
+/**
+ * Run task on background thread and return nullable result on main thread.
+ *
+ * @param task that you want to execute on background thread. Return null in
+ * case of error.
+ * @param onResult function receives [task] result and handles it on the
+ * main thread.
+ */
 internal fun <T> async(task: () -> T?, onResult: (T?) -> Unit) {
     AsyncUtils.backgroundHandler.post {
         val result = task()

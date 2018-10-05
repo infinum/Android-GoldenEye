@@ -6,6 +6,9 @@ import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.models.FlashMode
 
+/**
+ * Copy given request builder parameters to [this] request builder.
+ */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal fun CaptureRequest.Builder?.copyParamsFrom(other: CaptureRequest.Builder?) {
     if (other == null || this == null) {
@@ -23,6 +26,9 @@ internal fun CaptureRequest.Builder?.copyParamsFrom(other: CaptureRequest.Builde
     set(CaptureRequest.FLASH_MODE, other[CaptureRequest.FLASH_MODE])
 }
 
+/**
+ * Create new capture request builder from given config.
+ */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal fun CaptureRequest.Builder?.applyConfig(config: CameraConfig?) {
     if (this == null || config == null) {
@@ -57,10 +63,11 @@ internal fun CaptureRequest.Builder?.applyConfig(config: CameraConfig?) {
             )
         }
 
+        /* Awesome Camera2 API workaround to support FlashMode.TORCH */
         if (supportedFlashModes.contains(flashMode)) {
             if (flashMode == FlashMode.TORCH) {
-                set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
-                set(CaptureRequest.FLASH_MODE, flashMode.toCamera2())
+                set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                set(CaptureRequest.FLASH_MODE, FlashMode.TORCH.toCamera2())
             } else {
                 set(CaptureRequest.CONTROL_AE_MODE, flashMode.toCamera2())
                 set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)

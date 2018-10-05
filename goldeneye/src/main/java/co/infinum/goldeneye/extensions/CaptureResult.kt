@@ -7,6 +7,9 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.utils.LogDelegate
 
+/**
+ * Check if camera is ready and locked.
+ */
 fun CaptureResult.isLocked(): Boolean {
     val aeMode = get(CaptureResult.CONTROL_AE_MODE)
     val aeState = get(CaptureResult.CONTROL_AE_STATE)
@@ -16,7 +19,6 @@ fun CaptureResult.isLocked(): Boolean {
     val awbState = get(CaptureResult.CONTROL_AWB_STATE)
 
     /* Wait for all states to be ready, if they are not ready repeat basic capture while camera is preparing for capture */
-    LogDelegate.log("${isExposureReady(aeMode, aeState)}; ${isFocusReady(afMode, afState)} = $afState; ${isAwbReady(awbMode, awbState)}")
     return isExposureReady(aeMode, aeState) && isFocusReady(afMode, afState) && isAwbReady(awbMode, awbState)
 }
 

@@ -25,6 +25,8 @@ interface PictureTransformation {
      * @param config current camera config that can be used to calculate and measure necessary transformations.
      * @param orientationDifference represents orientation difference between device and camera.
      *
+     * NOTE: If [OutOfMemoryError] happens, original bitmap is returned!
+     *
      * @return bitmap that will be delegated to [PictureCallback.onPictureTaken]
      */
     fun transform(picture: Bitmap, config: CameraConfig, orientationDifference: Float): Bitmap

@@ -1,5 +1,6 @@
 package co.infinum.goldeneye.sessions
 
+import android.graphics.Rect
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
@@ -58,10 +59,14 @@ internal class SessionsManager(
         }
     }
 
+    fun resetFlashMode() {
+        activeSession.resetFlash()
+    }
+
     /**
      * Used to lock focus for tap to focus functionality.
      */
-    fun lockFocus(region: Array<MeteringRectangle>) {
+    fun lockFocus(region: Rect) {
         activeSession.lockFocus(region)
     }
 

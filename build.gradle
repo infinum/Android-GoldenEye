@@ -1,15 +1,13 @@
 buildscript {
 
     ext.sdk = [
-        min   : 16,
-        target: 27,
+        min   : 14,
+        target: 28,
     ]
 
     ext.versions = [
-        goldeneye: '0.2.0',
-        google   : '27.1.1',
-        junit    : '4.12',
-        mockito  : '2.10.0',
+        goldeneye: '1.0.0-rc1',
+        google   : '28.0.0',
         kotlin   : '1.2.71'
     ]
 

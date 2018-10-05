@@ -1,16 +1,13 @@
 package co.infinum.goldeneye.config.camera2
 
-import android.app.Activity
 import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.support.annotation.RequiresApi
-import android.view.TextureView
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.FlashMode
 import co.infinum.goldeneye.sessions.SessionsManager
-import co.infinum.goldeneye.utils.CameraUtils
 
 /**
  * Handles property updates. Syncs CameraConfig with active Camera2 session.
@@ -26,8 +23,9 @@ internal class ConfigUpdateHandler(
             CameraProperty.FOCUS -> sessionsManager.updateSession {
                 set(CaptureRequest.CONTROL_AF_MODE, config.focusMode.toCamera2())
             }
-            CameraProperty.FLASH -> sessionsManager.updateSession {
-                updateFlashMode(this, config.flashMode)
+            CameraProperty.FLASH -> {
+                sessionsManager.resetFlashMode()
+                sessionsManager.updateSession { updateFlashMode(this, config.flashMode) }
             }
             CameraProperty.COLOR_EFFECT -> sessionsManager.updateSession {
                 set(CaptureRequest.CONTROL_EFFECT_MODE, config.colorEffectMode.toCamera2())
@@ -83,6 +81,13 @@ internal class ConfigUpdateHandler(
         requestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomedRect)
     }
 
+    private fun resetFlashMode(requestBuilder: CaptureRequest.Builder) {
+        requestBuilder.apply {
+            set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+            set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+        }
+    }
+
     /**
      * Update Flash mode. Edge case is if it is FlashMode.TORCH is applied.
      * Flash mode is handled by AE_MODE except FlashMode.TORCH. If TORCH is
@@ -90,11 +95,11 @@ internal class ConfigUpdateHandler(
      */
     private fun updateFlashMode(requestBuilder: CaptureRequest.Builder, flashMode: FlashMode) {
         if (flashMode == FlashMode.TORCH) {
-            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
-            requestBuilder.set(CaptureRequest.FLASH_MODE, flashMode.toCamera2())
+            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+            requestBuilder.set(CaptureRequest.FLASH_MODE, FlashMode.TORCH.toCamera2())
         } else {
-            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, flashMode.toCamera2())
             requestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, flashMode.toCamera2())
         }
     }
 }
