@@ -200,7 +200,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun prepareItems() {
         goldenEye.config?.apply {
-            settingsAdapter.updateDataSet(prepareItems(this@MainActivity))
+            prepareItems(this@MainActivity, settingsAdapter)
         }
     }
 

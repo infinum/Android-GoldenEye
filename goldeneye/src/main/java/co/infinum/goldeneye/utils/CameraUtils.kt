@@ -251,4 +251,27 @@ internal object CameraUtils {
 
         return Rect(left, top, right, bottom)
     }
+
+    /**
+     * Calculate zoom rect by scaling active rect with zoom ratio.
+     */
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    fun calculateCamera2ZoomRect(config: Camera2ConfigImpl): Rect? {
+        val activeRect = config.characteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return null
+        val zoomPercentage = config.zoom / 100f
+
+        /* Measure actual zoomed width and zoomed height */
+        val zoomedWidth = (activeRect.width() / zoomPercentage).toInt()
+        val zoomedHeight = (activeRect.height() / zoomPercentage).toInt()
+        val halfWidthDiff = (activeRect.width() - zoomedWidth) / 2
+        val halfHeightDiff = (activeRect.height() - zoomedHeight) / 2
+
+        /* Create zoomed rect */
+        return Rect(
+            activeRect.left + halfWidthDiff,
+            activeRect.top + halfHeightDiff,
+            activeRect.right - halfWidthDiff,
+            activeRect.bottom - halfHeightDiff
+        )
+    }
 }

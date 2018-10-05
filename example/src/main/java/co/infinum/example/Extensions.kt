@@ -25,8 +25,8 @@ fun boolList() = listOf(
 
 fun Context.toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
 
-fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
-    return listOf(
+fun CameraConfig.prepareItems(context: Context, adapter: SettingsAdapter) {
+    val settingsItems = listOf(
         SettingsItem("Preview size:", previewSize.convertToString()) {
             if (previewScale == PreviewScale.MANUAL
                 || previewScale == PreviewScale.MANUAL_FIT
@@ -35,6 +35,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
                 displayDialog(
                     context = context,
                     config = this,
+                    settingsAdapter = adapter,
                     title = "Preview size",
                     listItems = supportedPreviewSizes.map { ListItem(it, it.convertToString()) },
                     onClick = { previewSize = it }
@@ -47,6 +48,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
             displayDialog(
                 context = context,
                 config = this,
+                settingsAdapter = adapter,
                 title = "Picture size",
                 listItems = supportedPictureSizes.map { ListItem(it, it.convertToString()) },
                 onClick = { pictureSize = it }
@@ -56,6 +58,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
             displayDialog(
                 context = context,
                 config = this,
+                settingsAdapter = adapter,
                 title = "Preview scale",
                 listItems = PreviewScale.values().map { ListItem(it, it.convertToString()) },
                 onClick = { previewScale = it }
@@ -65,6 +68,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
             displayDialog(
                 context = context,
                 config = this,
+                settingsAdapter = adapter,
                 title = "Video quality",
                 listItems = supportedVideoQualities.map { ListItem(it, it.convertToString()) },
                 onClick = { videoQuality = it }
@@ -75,6 +79,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
                 displayDialog(
                     context = context,
                     config = this,
+                    settingsAdapter = adapter,
                     title = "Video stabilization",
                     listItems = boolList(),
                     onClick = { videoStabilizationEnabled = it }
@@ -87,6 +92,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
             displayDialog(
                 context = context,
                 config = this,
+                settingsAdapter = adapter,
                 title = "Flash mode",
                 listItems = supportedFlashModes.map { ListItem(it, it.convertToString()) },
                 onClick = { flashMode = it }
@@ -96,6 +102,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
             displayDialog(
                 context = context,
                 config = this,
+                settingsAdapter = adapter,
                 title = "Focus mode",
                 listItems = supportedFocusModes.map { ListItem(it, it.convertToString()) },
                 onClick = { focusMode = it }
@@ -105,6 +112,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
             displayDialog(
                 context = context,
                 config = this,
+                settingsAdapter = adapter,
                 title = "White Balance",
                 listItems = supportedWhiteBalanceModes.map { ListItem(it, it.convertToString()) },
                 onClick = { whiteBalanceMode = it }
@@ -114,6 +122,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
             displayDialog(
                 context = context,
                 config = this,
+                settingsAdapter = adapter,
                 title = "Color Effect",
                 listItems = supportedColorEffectModes.map { ListItem(it, it.convertToString()) },
                 onClick = { colorEffectMode = it }
@@ -123,6 +132,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
             displayDialog(
                 context = context,
                 config = this,
+                settingsAdapter = adapter,
                 title = "Antibanding",
                 listItems = supportedAntibandingModes.map { ListItem(it, it.convertToString()) },
                 onClick = { antibandingMode = it }
@@ -133,6 +143,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
                 displayDialog(
                     context = context,
                     config = this,
+                    settingsAdapter = adapter,
                     title = "Tap to focus",
                     listItems = boolList(),
                     onClick = { tapToFocusEnabled = it }
@@ -146,6 +157,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
                 displayDialog(
                     context = context,
                     config = this,
+                    settingsAdapter = adapter,
                     title = "Reset delay",
                     listItems = listOf(
                         ListItem(2_500L, "2500"),
@@ -163,6 +175,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
                 displayDialog(
                     context = context,
                     config = this,
+                    settingsAdapter = adapter,
                     title = "Pinch to zoom",
                     listItems = boolList(),
                     onClick = { pinchToZoomEnabled = it }
@@ -176,6 +189,7 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
                 displayDialog(
                     context = context,
                     config = this,
+                    settingsAdapter = adapter,
                     title = "Friction",
                     listItems = listOf(
                         ListItem(0.5f, "0.50"),
@@ -189,9 +203,12 @@ fun CameraConfig.prepareItems(context: Context): List<SettingsItem> {
             }
         }
     )
+    adapter.updateDataSet(settingsItems)
 }
 
-fun <T> displayDialog(context: Context, config: CameraConfig, title: String, listItems: List<ListItem<T>>, onClick: (T) -> Unit) {
+fun <T> displayDialog(context: Context, config: CameraConfig, settingsAdapter: SettingsAdapter,
+    title: String, listItems: List<ListItem<T>>, onClick: (T) -> Unit
+) {
     if (listItems.isEmpty()) {
         context.toast("$title not supported")
         return
@@ -208,7 +225,7 @@ fun <T> displayDialog(context: Context, config: CameraConfig, title: String, lis
         adapter = ListItemAdapter(listItems) {
             onClick(it)
             dialog.dismiss()
-            config.prepareItems(context)
+            config.prepareItems(context, settingsAdapter)
         }
     }
 }

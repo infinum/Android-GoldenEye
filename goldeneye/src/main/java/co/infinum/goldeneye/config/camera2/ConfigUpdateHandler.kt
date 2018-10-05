@@ -1,13 +1,12 @@
 package co.infinum.goldeneye.config.camera2
 
-import android.graphics.Rect
-import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.FlashMode
 import co.infinum.goldeneye.sessions.SessionsManager
+import co.infinum.goldeneye.utils.CameraUtils
 
 /**
  * Handles property updates. Syncs CameraConfig with active Camera2 session.
@@ -38,7 +37,7 @@ internal class ConfigUpdateHandler(
             }
             CameraProperty.PICTURE_SIZE -> sessionsManager.restartSession()
             CameraProperty.PREVIEW_SIZE -> sessionsManager.restartSession()
-            CameraProperty.ZOOM -> sessionsManager.updateSession { updateZoom(this, config.zoom) }
+            CameraProperty.ZOOM -> sessionsManager.updateSession { updateZoom(this) }
             CameraProperty.VIDEO_STABILIZATION -> updateVideoStabilization()
             CameraProperty.PREVIEW_SCALE -> sessionsManager.restartSession()
         }
@@ -58,34 +57,12 @@ internal class ConfigUpdateHandler(
     /**
      * Update Camera2 zoom by measuring ZoomRect.
      */
-    private fun updateZoom(requestBuilder: CaptureRequest.Builder, zoom: Int) {
+    private fun updateZoom(requestBuilder: CaptureRequest.Builder) {
         /* Get active Rect size. This corresponds to actual camera size seen by Camera2 API */
-        val activeRect = config.characteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return
-        val zoomPercentage = zoom / 100f
-
-        /* Measure actual zoomed width and zoomed height */
-        val zoomedWidth = (activeRect.width() / zoomPercentage).toInt()
-        val zoomedHeight = (activeRect.height() / zoomPercentage).toInt()
-        val halfWidthDiff = (activeRect.width() - zoomedWidth) / 2
-        val halfHeightDiff = (activeRect.height() - zoomedHeight) / 2
-
-        /* Create zoomed rect */
-        val zoomedRect = Rect(
-            activeRect.left + halfWidthDiff,
-            activeRect.top + halfHeightDiff,
-            activeRect.right - halfWidthDiff,
-            activeRect.bottom - halfHeightDiff
-        )
+        val zoomedRect = CameraUtils.calculateCamera2ZoomRect(config) ?: return
 
         /* BAM */
         requestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomedRect)
-    }
-
-    private fun resetFlashMode(requestBuilder: CaptureRequest.Builder) {
-        requestBuilder.apply {
-            set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
-            set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
-        }
     }
 
     /**

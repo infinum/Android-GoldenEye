@@ -3,8 +3,9 @@ package co.infinum.goldeneye.extensions
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.support.annotation.RequiresApi
-import co.infinum.goldeneye.config.CameraConfig
+import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
 import co.infinum.goldeneye.models.FlashMode
+import co.infinum.goldeneye.utils.CameraUtils
 
 /**
  * Copy given request builder parameters to [this] request builder.
@@ -30,7 +31,7 @@ internal fun CaptureRequest.Builder?.copyParamsFrom(other: CaptureRequest.Builde
  * Create new capture request builder from given config.
  */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-internal fun CaptureRequest.Builder?.applyConfig(config: CameraConfig?) {
+internal fun CaptureRequest.Builder?.applyConfig(config: Camera2ConfigImpl?) {
     if (this == null || config == null) {
         return
     }
@@ -50,6 +51,11 @@ internal fun CaptureRequest.Builder?.applyConfig(config: CameraConfig?) {
 
         if (supportedWhiteBalanceModes.contains(whiteBalanceMode)) {
             set(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode.toCamera2())
+        }
+
+        val zoomRect = CameraUtils.calculateCamera2ZoomRect(this)
+        if (zoomRect != null) {
+            set(CaptureRequest.SCALER_CROP_REGION, zoomRect)
         }
 
         if (videoStabilizationEnabled) {
