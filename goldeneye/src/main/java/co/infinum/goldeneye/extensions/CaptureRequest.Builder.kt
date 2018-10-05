@@ -53,9 +53,13 @@ internal fun CaptureRequest.Builder?.applyConfig(config: Camera2ConfigImpl?) {
             set(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode.toCamera2())
         }
 
-        val zoomRect = CameraUtils.calculateCamera2ZoomRect(this)
-        if (zoomRect != null) {
-            set(CaptureRequest.SCALER_CROP_REGION, zoomRect)
+        if (config.zoom > 100) {
+            val zoomRect = CameraUtils.calculateCamera2ZoomRect(this)
+            if (zoomRect != null) {
+                set(CaptureRequest.SCALER_CROP_REGION, zoomRect)
+            }
+        } else {
+            set(CaptureRequest.SCALER_CROP_REGION, null)
         }
 
         if (videoStabilizationEnabled) {

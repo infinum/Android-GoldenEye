@@ -268,10 +268,10 @@ internal object CameraUtils {
 
         /* Create zoomed rect */
         return Rect(
-            activeRect.left + halfWidthDiff,
-            activeRect.top + halfHeightDiff,
-            activeRect.right - halfWidthDiff,
-            activeRect.bottom - halfHeightDiff
+            max(0, halfWidthDiff),
+            max(0, halfHeightDiff),
+            min(halfWidthDiff + zoomedWidth, activeRect.width() - 1),
+            min(halfHeightDiff + zoomedHeight, activeRect.height() - 1)
         )
     }
 }
