@@ -183,8 +183,22 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == 0x1 && grantResults.getOrNull(0) == PackageManager.PERMISSION_GRANTED) {
-            goldenEye.open(textureView, goldenEye.availableCameras[0], initCallback)
+        if (requestCode == 0x1) {
+            if (grantResults.getOrNull(0) == PackageManager.PERMISSION_GRANTED) {
+                goldenEye.open(textureView, goldenEye.availableCameras[0], initCallback)
+            } else {
+                AlertDialog.Builder(this)
+                    .setTitle("GoldenEye")
+                    .setMessage("Smartass Detected!")
+                    .setPositiveButton("I am smartass") { _, _ ->
+                        throw SmartassException
+                    }
+                    .setNegativeButton("Sorry") { _, _ ->
+                        openCamera(goldenEye.availableCameras[0])
+                    }
+                    .setCancelable(false)
+                    .show()
+            }
         } else if (requestCode == 0x2) {
             record()
         }
@@ -231,3 +245,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
+object SmartassException : Throwable()
