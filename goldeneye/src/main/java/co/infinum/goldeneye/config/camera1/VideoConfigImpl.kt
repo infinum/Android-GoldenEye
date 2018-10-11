@@ -4,6 +4,7 @@ package co.infinum.goldeneye.config.camera1
 
 import android.hardware.Camera
 import android.media.CamcorderProfile
+import android.os.Build
 import co.infinum.goldeneye.config.BaseVideoConfig
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.VideoQuality
@@ -14,7 +15,7 @@ internal class VideoConfigImpl(
 ) : BaseVideoConfig<Camera.Parameters>(onUpdateCallback) {
 
     override val isVideoStabilizationSupported: Boolean by lazy {
-        characteristics.isVideoStabilizationSupported
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1 && characteristics.isVideoStabilizationSupported
     }
 
     override val supportedVideoQualities: List<VideoQuality> by lazy {

@@ -7,6 +7,8 @@ import co.infinum.goldeneye.extensions.mirror
 import co.infinum.goldeneye.extensions.rotate
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.utils.LogDelegate
+import co.infinum.goldeneye.utils.LogDelegate.log
+import kotlin.math.log
 
 /**
  * Implement picture transformation after picture is taken.
@@ -50,7 +52,7 @@ interface PictureTransformation {
                     }
                 }
             } catch (t: Throwable) {
-                LogDelegate.log(t)
+                log("Failed to transform picture. Returning raw picture.", t)
                 picture
             }
     }

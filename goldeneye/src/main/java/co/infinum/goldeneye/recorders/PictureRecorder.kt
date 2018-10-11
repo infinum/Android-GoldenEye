@@ -40,7 +40,7 @@ internal class PictureRecorder(
                 null
             }
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to get picture.", t)
             null
         }
     }

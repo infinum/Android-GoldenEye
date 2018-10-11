@@ -110,7 +110,7 @@ internal class VideoSession(
             mediaRecorder?.reset()
             mediaRecorder?.release()
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to release video session.", t)
         } finally {
             mediaRecorder = null
             mediaSurface = null

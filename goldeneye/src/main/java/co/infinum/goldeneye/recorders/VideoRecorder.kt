@@ -73,7 +73,7 @@ internal class VideoRecorder(
             mediaRecorder?.reset()
             mediaRecorder?.release()
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to release media recorder.", t)
         } finally {
             mediaRecorder = null
             callback = null

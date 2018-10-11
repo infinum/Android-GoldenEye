@@ -35,7 +35,7 @@ internal object AsyncUtils {
             }
             backgroundThread?.join()
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to stop background threads." ,t)
         } finally {
             _backgroundHandler = null
             backgroundThread = null

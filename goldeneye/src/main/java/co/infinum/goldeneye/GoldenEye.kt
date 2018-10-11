@@ -104,6 +104,7 @@ interface GoldenEye {
         private var onZoomChangedCallback: OnZoomChangedCallback? = null
         private var onFocusChangedCallback: OnFocusChangedCallback? = null
         private var pictureTransformation: PictureTransformation? = PictureTransformation.Default
+        private var advancedFeaturesEnabled = false
 
         /**
          * @see Logger
@@ -172,6 +173,8 @@ interface GoldenEye {
          */
         fun setPictureTransformation(transformation: PictureTransformation) = apply { this.pictureTransformation = transformation }
 
+        fun withAdvancedFeatures() = apply { this.advancedFeaturesEnabled = true }
+
         /**
          * Builds GoldenEye implementation. Builds Camera1 API wrapper for devices older than
          * LOLLIPOP and devices that use LEGACY camera, otherwise Camera2 API wrapper is built.
@@ -179,9 +182,15 @@ interface GoldenEye {
         @SuppressLint("NewApi")
         fun build(): GoldenEye {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && isLegacyCamera().not()) {
-                GoldenEye2Impl(activity, onZoomChangedCallback, onFocusChangedCallback, pictureTransformation, logger)
+                GoldenEye2Impl(
+                    activity, advancedFeaturesEnabled, onZoomChangedCallback,
+                    onFocusChangedCallback, pictureTransformation, logger
+                )
             } else {
-                GoldenEye1Impl(activity, onZoomChangedCallback, onFocusChangedCallback, pictureTransformation, logger)
+                GoldenEye1Impl(
+                    activity, advancedFeaturesEnabled, onZoomChangedCallback,
+                    onFocusChangedCallback, pictureTransformation, logger
+                )
             }
         }
 

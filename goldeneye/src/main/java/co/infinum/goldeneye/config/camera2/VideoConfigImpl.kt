@@ -2,14 +2,11 @@ package co.infinum.goldeneye.config.camera2
 
 import android.hardware.camera2.CameraCharacteristics
 import android.media.CamcorderProfile
-import android.media.MediaRecorder
 import android.os.Build
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.config.BaseVideoConfig
 import co.infinum.goldeneye.models.CameraProperty
-import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.models.VideoQuality
-import co.infinum.goldeneye.models.toInternalSize
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class VideoConfigImpl(

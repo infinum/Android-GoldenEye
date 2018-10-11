@@ -10,20 +10,23 @@ import co.infinum.goldeneye.IllegalCharacteristicsException
 interface CameraConfig :
     CameraInfo,
     VideoConfig,
-    FeatureConfig,
+    BasicFeatureConfig,
+    AdvancedFeatureConfig,
     SizeConfig,
     ZoomConfig
 
 internal abstract class CameraConfigImpl<T : Any>(
     var cameraInfo: CameraInfo,
     var videoConfig: BaseVideoConfig<T>,
-    var featureConfig: BaseFeatureConfig<T>,
+    var basicFeatureConfig: BaseBasicFeatureConfig<T>,
+    var advancedFeatureConfig: BaseAdvancedFeatureConfig<T>,
     var sizeConfig: BaseSizeConfig<T>,
     var zoomConfig: BaseZoomConfig<T>
 ) : CameraConfig,
     CameraInfo by cameraInfo,
     VideoConfig by videoConfig,
-    FeatureConfig by featureConfig,
+    BasicFeatureConfig by basicFeatureConfig,
+    AdvancedFeatureConfig by advancedFeatureConfig,
     SizeConfig by sizeConfig,
     ZoomConfig by zoomConfig {
 
@@ -33,7 +36,8 @@ internal abstract class CameraConfigImpl<T : Any>(
             if (value != null) {
                 sizeConfig.characteristics = value
                 videoConfig.characteristics = value
-                featureConfig.characteristics = value
+                basicFeatureConfig.characteristics = value
+                advancedFeatureConfig.characteristics = value
                 zoomConfig.characteristics = value
             } else {
                 throw IllegalCharacteristicsException

@@ -10,10 +10,11 @@ import co.infinum.goldeneye.config.*
 internal class Camera2ConfigImpl(
     cameraInfo: CameraInfo,
     videoConfig: BaseVideoConfig<CameraCharacteristics>,
-    featureConfig: BaseFeatureConfig<CameraCharacteristics>,
+    basicFeatureConfig: BaseBasicFeatureConfig<CameraCharacteristics>,
+    advancedFeatureConfig: BaseAdvancedFeatureConfig<CameraCharacteristics>,
     sizeConfig: BaseSizeConfig<CameraCharacteristics>,
     zoomConfig: BaseZoomConfig<CameraCharacteristics>
-) : CameraConfigImpl<CameraCharacteristics>(cameraInfo, videoConfig, featureConfig, sizeConfig, zoomConfig) {
+) : CameraConfigImpl<CameraCharacteristics>(cameraInfo, videoConfig, basicFeatureConfig, advancedFeatureConfig, sizeConfig, zoomConfig) {
 
     fun isHardwareAtLeastLimited() =
         characteristics?.get(INFO_SUPPORTED_HARDWARE_LEVEL) == INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED

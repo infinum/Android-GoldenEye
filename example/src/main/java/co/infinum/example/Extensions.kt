@@ -27,6 +27,7 @@ fun Context.toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).
 
 fun CameraConfig.prepareItems(context: Context, adapter: SettingsAdapter) {
     val settingsItems = listOf(
+        SettingsItem(name = "Basic features", type = 1),
         SettingsItem("Preview size:", previewSize.convertToString()) {
             if (previewScale == PreviewScale.MANUAL
                 || previewScale == PreviewScale.MANUAL_FIT
@@ -108,36 +109,6 @@ fun CameraConfig.prepareItems(context: Context, adapter: SettingsAdapter) {
                 onClick = { focusMode = it }
             )
         },
-        SettingsItem("White Balance:", whiteBalanceMode.convertToString()) {
-            displayDialog(
-                context = context,
-                config = this,
-                settingsAdapter = adapter,
-                title = "White Balance",
-                listItems = supportedWhiteBalanceModes.map { ListItem(it, it.convertToString()) },
-                onClick = { whiteBalanceMode = it }
-            )
-        },
-        SettingsItem("Color Effect:", colorEffectMode.convertToString()) {
-            displayDialog(
-                context = context,
-                config = this,
-                settingsAdapter = adapter,
-                title = "Color Effect",
-                listItems = supportedColorEffectModes.map { ListItem(it, it.convertToString()) },
-                onClick = { colorEffectMode = it }
-            )
-        },
-        SettingsItem("Antibanding:", antibandingMode.convertToString()) {
-            displayDialog(
-                context = context,
-                config = this,
-                settingsAdapter = adapter,
-                title = "Antibanding",
-                listItems = supportedAntibandingModes.map { ListItem(it, it.convertToString()) },
-                onClick = { antibandingMode = it }
-            )
-        },
         SettingsItem("Tap to focus:", tapToFocusEnabled.convertToString()) {
             if (isTapToFocusSupported) {
                 displayDialog(
@@ -201,6 +172,37 @@ fun CameraConfig.prepareItems(context: Context, adapter: SettingsAdapter) {
             } else {
                 context.toast("Pinch to zoom not supported.")
             }
+        },
+        SettingsItem(name = "Advanced features", type = 1),
+        SettingsItem("White Balance:", whiteBalanceMode.convertToString()) {
+            displayDialog(
+                context = context,
+                config = this,
+                settingsAdapter = adapter,
+                title = "White Balance",
+                listItems = supportedWhiteBalanceModes.map { ListItem(it, it.convertToString()) },
+                onClick = { whiteBalanceMode = it }
+            )
+        },
+        SettingsItem("Color Effect:", colorEffectMode.convertToString()) {
+            displayDialog(
+                context = context,
+                config = this,
+                settingsAdapter = adapter,
+                title = "Color Effect",
+                listItems = supportedColorEffectModes.map { ListItem(it, it.convertToString()) },
+                onClick = { colorEffectMode = it }
+            )
+        },
+        SettingsItem("Antibanding:", antibandingMode.convertToString()) {
+            displayDialog(
+                context = context,
+                config = this,
+                settingsAdapter = adapter,
+                title = "Antibanding",
+                listItems = supportedAntibandingModes.map { ListItem(it, it.convertToString()) },
+                onClick = { antibandingMode = it }
+            )
         }
     )
     adapter.updateDataSet(settingsItems)

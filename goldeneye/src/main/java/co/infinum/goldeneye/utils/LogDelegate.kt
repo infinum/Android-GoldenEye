@@ -7,5 +7,8 @@ internal object LogDelegate {
     var logger: Logger? = null
 
     fun log(message: String) = logger?.log(message)
-    fun log(t: Throwable) = logger?.log(t)
+    fun log(message: String, t: Throwable) {
+        logger?.log(message)
+        logger?.log(t)
+    }
 }

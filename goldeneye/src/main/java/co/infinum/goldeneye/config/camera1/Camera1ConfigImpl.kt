@@ -8,7 +8,8 @@ import co.infinum.goldeneye.config.*
 internal class Camera1ConfigImpl(
     cameraInfo: CameraInfo,
     videoConfig: BaseVideoConfig<Camera.Parameters>,
-    featureConfig: BaseFeatureConfig<Camera.Parameters>,
+    basicFeatureConfig: BaseBasicFeatureConfig<Camera.Parameters>,
     sizeConfig: BaseSizeConfig<Camera.Parameters>,
-    zoomConfig: BaseZoomConfig<Camera.Parameters>
-) : CameraConfigImpl<Camera.Parameters>(cameraInfo, videoConfig, featureConfig, sizeConfig, zoomConfig)
+    zoomConfig: BaseZoomConfig<Camera.Parameters>,
+    advancedFeatureConfig: BaseAdvancedFeatureConfig<Camera.Parameters>
+) : CameraConfigImpl<Camera.Parameters>(cameraInfo, videoConfig, basicFeatureConfig, advancedFeatureConfig, sizeConfig, zoomConfig)

@@ -3,7 +3,7 @@ package co.infinum.goldeneye.config
 import co.infinum.goldeneye.models.*
 import co.infinum.goldeneye.utils.LogDelegate
 
-interface FeatureConfig {
+interface BasicFeatureConfig {
 
     /**
      * Returns current JPEG quality. The value must be Integer between 1 and 100 (inclusive).
@@ -79,67 +79,11 @@ interface FeatureConfig {
      * @see FocusMode
      */
     val supportedFocusModes: List<FocusMode>
-
-    /**
-     * Returns currently active White balance mode.
-     * When new White balance mode is set, it is automatically updated on current camera.
-     *
-     * Default value is the first supported mode of [WhiteBalanceMode.AUTO], [WhiteBalanceMode.OFF].
-     * If none is supported [WhiteBalanceMode.UNKNOWN] is used.
-     *
-     * @see WhiteBalanceMode
-     */
-    var whiteBalanceMode: WhiteBalanceMode
-
-    /**
-     * Returns list of available White balance modes. In case White balance is not supported,
-     * empty list will be returned.
-     *
-     * @see WhiteBalanceMode
-     */
-    val supportedWhiteBalanceModes: List<WhiteBalanceMode>
-
-    /**
-     * Returns currently active Color effect mode.
-     * When new Color effect mode is set, it is automatically updated on current camera.
-     *
-     * Default value is [ColorEffectMode.NONE] if supported, otherwise [ColorEffectMode.UNKNOWN].
-     *
-     * @see ColorEffectMode
-     */
-    var colorEffectMode: ColorEffectMode
-
-    /**
-     * Returns list of available Color effect modes. In case Color effect is not supported,
-     * empty list will be returned.
-     *
-     * @see ColorEffectMode
-     */
-    val supportedColorEffectModes: List<ColorEffectMode>
-
-    /**
-     * Returns currently active Antibanding mode.
-     * When new Antibanding mode is set, it is automatically updated on current camera.
-     *
-     * Default value is the first supported mode of [AntibandingMode.AUTO], [AntibandingMode.OFF].
-     * If none is supported [AntibandingMode.UNKNOWN] is used.
-     *
-     * @see AntibandingMode
-     */
-    var antibandingMode: AntibandingMode
-
-    /**
-     * Returns list of available Antibanding modes. In case Antibanding is not supported,
-     * empty list will be returned.
-     *
-     * @see AntibandingMode
-     */
-    val supportedAntibandingModes: List<AntibandingMode>
 }
 
-internal abstract class BaseFeatureConfig<T : Any>(
+internal abstract class BaseBasicFeatureConfig<T : Any>(
     private val onUpdateCallback: (CameraProperty) -> Unit
-) : FeatureConfig {
+) : BasicFeatureConfig {
 
     lateinit var characteristics: T
 
@@ -196,53 +140,6 @@ internal abstract class BaseFeatureConfig<T : Any>(
                 onUpdateCallback(CameraProperty.FOCUS)
             } else {
                 LogDelegate.log("Unsupported FocusMode [$value]")
-            }
-        }
-
-    override var whiteBalanceMode = WhiteBalanceMode.UNKNOWN
-        get() = when {
-            field != WhiteBalanceMode.UNKNOWN -> field
-            supportedWhiteBalanceModes.contains(WhiteBalanceMode.AUTO) -> WhiteBalanceMode.AUTO
-            supportedWhiteBalanceModes.contains(WhiteBalanceMode.OFF) -> WhiteBalanceMode.OFF
-            else -> WhiteBalanceMode.UNKNOWN
-        }
-        set(value) {
-            if (supportedWhiteBalanceModes.contains(value)) {
-                field = value
-                onUpdateCallback(CameraProperty.WHITE_BALANCE)
-            } else {
-                LogDelegate.log("Unsupported WhiteBalance [$value]")
-            }
-        }
-
-    override var colorEffectMode = ColorEffectMode.UNKNOWN
-        get() = when {
-            field != ColorEffectMode.UNKNOWN -> field
-            supportedColorEffectModes.contains(ColorEffectMode.NONE) -> ColorEffectMode.NONE
-            else -> ColorEffectMode.UNKNOWN
-        }
-        set(value) {
-            if (supportedColorEffectModes.contains(value)) {
-                field = value
-                onUpdateCallback(CameraProperty.COLOR_EFFECT)
-            } else {
-                LogDelegate.log("Unsupported ColorEffect [$value]")
-            }
-        }
-
-    override var antibandingMode = AntibandingMode.UNKNOWN
-        get() = when {
-            field != AntibandingMode.UNKNOWN -> field
-            supportedAntibandingModes.contains(AntibandingMode.AUTO) -> AntibandingMode.AUTO
-            supportedAntibandingModes.contains(AntibandingMode.OFF) -> AntibandingMode.OFF
-            else -> AntibandingMode.UNKNOWN
-        }
-        set(value) {
-            if (supportedAntibandingModes.contains(value)) {
-                field = value
-                onUpdateCallback(CameraProperty.ANTIBANDING)
-            } else {
-                LogDelegate.log("Unsupported Antibanding [$value]")
             }
         }
 }

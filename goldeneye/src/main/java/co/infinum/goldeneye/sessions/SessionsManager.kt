@@ -38,7 +38,7 @@ internal class SessionsManager(
         try {
             activeSession.startSession()
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to apply new parameters to camera.", t)
         }
     }
 
@@ -55,7 +55,7 @@ internal class SessionsManager(
                 activeSession.createSession(textureView)
             }
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to restart session.", t)
         }
     }
 

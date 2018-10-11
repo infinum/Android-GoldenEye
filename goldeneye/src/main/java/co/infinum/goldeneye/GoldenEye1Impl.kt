@@ -31,6 +31,7 @@ import java.io.File
 
 internal class GoldenEye1Impl @JvmOverloads constructor(
     private val activity: Activity,
+    private val advancedFeaturesEnabled: Boolean,
     private val onZoomChangedCallback: OnZoomChangedCallback?,
     private val onFocusChangedCallback: OnFocusChangedCallback?,
     private val pictureTransformation: PictureTransformation?,
@@ -93,7 +94,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             camera?.stopPreview()
             camera?.release()
         } catch (t: Throwable) {
-            log(t)
+            log("Failed to release camera.", t)
         } finally {
             camera = null
             gestureHandler?.release()
@@ -251,7 +252,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
                 jpegQuality = _config.jpegQuality
 
-                if (_config.isVideoStabilizationSupported) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1 && _config.isVideoStabilizationSupported) {
                     videoStabilization = _config.videoStabilizationEnabled
                 }
 
@@ -299,7 +300,8 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                 Camera1ConfigImpl(
                     cameraInfo = cameraInfo,
                     videoConfig = videoConfig,
-                    featureConfig = FeatureConfigImpl(onConfigUpdateListener),
+                    basicFeatureConfig = BasicFeatureConfigImpl(onConfigUpdateListener),
+                    advancedFeatureConfig = AdvancedFeatureConfigImpl(advancedFeaturesEnabled, onConfigUpdateListener),
                     sizeConfig = SizeConfigImpl(cameraInfo, videoConfig, onConfigUpdateListener),
                     zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
                 )

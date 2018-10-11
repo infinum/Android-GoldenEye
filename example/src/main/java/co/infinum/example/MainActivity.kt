@@ -3,6 +3,7 @@ package co.infinum.example
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -13,7 +14,6 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.app.AppCompatDelegate
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Surface
 import android.view.TextureView
@@ -23,16 +23,16 @@ import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.Logger
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
-import co.infinum.goldeneye.models.PreviewScale
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
+import java.util.concurrent.Executors
 import kotlin.math.min
 
 @SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
-    lateinit var goldenEye: GoldenEye
+    private lateinit var goldenEye: GoldenEye
     private lateinit var videoFile: File
     private var isRecording = false
     private var settingsAdapter = SettingsAdapter(listOf())
@@ -43,7 +43,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onError(t: Throwable) {
-            toast("Init error - check log")
             t.printStackTrace()
         }
     }
@@ -54,7 +53,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun log(t: Throwable) {
-            toast(t.message ?: "GoldenEye error - check log")
             t.printStackTrace()
         }
     }
@@ -82,22 +80,12 @@ class MainActivity : AppCompatActivity() {
             goldenEye.takePicture(
                 onPictureTaken = { bitmap ->
                     if (bitmap.width <= 4096 && bitmap.height <= 4096) {
-                        previewPictureView.apply {
-                            setImageBitmap(bitmap)
-                            visibility = View.VISIBLE
-                        }
-                        mainHandler.postDelayed(
-                            { previewPictureView.visibility = View.GONE },
-                            3_000
-                        )
+                        displayPicture(bitmap)
                     } else {
-                        toast("Bitmap too large to show in ImageView. Max is 4096x4096.")
+                        reducePictureSize(bitmap)
                     }
                 },
-                onError = {
-                    toast("TakePicture error - check log")
-                    it.printStackTrace()
-                }
+                onError = { it.printStackTrace() }
             )
         }
 
@@ -116,6 +104,33 @@ class MainActivity : AppCompatActivity() {
             val nextIndex = (currentIndex + 1) % goldenEye.availableCameras.size
             openCamera(goldenEye.availableCameras[nextIndex])
         }
+    }
+
+    private fun reducePictureSize(bitmap: Bitmap) {
+        Executors.newSingleThreadExecutor().execute {
+            try {
+                val scaleX = 4096f / bitmap.width
+                val scaleY = 4096f / bitmap.height
+                val scale = min(scaleX, scaleY)
+                val newBitmap = Bitmap.createScaledBitmap(bitmap, (bitmap.width * scale).toInt(), (bitmap.height * scale).toInt(), true)
+                mainHandler.post {
+                    displayPicture(newBitmap)
+                }
+            } catch (t: Throwable) {
+                toast("Picture is too big. Reduce picture size in settings below 4096x4096.")
+            }
+        }
+    }
+
+    private fun displayPicture(bitmap: Bitmap) {
+        previewPictureView.apply {
+            setImageBitmap(bitmap)
+            visibility = View.VISIBLE
+        }
+        mainHandler.postDelayed(
+            { previewPictureView.visibility = View.GONE },
+            3_000
+        )
     }
 
     private fun initGoldenEye() {
@@ -174,10 +189,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             },
-            onError = {
-                toast("Recording error - check log")
-                it.printStackTrace()
-            }
+            onError = { it.printStackTrace() }
         )
     }
 

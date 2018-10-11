@@ -27,11 +27,13 @@ import co.infinum.goldeneye.sessions.VideoSession
 import co.infinum.goldeneye.utils.AsyncUtils
 import co.infinum.goldeneye.utils.Intrinsics
 import co.infinum.goldeneye.utils.LogDelegate
+import co.infinum.goldeneye.utils.LogDelegate.log
 import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class GoldenEye2Impl(
     private val activity: Activity,
+    private val advancedFeaturesEnabled: Boolean,
     private val onZoomChangedCallback: OnZoomChangedCallback?,
     private val onFocusChangedCallback: OnFocusChangedCallback?,
     private val pictureTransformation: PictureTransformation?,
@@ -102,7 +104,7 @@ internal class GoldenEye2Impl(
                 val currentState = state
                 if (lastCameraRequest == null) {
                     releaseInternal()
-                    LogDelegate.log(Camera2Error.fromInt(error).message)
+                    log(Camera2Error.fromInt(error).message)
                     if (currentState == CameraState.INITIALIZING) {
                         MAIN_HANDLER.post { callback.onError(CameraFailedToOpenException) }
                     }
@@ -200,7 +202,7 @@ internal class GoldenEye2Impl(
             sessionsManager?.release()
             cameraDevice?.close()
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            log("Failed to release camera.", t)
         } finally {
             lastCameraRequest = null
             cameraDevice = null
@@ -282,7 +284,8 @@ internal class GoldenEye2Impl(
             val cameraConfig = Camera2ConfigImpl(
                 cameraInfo = cameraInfo,
                 videoConfig = videoConfig,
-                featureConfig = FeatureConfigImpl(onConfigUpdateListener),
+                basicFeatureConfig = BasicFeatureConfig(onConfigUpdateListener),
+                advancedFeatureConfig = AdvancedFeatureConfigImpl(advancedFeaturesEnabled, onConfigUpdateListener),
                 sizeConfig = SizeConfigImpl(cameraInfo, videoConfig, onConfigUpdateListener),
                 zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
             )
