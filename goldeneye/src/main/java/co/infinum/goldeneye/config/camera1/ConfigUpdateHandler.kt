@@ -3,6 +3,7 @@
 package co.infinum.goldeneye.config.camera1
 
 import android.hardware.Camera
+import android.os.Build
 import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.updateParams
@@ -33,7 +34,11 @@ internal class ConfigUpdateHandler(
             CameraProperty.PICTURE_SIZE -> updatePictureSize(config.pictureSize, config.previewSize)
             CameraProperty.PREVIEW_SIZE -> updatePreviewSize(config.previewSize)
             CameraProperty.ZOOM -> camera.updateParams { zoom = zoomRatios.indexOf(config.zoom) }
-            CameraProperty.VIDEO_STABILIZATION -> camera.updateParams { videoStabilization = config.videoStabilizationEnabled }
+            CameraProperty.VIDEO_STABILIZATION -> camera.updateParams {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                    videoStabilization = config.videoStabilizationEnabled
+                }
+            }
             CameraProperty.PREVIEW_SCALE -> restartPreview()
         }
     }

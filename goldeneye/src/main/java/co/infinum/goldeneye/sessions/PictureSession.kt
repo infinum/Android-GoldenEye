@@ -46,11 +46,15 @@ internal class PictureSession(
     config: Camera2ConfigImpl,
     private val pictureTransformation: PictureTransformation?
 ) : BaseSession(activity, cameraDevice, config) {
+    companion object {
+        private const val MAX_CAPTURE_TIMES = 30
+    }
 
     private var imageReader: ImageReader? = null
     private var pictureCallback: PictureCallback? = null
     private var initCallback: InitCallback? = null
     private var locked = false
+    private var captureTimes = 0
 
     private val captureCallback = object : CameraCaptureSession.CaptureCallback() {
         override fun onCaptureCompleted(session: CameraCaptureSession?, request: CaptureRequest?, result: TotalCaptureResult?) {
@@ -68,12 +72,13 @@ internal class PictureSession(
                 if (locked) return
 
                 /* Wait for all states to be ready, if they are not ready repeat basic capture while camera is preparing for capture */
-                if (result.isLocked()) {
+                if (result.isLocked() || captureTimes > MAX_CAPTURE_TIMES) {
                     /* Take picture */
                     locked = true
                     capture()
                 } else if (isCompleted) {
                     /* Wait while camera is preparing */
+                    captureTimes++
                     session?.capture(sessionBuilder?.build()!!, this, AsyncUtils.backgroundHandler)
                 }
             } catch (t: Throwable) {
@@ -158,11 +163,7 @@ internal class PictureSession(
                 },
                 onResult = {
                     locked = false
-                    try {
-                        startSession()
-                    } catch (t: Throwable) {
-                        LogDelegate.log("Failed to restart camera preview.", t)
-                    }
+                    unlockFocus(config.focusMode)
                     if (it != null) {
                         pictureCallback?.onPictureTaken(it)
                     } else {
@@ -174,6 +175,7 @@ internal class PictureSession(
     }
 
     fun takePicture(callback: PictureCallback) {
+        captureTimes = 0
         this.pictureCallback = callback
         sessionBuilder?.apply {
             /* Trigger AF and AE */

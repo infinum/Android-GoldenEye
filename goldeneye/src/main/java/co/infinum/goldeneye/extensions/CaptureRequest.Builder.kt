@@ -15,13 +15,10 @@ internal fun CaptureRequest.Builder?.copyParamsFrom(other: CaptureRequest.Builde
     if (other == null || this == null) {
         return
     }
-
     set(CaptureRequest.CONTROL_AF_MODE, other[CaptureRequest.CONTROL_AF_MODE])
     set(CaptureRequest.CONTROL_EFFECT_MODE, other[CaptureRequest.CONTROL_EFFECT_MODE])
     set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, other[CaptureRequest.CONTROL_AE_ANTIBANDING_MODE])
-    set(CaptureRequest.CONTROL_SCENE_MODE, other[CaptureRequest.CONTROL_SCENE_MODE])
     set(CaptureRequest.CONTROL_AWB_MODE, other[CaptureRequest.CONTROL_AWB_MODE])
-    set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, other[CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE])
     set(CaptureRequest.SCALER_CROP_REGION, other[CaptureRequest.SCALER_CROP_REGION])
     set(CaptureRequest.CONTROL_AE_MODE, other[CaptureRequest.CONTROL_AE_MODE])
     set(CaptureRequest.FLASH_MODE, other[CaptureRequest.FLASH_MODE])

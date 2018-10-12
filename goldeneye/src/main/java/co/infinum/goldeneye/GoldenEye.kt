@@ -55,7 +55,8 @@ interface GoldenEye {
      */
     @RequiresPermission(Manifest.permission.CAMERA)
     fun open(textureView: TextureView, cameraInfo: CameraInfo,
-        onReady: ((CameraConfig) -> Unit)? = null, onActive: (() -> Unit)? = null, onError: (Throwable) -> Unit)
+        onReady: ((CameraConfig) -> Unit)? = null, onActive: (() -> Unit)? = null, onError: (Throwable) -> Unit
+    )
 
     /**
      * Release resources when camera is not used anymore. It stops the camera
@@ -181,7 +182,10 @@ interface GoldenEye {
          */
         @SuppressLint("NewApi")
         fun build(): GoldenEye {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && isLegacyCamera().not()) {
+            return if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                && isLegacyCamera().not()
+            ) {
                 GoldenEye2Impl(
                     activity, advancedFeaturesEnabled, onZoomChangedCallback,
                     onFocusChangedCallback, pictureTransformation, logger
