@@ -96,6 +96,7 @@ internal abstract class BaseSession(
             cancelFocus()
             sessionBuilder?.apply {
                 set(CaptureRequest.CONTROL_AF_MODE, focus.toCamera2())
+                set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
             }
             startSession()
         } catch (t: Throwable) {

@@ -16,6 +16,7 @@ import android.support.annotation.RequiresPermission
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
+import co.infinum.goldeneye.utils.IncompatibleDevicesUtils
 import java.io.File
 
 interface GoldenEye {
@@ -185,6 +186,7 @@ interface GoldenEye {
             return if (
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
                 && isLegacyCamera().not()
+                && IncompatibleDevicesUtils.isIncompatibleDevice(Build.MODEL).not()
             ) {
                 GoldenEye2Impl(
                     activity, advancedFeaturesEnabled, onZoomChangedCallback,
