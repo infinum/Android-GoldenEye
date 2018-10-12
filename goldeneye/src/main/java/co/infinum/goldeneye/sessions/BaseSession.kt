@@ -37,7 +37,7 @@ internal abstract class BaseSession(
         try {
             sessionBuilder?.apply(update)
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to update camera parameters.", t)
         }
     }
 
@@ -87,7 +87,7 @@ internal abstract class BaseSession(
             sessionBuilder?.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
             startSession()
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to lock focus.", t)
         }
     }
 
@@ -99,7 +99,7 @@ internal abstract class BaseSession(
             }
             startSession()
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to unlock focus.", t)
         }
     }
 
@@ -148,7 +148,7 @@ internal abstract class BaseSession(
                 close()
             }
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to release session.", t)
         } finally {
             sessionBuilder = null
             session = null

@@ -7,7 +7,9 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.utils.LogDelegate
 
-fun CaptureResult?.isExposureReady(): Boolean {
+fun CaptureResult?.isLocked() = isFocusReady() && isExposureReady()
+
+private fun CaptureResult?.isExposureReady(): Boolean {
     if (this == null) return false
 
     val aeMode = get(CaptureResult.CONTROL_AE_MODE)
@@ -21,7 +23,7 @@ fun CaptureResult?.isExposureReady(): Boolean {
         || aeState == CaptureResult.CONTROL_AE_STATE_LOCKED
 }
 
-fun CaptureResult?.isFocusReady(): Boolean {
+private fun CaptureResult?.isFocusReady(): Boolean {
     if (this == null) return false
 
     val afMode = get(CaptureResult.CONTROL_AF_MODE)

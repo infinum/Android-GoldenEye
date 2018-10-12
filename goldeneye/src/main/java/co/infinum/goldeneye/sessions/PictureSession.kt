@@ -55,11 +55,15 @@ internal class PictureSession(
     private val captureCallback = object : CameraCaptureSession.CaptureCallback() {
         override fun onCaptureCompleted(session: CameraCaptureSession?, request: CaptureRequest?, result: TotalCaptureResult?) {
             if (result != null) {
-                process(result)
+                process(result, true)
             }
         }
 
-        private fun process(result: CaptureResult) {
+        override fun onCaptureProgressed(session: CameraCaptureSession, request: CaptureRequest, partialResult: CaptureResult) {
+            process(partialResult, false)
+        }
+
+        private fun process(result: CaptureResult, isCompleted: Boolean) {
             try {
                 if (locked) return
 
@@ -68,12 +72,12 @@ internal class PictureSession(
                     /* Take picture */
                     locked = true
                     capture()
-                } else {
+                } else if (isCompleted) {
                     /* Wait while camera is preparing */
                     session?.capture(sessionBuilder?.build()!!, this, AsyncUtils.backgroundHandler)
                 }
             } catch (t: Throwable) {
-                LogDelegate.log(t)
+                LogDelegate.log("Failed to take picture.", t)
                 pictureCallback?.onError(t)
             }
         }
@@ -107,14 +111,14 @@ internal class PictureSession(
                 initCallback?.onActive()
                 initCallback = null
             } catch (t: Throwable) {
-                LogDelegate.log(t)
+                LogDelegate.log("Failed to open camera preview.", t)
                 initCallback?.onError(t)
                 initCallback = null
             }
         }
 
         override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-            LogDelegate.log(CameraConfigurationFailedException)
+            LogDelegate.log("Failed to configure camera.", CameraConfigurationFailedException)
             initCallback?.onError(CameraConfigurationFailedException)
             initCallback = null
         }
@@ -131,7 +135,7 @@ internal class PictureSession(
             initImageReader()
             cameraDevice.createCaptureSession(listOf(surface, imageReader?.surface), stateCallback, AsyncUtils.backgroundHandler)
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to create session.", t)
             initCallback?.onError(t)
             initCallback = null
         }
@@ -157,7 +161,7 @@ internal class PictureSession(
                     try {
                         startSession()
                     } catch (t: Throwable) {
-                        LogDelegate.log(t)
+                        LogDelegate.log("Failed to restart camera preview.", t)
                     }
                     if (it != null) {
                         pictureCallback?.onPictureTaken(it)
@@ -178,7 +182,6 @@ internal class PictureSession(
                 set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
             }
             session?.capture(build(), captureCallback, AsyncUtils.backgroundHandler)
-            /* Immediately remove trigger flags to avoid recursive triggering */
             set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
             if (config.isHardwareAtLeastLimited()) {
                 set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE)
@@ -194,7 +197,7 @@ internal class PictureSession(
         try {
             imageReader?.close()
         } catch (t: Throwable) {
-            LogDelegate.log(t)
+            LogDelegate.log("Failed to release picture session.", t)
         } finally {
             imageReader = null
         }
