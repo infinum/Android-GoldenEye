@@ -124,8 +124,6 @@ object: PictureTransformation {
 
 #### Advanced features
 
-Advanced features are:
-
 - [Antibanding mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/AntibandingMode.kt)
 - [White balance mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/WhiteBalanceMode.kt)
 - [Color effect mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/ColorEffectMode.kt)
@@ -143,9 +141,11 @@ GoldenEye.Builder(activity)
 
 ## Edge case behavior
 
-- If you call `startRecording` or `takePicture` while GoldenEye is already taking a picture or recording a video, immediate `onError` callback will be dispatched
-- If you call `release` while GoldenEye is taking a picture or recording a video, everything will be canceled and nothing is dispatched
-- If you call `GoldenEye.config` before `InitCallback#onReady` is received, returned `config` will be `null`
+- If you call `startRecording` or `takePicture` while GoldenEye is already taking a picture or recording a video, immediate `onError`
+callback will be dispatched for the **second** call, first call to `startRecording` or `takePicture` will still be active
+- If you call `release` while GoldenEye is taking a picture or recording a video, everything will be canceled including all callbacks,
+nothing will be dispatched
+- If you call `GoldenEye.config` before `InitCallback#onReady` is dispatched, returned `config` will be `null`
 - If you call `open` while camera is already opened, old camera will be released and closed and new camera will be opened
 
 ## Known issues
