@@ -1,0 +1,22 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion sdk.target
+
+    defaultConfig {
+        applicationId "co.infinum.example"
+        minSdkVersion sdk.min
+        targetSdkVersion sdk.target
+    }
+
+    defaultConfig.vectorDrawables.useSupportLibrary = true
+}
+
+dependencies {
+    implementation project(":goldeneye")
+    implementation "com.android.support:appcompat-v7:$versions.google"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$versions.kotlin"
+    implementation "com.android.support:recyclerview-v7:$versions.google"
+}

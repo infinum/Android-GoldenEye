@@ -1,13 +1,21 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.dokka'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion sdk.target
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 27
+        minSdkVersion sdk.min
+        targetSdkVersion sdk.target
     }
 }
 
 dependencies {
-    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:${versions.kotlin}"
+    implementation "com.android.support:appcompat-v7:${versions.google}"
 }
+
+apply from: '../tasks.gradle'
+apply from: 'bintray.gradle'
+
+preBuild.dependsOn ':goldeneye:generateReadme'
