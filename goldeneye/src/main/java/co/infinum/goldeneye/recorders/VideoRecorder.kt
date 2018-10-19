@@ -70,7 +70,6 @@ internal class VideoRecorder(
 
     fun release() {
         try {
-            mediaRecorder?.reset()
             mediaRecorder?.release()
         } catch (t: Throwable) {
             LogDelegate.log("Failed to release media recorder.", t)

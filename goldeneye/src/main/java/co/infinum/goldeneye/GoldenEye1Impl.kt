@@ -90,6 +90,12 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
     private fun releaseInternal() {
         state = CameraState.CLOSED
+        videoRecorder?.release()
+        pictureRecorder?.release()
+        gestureHandler?.release()
+        gestureHandler = null
+        videoRecorder = null
+        pictureRecorder = null
         try {
             camera?.stopPreview()
             camera?.release()
@@ -97,12 +103,6 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
             log("Failed to release camera.", t)
         } finally {
             camera = null
-            gestureHandler?.release()
-            gestureHandler = null
-            videoRecorder?.release()
-            videoRecorder = null
-            pictureRecorder?.release()
-            pictureRecorder = null
         }
     }
 

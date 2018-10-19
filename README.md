@@ -43,7 +43,25 @@ goldenEye.stopRecording()
 
 You can see all GoldenEye methods [here](./goldeneye/src/main/java/co/infinum/goldeneye/GoldenEye.kt).
 
-## Camera lifecycle
+## Features
+
+#### Zoom change
+
+#### Focus change
+
+#### Bitmap Transformation
+
+## How it works
+
+#### Lifecycle
+
+## Known issues
+
+- Video recording with external camera is not supported due to current video configuration limitations due to internal API design.
+
+## Contributing
+
+Feedback and code contributions are very much welcome. Just make a pull request with a short description of your changes. By making contributions to this project you give permission for your code to be used under the same [license](LICENSE).
 
 Camera lifecycle can be separated in several states:
 
@@ -71,14 +89,6 @@ Use `GoldenEye.Builder` to configure GoldenEye to your needs. It accepts:
 - OnZoomChangedCallback - callback to receive zoom change events
 - OnFocusChangedCallback - callback to receive tap to focus events
 - PictureTransformation - interface that is used when raw camera picture is received and it transforms the picture on the **background thread**. Default implementation rotates the picture to device orientation and mirrors the picture if it is taken with front camera.
-
-## Known issues
-
-- Video recording with external camera is not supported due to current video configuration limitations due to internal API design.
-
-## Contributing
-
-Feedback and code contributions are very much welcome. Just make a pull request with a short description of your changes. By making contributions to this project you give permission for your code to be used under the same [license](LICENSE).
 
 ## Credits
 
