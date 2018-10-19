@@ -130,12 +130,6 @@ class MainActivity : AppCompatActivity() {
             { previewPictureView.visibility = View.GONE },
             2000
         )
-
-        val activity = this
-
-        GoldenEye.Builder(activity)
-            .withAdvancedFeatures()
-            .build()
     }
 
     private fun initGoldenEye() {
