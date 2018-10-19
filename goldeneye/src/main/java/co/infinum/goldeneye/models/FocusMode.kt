@@ -9,12 +9,35 @@ import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.IllegalEnumException
 
 enum class FocusMode {
+    /**
+     * Auto-focus mode.
+     */
     AUTO,
+    /**
+     * Focus is set at infinity.
+     */
     INFINITY,
+    /**
+     * Close-up focusing mode.
+     */
     MACRO,
+    /**
+     * Focus is fixed.
+     */
     FIXED,
+    /**
+     * Extended depth of field.
+     */
     EDOF,
+    /**
+     * Continuous auto focus mode intended for video recording.
+     * It has smoother change than [CONTINUOUS_PICTURE].
+     */
     CONTINUOUS_VIDEO,
+    /**
+     * Continuous auto focus mode intended for picture taking.
+     * It is more aggressive than [CONTINUOUS_VIDEO].
+     */
     CONTINUOUS_PICTURE,
     UNKNOWN;
 

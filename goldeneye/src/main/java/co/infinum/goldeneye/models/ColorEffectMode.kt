@@ -8,15 +8,55 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.IllegalEnumException
 
+/**
+ * One of the advanced features. Use [co.infinum.goldeneye.GoldenEye.Builder.withAdvancedFeatures] method
+ * to gain access to it.
+ */
 enum class ColorEffectMode {
+    /**
+     * @see Camera.Parameters.EFFECT_NONE
+     * @see CameraCharacteristics.CONTROL_EFFECT_MODE_OFF
+     */
     NONE,
+    /**
+     * @see Camera.Parameters.EFFECT_MONO
+     * @see CameraCharacteristics.CONTROL_EFFECT_MODE_MONO
+     */
     MONO,
+    /**
+     * @see Camera.Parameters.EFFECT_NEGATIVE
+     * @see CameraCharacteristics.CONTROL_EFFECT_MODE_NEGATIVE
+     */
     NEGATIVE,
+    /**
+     * @see Camera.Parameters.EFFECT_SOLARIZE
+     * @see CameraCharacteristics.CONTROL_EFFECT_MODE_SOLARIZE
+     */
     SOLARIZE,
+    /**
+     * @see Camera.Parameters.EFFECT_SEPIA
+     * @see CameraCharacteristics.CONTROL_EFFECT_MODE_SEPIA
+     */
     SEPIA,
+    /**
+     * @see Camera.Parameters.EFFECT_POSTERIZE
+     * @see CameraCharacteristics.CONTROL_EFFECT_MODE_POSTERIZE
+     */
     POSTERIZE,
+    /**
+     * @see Camera.Parameters.EFFECT_WHITEBOARD
+     * @see CameraCharacteristics.CONTROL_EFFECT_MODE_WHITEBOARD
+     */
     WHITEBOARD,
+    /**
+     * @see Camera.Parameters.EFFECT_BLACKBOARD
+     * @see CameraCharacteristics.CONTROL_EFFECT_MODE_BLACKBOARD
+     */
     BLACKBOARD,
+    /**
+     * @see Camera.Parameters.EFFECT_AQUA
+     * @see CameraCharacteristics.CONTROL_EFFECT_MODE_AQUA
+     */
     AQUA,
     UNKNOWN;
 

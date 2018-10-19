@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Point
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -18,9 +19,7 @@ import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
-import co.infinum.goldeneye.GoldenEye
-import co.infinum.goldeneye.InitCallback
-import co.infinum.goldeneye.Logger
+import co.infinum.goldeneye.*
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import kotlinx.android.synthetic.main.activity_main.*
@@ -131,6 +130,12 @@ class MainActivity : AppCompatActivity() {
             { previewPictureView.visibility = View.GONE },
             2000
         )
+
+        val activity = this
+
+        GoldenEye.Builder(activity)
+            .withAdvancedFeatures()
+            .build()
     }
 
     private fun initGoldenEye() {

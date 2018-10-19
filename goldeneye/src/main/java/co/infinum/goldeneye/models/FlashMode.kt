@@ -9,10 +9,25 @@ import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.IllegalEnumException
 
 enum class FlashMode {
+    /**
+     * Flash mode is turned off.
+     */
     OFF,
+    /**
+     * Flash will always be fired.
+     */
     ON,
+    /**
+     * Flash will be fired automatically when required.
+     */
     AUTO,
+    /**
+     * Constant emission of light.
+     */
     TORCH,
+    /**
+     * Flash will be fired in red-eye reduction mode.
+     */
     RED_EYE,
     UNKNOWN;
 

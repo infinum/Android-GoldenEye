@@ -92,7 +92,7 @@ internal class PictureSession(
             cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
                 copyParamsFrom(sessionBuilder)
                 /* Set picture quality */
-                set(CaptureRequest.JPEG_QUALITY, config.jpegQuality.toByte())
+                set(CaptureRequest.JPEG_QUALITY, config.pictureQuality.toByte())
                 /* Add surface target that will receive capture */
                 addTarget(imageReader?.surface!!)
                 session?.apply {

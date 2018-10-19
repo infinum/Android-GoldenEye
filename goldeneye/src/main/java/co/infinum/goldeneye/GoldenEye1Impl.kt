@@ -186,8 +186,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
 
         val zoomHandler = ZoomHandlerImpl(
             activity = activity,
-            config = _config,
-            onZoomChanged = { onZoomChangedCallback?.onZoomChanged(it) }
+            config = _config
         )
         val focusHandler = FocusHandlerImpl(
             activity = activity,
@@ -250,7 +249,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                 val previewSize = _config.previewSize
                 setPreviewSize(previewSize.width, previewSize.height)
 
-                jpegQuality = _config.jpegQuality
+                jpegQuality = _config.pictureQuality
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1 && _config.isVideoStabilizationSupported) {
                     videoStabilization = _config.videoStabilizationEnabled
@@ -303,7 +302,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
                     basicFeatureConfig = BasicFeatureConfigImpl(onConfigUpdateListener),
                     advancedFeatureConfig = AdvancedFeatureConfigImpl(advancedFeaturesEnabled, onConfigUpdateListener),
                     sizeConfig = SizeConfigImpl(cameraInfo, videoConfig, onConfigUpdateListener),
-                    zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
+                    zoomConfig = ZoomConfigImpl(onConfigUpdateListener, onZoomChangedCallback)
                 )
             )
         }

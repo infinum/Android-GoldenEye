@@ -8,6 +8,7 @@ package co.infinum.goldeneye.models
  *
  * AUTO_* scale will automatically pick best available preview size that
  * has same aspect ratio as currently chosen picture size or video size.
+ *
  * While standard preview is active, it will scale preview by picture size and
  * while video recording is active, it will scale preview by video size.
  */

@@ -175,6 +175,11 @@ interface GoldenEye {
          */
         fun setPictureTransformation(transformation: PictureTransformation) = apply { this.pictureTransformation = transformation }
 
+        /**
+         * Enables the use of [co.infinum.goldeneye.config.AdvancedFeatureConfig] features. Those features
+         * are experimental and disabled by default. If you try to change the value of any advanced feature,
+         * it will be ignored unless you enable them.
+         */
         fun withAdvancedFeatures() = apply { this.advancedFeaturesEnabled = true }
 
         /**

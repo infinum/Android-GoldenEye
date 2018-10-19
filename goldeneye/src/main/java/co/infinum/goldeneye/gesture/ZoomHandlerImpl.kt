@@ -7,8 +7,7 @@ import co.infinum.goldeneye.config.CameraConfig
 
 internal class ZoomHandlerImpl(
     activity: Activity,
-    private val config: CameraConfig,
-    private val onZoomChanged: (Int) -> Unit
+    private val config: CameraConfig
 ): ZoomHandler {
 
     private val zoomPinchDelta: Int =
@@ -29,7 +28,6 @@ internal class ZoomHandlerImpl(
 
         if (zoomDelta != 0) {
             config.zoom = (config.zoom + zoomDelta).coerceIn(100, config.maxZoom)
-            onZoomChanged(config.zoom)
         }
         this.pinchDelta %= zoomPinchDelta
     }

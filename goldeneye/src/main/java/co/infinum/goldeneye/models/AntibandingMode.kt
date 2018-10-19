@@ -8,10 +8,30 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import co.infinum.goldeneye.IllegalEnumException
 
+/**
+ * One of the advanced features. Use [co.infinum.goldeneye.GoldenEye.Builder.withAdvancedFeatures] method
+ * to gain access to it.
+ */
 enum class AntibandingMode {
+    /**
+     * @see Camera.Parameters.ANTIBANDING_AUTO
+     * @see CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_AUTO
+     */
     AUTO,
+    /**
+     * @see Camera.Parameters.ANTIBANDING_50HZ
+     * @see CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_50HZ
+     */
     HZ_50,
+    /**
+     * @see Camera.Parameters.ANTIBANDING_60HZ
+     * @see CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_60HZ
+     */
     HZ_60,
+    /**
+     * @see Camera.Parameters.ANTIBANDING_OFF
+     * @see CameraCharacteristics.CONTROL_AE_ANTIBANDING_MODE_OFF
+     */
     OFF,
     UNKNOWN;
 

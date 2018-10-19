@@ -1,5 +1,6 @@
 package co.infinum.goldeneye.config
 
+import co.infinum.goldeneye.OnZoomChangedCallback
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.utils.LogDelegate
 
@@ -46,7 +47,8 @@ interface ZoomConfig {
 }
 
 internal abstract class BaseZoomConfig<T : Any>(
-    protected val onUpdateCallback: (CameraProperty) -> Unit
+    protected val onUpdateCallback: (CameraProperty) -> Unit,
+    protected val onZoomChangedCallback: OnZoomChangedCallback?
 ) : ZoomConfig {
 
     lateinit var characteristics: T

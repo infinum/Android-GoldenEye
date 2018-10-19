@@ -8,15 +8,54 @@ import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
 import co.infinum.goldeneye.IllegalEnumException
 
+/**
+ * One of the advanced features. Use [co.infinum.goldeneye.GoldenEye.Builder.withAdvancedFeatures] method
+ * to gain access to it.
+ */
 enum class WhiteBalanceMode {
+    /**
+     * @see CameraCharacteristics.CONTROL_AWB_MODE_OFF
+     */
     OFF,
+    /**
+     * @see Camera.Parameters.WHITE_BALANCE_AUTO
+     * @see CameraCharacteristics.CONTROL_AWB_MODE_AUTO
+     */
     AUTO,
+    /**
+     * @see Camera.Parameters.WHITE_BALANCE_INCANDESCENT
+     * @see CameraCharacteristics.CONTROL_AWB_MODE_INCANDESCENT
+     */
     INCANDESCENT,
+    /**
+     * @see Camera.Parameters.WHITE_BALANCE_FLUORESCENT
+     * @see CameraCharacteristics.CONTROL_AWB_MODE_FLUORESCENT
+     */
     FLUORESCENT,
+    /**
+     * @see Camera.Parameters.WHITE_BALANCE_WARM_FLUORESCENT
+     * @see CameraCharacteristics.CONTROL_AWB_MODE_WARM_FLUORESCENT
+     */
     WARM_FLUORESCENT,
+    /**
+     * @see Camera.Parameters.WHITE_BALANCE_DAYLIGHT
+     * @see CameraCharacteristics.CONTROL_AWB_MODE_DAYLIGHT
+     */
     DAYLIGHT,
+    /**
+     * @see Camera.Parameters.WHITE_BALANCE_CLOUDY_DAYLIGHT
+     * @see CameraCharacteristics.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT
+     */
     CLOUDY_DAYLIGHT,
+    /**
+     * @see Camera.Parameters.WHITE_BALANCE_TWILIGHT
+     * @see CameraCharacteristics.CONTROL_AWB_MODE_TWILIGHT
+     */
     TWILIGHT,
+    /**
+     * @see Camera.Parameters.WHITE_BALANCE_SHADE
+     * @see CameraCharacteristics.CONTROL_AWB_MODE_SHADE
+     */
     SHADE,
     UNKNOWN;
 

@@ -7,11 +7,11 @@ interface BasicFeatureConfig {
 
     /**
      * Returns current JPEG quality. The value must be Integer between 1 and 100 (inclusive).
-     * It is dynamically applied to Picture session when capture is triggered.
+     * It is dynamically applied when capture is triggered.
      *
      * Default value is 100.
      */
-    var jpegQuality: Int
+    var pictureQuality: Int
 
     /**
      * Tap to focus toggle. [co.infinum.goldeneye.OnFocusChangedCallback] is triggered
@@ -106,7 +106,7 @@ internal abstract class BaseBasicFeatureConfig<T : Any>(
             }
         }
 
-    override var jpegQuality = 100
+    override var pictureQuality = 100
         set(value) {
             field = value.coerceIn(1, 100)
         }

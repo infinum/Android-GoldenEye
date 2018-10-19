@@ -178,8 +178,7 @@ internal class GoldenEye2Impl(
 
         val zoomHandler = ZoomHandlerImpl(
             activity = activity,
-            config = _config,
-            onZoomChanged = { onZoomChangedCallback?.onZoomChanged(it) }
+            config = _config
         )
         val focusHandler = FocusHandlerImpl(
             activity = activity,
@@ -287,7 +286,7 @@ internal class GoldenEye2Impl(
                 basicFeatureConfig = BasicFeatureConfig(onConfigUpdateListener),
                 advancedFeatureConfig = AdvancedFeatureConfigImpl(advancedFeaturesEnabled, onConfigUpdateListener),
                 sizeConfig = SizeConfigImpl(cameraInfo, videoConfig, onConfigUpdateListener),
-                zoomConfig = ZoomConfigImpl(onConfigUpdateListener)
+                zoomConfig = ZoomConfigImpl(onConfigUpdateListener, onZoomChangedCallback)
             )
             cameraConfig.characteristics = info
             _availableCameras.add(cameraConfig)

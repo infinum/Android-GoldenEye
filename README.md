@@ -19,7 +19,9 @@ val goldenEye = GoldenEye.Builder(activity).build()
 #### Open camera
 
 ```kotlin
-if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+    == PackageManager.PERMISSION_GRANTED
+    ) {
   /* Find back camera */
   val backCamera = goldenEye.availableCameras.find { it.facing == Facing.BACK }
   /* Open back camera */
@@ -45,50 +47,118 @@ You can see all GoldenEye methods [here](./goldeneye/src/main/java/co/infinum/go
 
 ## Features
 
-#### Zoom change
+GoldenEye supports multiple Camera features that can be changed at runtime:
 
-#### Focus change
+- [Flash mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/FlashMode.kt)
+- [Focus mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/FocusMode.kt)
+- [Preview scale](./goldeneye/src/main/java/co/infinum/goldeneye/models/PreviewScale.kt)
+- Preview size
+- Picture size
+- Picture quality
+- [Video quality](./goldeneye/src/main/java/co/infinum/goldeneye/models/VideoQuality.kt)
+- Tap to focus
+- Pinch to zoom
+- [Antibanding mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/AntibandingMode.kt)
+- [White balance mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/WhiteBalanceMode.kt)
+- [Color effect mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/ColorEffectMode.kt)
 
-#### Bitmap Transformation
+If you are interested to read in detail what is supported, there is thorough documentation inside [interfaces](./goldeneye/src/main/java/co/infinum/goldeneye/config).
 
-## How it works
+## Builder
 
-#### Lifecycle
+When initializing GoldenEye instance you can configure it to fit your needs with several interfaces.
+
+#### [Logger](./goldeneye/src/main/java/co/infinum/goldeneye/Logger.kt)
+
+By default logging is turned **OFF**. By implementing Logger interface, you can enable logs if needed.
+
+```kotlin
+object: Logger {
+  override fun log(message: String) {
+    /* Log standard message */
+  }
+
+  override fun log(t: Throwable) {
+    /* Log error */
+  }
+}
+```
+
+#### [OnZoomChangedCallback](./goldeneye/src/main/java/co/infinum/goldeneye/Callbacks.kt)
+
+GoldenEye supports pinch to zoom functionality. By using OnZoomChangedCallback you can receive callback every time the zoom changes.
+
+```kotlin
+object: OnZoomChangedCallback {
+  override fun onZoomChanged(zoom: Int) {
+    /* Do something */
+  }
+}
+```
+
+#### [OnFocusChangedCallback](./goldeneye/src/main/java/co/infinum/goldeneye/Callbacks.kt)
+
+GoldenEye supports tap to focus functionality. By using OnFocusChangedCallback you can receive callback every time the focus changes.
+
+```kotlin
+object: OnFocusChangedCallback {
+  override fun onFocusChanged(point: Point) {
+    /* Do something */
+  }
+}
+```
+
+#### [PictureTransformation](./goldeneye/src/main/java/co/infinum/goldeneye/PictureTransformation.kt)
+
+Once the picture is taken, by default, library will rotate the bitmap to be in sync with device's orientation and mirror
+the image if it is taken with front camera. If you are not OK with this behavior, you can provide `PictureTransformation` implementation
+that will be used instead. `PictureTransformation.transform` method is executed on the **background** thread!
+
+```kotlin
+object: PictureTransformation {
+  override fun transform(picture: Bitmap, config: CameraConfig, orientationDifference: Float): Bitmap {
+    /* Transform raw picture */
+  }
+}
+```
+
+#### Advanced features
+
+Advanced features are:
+
+- [Antibanding mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/AntibandingMode.kt)
+- [White balance mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/WhiteBalanceMode.kt)
+- [Color effect mode](./goldeneye/src/main/java/co/infinum/goldeneye/models/ColorEffectMode.kt)
+
+Advanced features are still in experimental phase and we noticed that they do not work on some devices and they were not
+thoroughly tested so we decided to disable them by default. That means that if you try to change the value via setter, it will simply be ignored.
+
+In case you want to try and play with advanced features, you can enable them when initializing GoldenEye instance.
+
+```kotlin
+GoldenEye.Builder(activity)
+  .withAdvancedFeatures()
+  .build()
+```
+
+## Edge case behavior
+
+- If you call `startRecording` or `takePicture` while GoldenEye is already taking a picture or recording a video, immediate `onError` callback will be dispatched
+- If you call `release` while GoldenEye is taking a picture or recording a video, everything will be canceled and nothing is dispatched
+- If you call `GoldenEye.config` before `InitCallback#onReady` is received, returned `config` will be `null`
+- If you call `open` while camera is already opened, old camera will be released and closed and new camera will be opened
 
 ## Known issues
 
-- Video recording with external camera is not supported due to current video configuration limitations due to internal API design.
+- Video recording with external camera is not supported due to current video configuration limitations of the internal API design
+- OnePlus 6 - ColorEffectMode does not work
+- Huawei Nexus 6P - Picture taken with Flash is too dark
+- LG G5 - Picture taken with Flash is too dark
 
 ## Contributing
 
-Feedback and code contributions are very much welcome. Just make a pull request with a short description of your changes. By making contributions to this project you give permission for your code to be used under the same [license](LICENSE).
-
-Camera lifecycle can be separated in several states:
-
-- CLOSED - Initial state, Camera is closed and cannot be used.
-- INITIALIZING - Temporary state when `open` is called. Camera initialization takes time so in that time you can find it in initialization state. If error happens, it will be back in CLOSED state.
-- READY - Temporary state after INITIALIZING. `onReady` callback will be dispatched and developer can modify camera configuration.
-- ACTIVE - Camera is active and preview is started. `onActive` callback will be dispatched and developer can use GoldenEye to take picture or record video.
-- TAKING_PICTURE - Self-explanatory
-- RECORDING_VIDEO - Self-explanatory
-
-If you try to take picture while camera is not in ACTIVE state, it will be ignored and you will receive onError callback immediately. It is up to you to call take picture
-only after `onActive` callback is received from `open` method.
-
-## Lifecycle limitations
-
-- Configuration can be changed only after camera is in READY or ACTIVE state - returns `null`
-- Picture can be taken only after camera is in ACTIVE state - immediate onError callback
-- Video can be recorded only after camera is in ACTIVE state - immediate onError callback
-
-## Configuration
-
-Use `GoldenEye.Builder` to configure GoldenEye to your needs. It accepts:
-
-- Logger - logging interface that must be implemented if you want to see GoldenEye logs. Logging is **OFF** by default.
-- OnZoomChangedCallback - callback to receive zoom change events
-- OnFocusChangedCallback - callback to receive tap to focus events
-- PictureTransformation - interface that is used when raw camera picture is received and it transforms the picture on the **background thread**. Default implementation rotates the picture to device orientation and mirrors the picture if it is taken with front camera.
+Feedback and code contributions are very much welcome. Just make a pull request with a short description of your changes.
+By making contributions to this project you give permission for your code to be used under the same [license](LICENSE).
 
 ## Credits
 

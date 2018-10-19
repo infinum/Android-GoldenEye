@@ -5,7 +5,7 @@ import android.hardware.camera2.CameraDevice
 /**
  * Camera2 error wrapper.
  */
-enum class Camera2Error(
+internal enum class Camera2Error(
     val message: String
 ) {
     IN_USE("Camera already used by higher-priority camera API client"),
