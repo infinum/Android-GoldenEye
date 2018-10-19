@@ -58,7 +58,7 @@ private fun MediaRecorder.buildInstance(activity: Activity, config: CameraConfig
 
     setOutputFile(file.absolutePath)
     val cameraOrientation = CameraUtils.calculateDisplayOrientation(activity, config)
-    setOrientationHint(if (config.facing == Facing.FRONT) 360 - cameraOrientation else cameraOrientation)
+    setOrientationHint(if (config.facing == Facing.FRONT) (360 - cameraOrientation) % 360 else cameraOrientation)
     prepare()
     return this
 }

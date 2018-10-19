@@ -61,7 +61,7 @@ internal object CameraUtils {
         val matrix = Matrix()
         val previewSize = config.previewSize
         if (textureView.isNotMeasured() || previewSize == Size.UNKNOWN) {
-            return matrix
+            return matrix.apply { postScale(0f, 0f) }
         }
 
         /* scaleX and scaleY are used to reverse the process and scale is used to scale image according to PreviewScale */

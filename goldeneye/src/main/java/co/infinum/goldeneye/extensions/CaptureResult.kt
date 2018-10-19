@@ -21,14 +21,13 @@ private fun CaptureResult?.isExposureReady(): Boolean {
         || aeState == CaptureResult.CONTROL_AE_STATE_LOCKED
 }
 
-private fun CaptureResult?.isFocusReady(): Boolean {
+fun CaptureResult?.isFocusReady(): Boolean {
     if (this == null) return false
 
     val afState = get(CaptureResult.CONTROL_AF_STATE)
     val afMode = get(CaptureResult.CONTROL_AF_MODE)
 
     return afMode == CaptureResult.CONTROL_AF_MODE_OFF
-        || afState == null
         || afState == CaptureResult.CONTROL_AF_STATE_INACTIVE
         || afState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
         || afState == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED

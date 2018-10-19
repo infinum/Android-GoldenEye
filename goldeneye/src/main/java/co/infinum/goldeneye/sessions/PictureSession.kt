@@ -2,7 +2,9 @@ package co.infinum.goldeneye.sessions
 
 import android.app.Activity
 import android.graphics.ImageFormat
+import android.graphics.Rect
 import android.hardware.camera2.*
+import android.hardware.camera2.params.MeteringRectangle
 import android.media.ImageReader
 import android.os.Build
 import android.support.annotation.RequiresApi
@@ -10,9 +12,12 @@ import android.view.TextureView
 import co.infinum.goldeneye.*
 import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
 import co.infinum.goldeneye.extensions.*
+import co.infinum.goldeneye.models.FocusMode
 import co.infinum.goldeneye.utils.AsyncUtils
 import co.infinum.goldeneye.utils.CameraUtils
 import co.infinum.goldeneye.utils.LogDelegate
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Class handles Preview and Picture capturing session.
@@ -47,7 +52,7 @@ internal class PictureSession(
     private val pictureTransformation: PictureTransformation?
 ) : BaseSession(activity, cameraDevice, config) {
     companion object {
-        private const val MAX_CAPTURE_TIMES = 30
+        private const val MAX_CAPTURE_TIMES = 15
     }
 
     private var imageReader: ImageReader? = null
@@ -59,15 +64,11 @@ internal class PictureSession(
     private val captureCallback = object : CameraCaptureSession.CaptureCallback() {
         override fun onCaptureCompleted(session: CameraCaptureSession?, request: CaptureRequest?, result: TotalCaptureResult?) {
             if (result != null) {
-                process(result, true)
+                process(result)
             }
         }
 
-        override fun onCaptureProgressed(session: CameraCaptureSession, request: CaptureRequest, partialResult: CaptureResult) {
-            process(partialResult, false)
-        }
-
-        private fun process(result: CaptureResult, isCompleted: Boolean) {
+        private fun process(result: CaptureResult) {
             try {
                 if (locked) return
 
@@ -76,7 +77,7 @@ internal class PictureSession(
                     /* Take picture */
                     locked = true
                     capture()
-                } else if (isCompleted) {
+                } else {
                     /* Wait while camera is preparing */
                     captureTimes++
                     session?.capture(sessionBuilder?.build()!!, this, AsyncUtils.backgroundHandler)
@@ -179,6 +180,10 @@ internal class PictureSession(
         this.pictureCallback = callback
         sessionBuilder?.apply {
             /* Trigger AF and AE */
+            if (config.focusMode in arrayOf(FocusMode.AUTO, FocusMode.CONTINUOUS_PICTURE, FocusMode.CONTINUOUS_VIDEO)) {
+                set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
+                focusCenterIfUnfocused()
+            }
             set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START)
             if (config.isHardwareAtLeastLimited()) {
                 set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
@@ -189,6 +194,32 @@ internal class PictureSession(
                 set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE)
             }
         }
+    }
+
+    private fun focusCenterIfUnfocused() {
+        if (isFocused()) return
+
+        val activeRect = config.characteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return
+        val centerX = activeRect.width() / 2
+        val centerY = activeRect.height() / 2
+        val offsetX = (activeRect.width() * 0.1f).toInt()
+        val offsetY = (activeRect.height() * 0.1f).toInt()
+        val centerRegion = Rect(
+            max(centerX - offsetX, 0),
+            max(centerY - offsetY, 0),
+            min(centerX + offsetX, activeRect.width()),
+            min(centerY + offsetY, activeRect.height())
+        )
+        sessionBuilder?.set(
+            CaptureRequest.CONTROL_AF_REGIONS,
+            arrayOf(MeteringRectangle(centerRegion, MeteringRectangle.METERING_WEIGHT_MAX - 1))
+        )
+    }
+
+    private fun isFocused(): Boolean {
+        val regions = sessionBuilder?.get(CaptureRequest.CONTROL_AF_REGIONS)
+        val focusedRegion = regions?.getOrNull(0)
+        return focusedRegion?.meteringWeight == MeteringRectangle.METERING_WEIGHT_MAX - 1
     }
 
     override fun release() {

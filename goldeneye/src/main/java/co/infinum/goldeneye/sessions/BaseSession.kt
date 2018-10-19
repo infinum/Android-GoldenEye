@@ -11,6 +11,7 @@ import android.support.annotation.RequiresApi
 import android.view.Surface
 import android.view.TextureView
 import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
+import co.infinum.goldeneye.extensions.isFocusReady
 import co.infinum.goldeneye.extensions.isLocked
 import co.infinum.goldeneye.models.FocusMode
 import co.infinum.goldeneye.utils.AsyncUtils
@@ -75,17 +76,9 @@ internal abstract class BaseSession(
             session?.stopRepeating()
             session?.capture(sessionBuilder?.build()!!, object : CameraCaptureSession.CaptureCallback() {
                 override fun onCaptureCompleted(session: CameraCaptureSession?, request: CaptureRequest?, result: TotalCaptureResult?) {
-                    if (result?.isLocked() == true) {
-                    } else {
-                        session?.capture(sessionBuilder?.build()!!, this, AsyncUtils.backgroundHandler)
-                    }
-                }
-
-                override fun onCaptureFailed(session: CameraCaptureSession?, request: CaptureRequest?, failure: CaptureFailure?) {
+                    startSession()
                 }
             }, AsyncUtils.backgroundHandler)
-            sessionBuilder?.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
-            startSession()
         } catch (t: Throwable) {
             LogDelegate.log("Failed to lock focus.", t)
         }
@@ -95,7 +88,9 @@ internal abstract class BaseSession(
         try {
             cancelFocus()
             sessionBuilder?.apply {
-                set(CaptureRequest.CONTROL_AF_MODE, focus.toCamera2())
+                if (config.supportedFocusModes.contains(focus)) {
+                    set(CaptureRequest.CONTROL_AF_MODE, focus.toCamera2())
+                }
                 set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
             }
             startSession()

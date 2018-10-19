@@ -129,7 +129,7 @@ class MainActivity : AppCompatActivity() {
         }
         mainHandler.postDelayed(
             { previewPictureView.visibility = View.GONE },
-            3_000
+            2000
         )
     }
 
@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity() {
                 mainHandler.postDelayed({
                     previewVideoContainer.visibility = View.GONE
                     release()
-                }, 3000)
+                }, 1500)
             }
             setOnVideoSizeChangedListener { _, width, height ->
                 previewVideoView.apply {
