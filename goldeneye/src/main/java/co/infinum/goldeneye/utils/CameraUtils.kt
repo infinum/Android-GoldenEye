@@ -7,13 +7,11 @@ import android.graphics.Matrix
 import android.graphics.Rect
 import android.hardware.Camera
 import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.params.MeteringRectangle
 import android.os.Build
 import android.support.annotation.RequiresApi
 import android.view.Surface
 import android.view.TextureView
-import co.infinum.goldeneye.BaseGoldenEyeImpl
+import co.infinum.goldeneye.BaseGoldenEye
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
@@ -67,7 +65,7 @@ internal object CameraUtils {
         /* scaleX and scaleY are used to reverse the process and scale is used to scale image according to PreviewScale */
         val (scaleX, scaleY, scale) = calculateScale(activity, textureView, config)
 
-        if (BaseGoldenEyeImpl.version == CameraApi.VERSION_2 && getDeviceOrientation(activity) % 180 != 0) {
+        if (BaseGoldenEye.version == CameraApi.VERSION_2 && getDeviceOrientation(activity) % 180 != 0) {
             matrix.postScale(
                 textureView.height / textureView.width.toFloat() / scaleY * scale,
                 textureView.width / textureView.height.toFloat() / scaleX * scale,

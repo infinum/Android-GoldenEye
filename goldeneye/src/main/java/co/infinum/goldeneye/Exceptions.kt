@@ -34,4 +34,4 @@ object CameraConfigNotAvailableException :
     Exception("Camera configuration is not available. Be sure to wait for InitCallback.onReady callback.")
 
 class CameraNotActiveException :
-    Exception("Camera is currently not active. State = [${BaseGoldenEyeImpl.state}]")
+    Exception("Camera is currently not active. State = [${BaseGoldenEye.state}]")

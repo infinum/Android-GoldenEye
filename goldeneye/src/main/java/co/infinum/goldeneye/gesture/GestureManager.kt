@@ -7,9 +7,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.TextureView
-import co.infinum.goldeneye.BaseGoldenEyeImpl
 import co.infinum.goldeneye.extensions.MAIN_HANDLER
-import co.infinum.goldeneye.models.CameraState
 
 /**
  * Delegate class that encapsulates gesture handling - pinch to zoom and tap to focus.
