@@ -10,7 +10,7 @@ import co.infinum.goldeneye.models.CameraApi
 import co.infinum.goldeneye.models.CameraState
 import java.io.File
 
-internal abstract class BaseGoldenEyeImpl(
+internal abstract class BaseGoldenEye(
     version: CameraApi
 ) : GoldenEye {
     companion object {
@@ -19,7 +19,7 @@ internal abstract class BaseGoldenEyeImpl(
     }
 
     init {
-        BaseGoldenEyeImpl.version = version
+        BaseGoldenEye.version = version
     }
 
     protected val isConfigAvailable: Boolean

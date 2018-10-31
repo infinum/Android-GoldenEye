@@ -4,7 +4,7 @@ package co.infinum.goldeneye.config.camera1
 
 import android.hardware.Camera
 import android.os.Build
-import co.infinum.goldeneye.BaseGoldenEyeImpl
+import co.infinum.goldeneye.BaseGoldenEye
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.extensions.updateParams
 import co.infinum.goldeneye.models.CameraProperty
@@ -47,7 +47,7 @@ internal class ConfigUpdateHandler(
         camera.updateParams { setPictureSize(pictureSize.width, pictureSize.height) }
         /* Update preview if AUTO_* mode is active and video is not being recorded */
         if ((config.previewScale == PreviewScale.AUTO_FILL || config.previewScale == PreviewScale.AUTO_FIT)
-            && BaseGoldenEyeImpl.state != CameraState.RECORDING_VIDEO
+            && BaseGoldenEye.state != CameraState.RECORDING_VIDEO
         ) {
             updatePreviewSize(previewSize)
         }

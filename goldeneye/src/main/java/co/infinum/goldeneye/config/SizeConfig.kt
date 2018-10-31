@@ -1,7 +1,7 @@
 package co.infinum.goldeneye.config
 
 import android.media.CamcorderProfile
-import co.infinum.goldeneye.BaseGoldenEyeImpl
+import co.infinum.goldeneye.BaseGoldenEye
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.CameraState
 import co.infinum.goldeneye.models.PreviewScale
@@ -63,7 +63,7 @@ internal abstract class BaseSizeConfig<T : Any>(
             PreviewScale.MANUAL_FILL -> field
             PreviewScale.AUTO_FIT,
             PreviewScale.AUTO_FILL ->
-                if (BaseGoldenEyeImpl.state == CameraState.RECORDING_VIDEO) {
+                if (BaseGoldenEye.state == CameraState.RECORDING_VIDEO) {
                     CameraUtils.findBestMatchingSize(videoSize, supportedPreviewSizes)
                 } else {
                     CameraUtils.findBestMatchingSize(pictureSize, supportedPreviewSizes)

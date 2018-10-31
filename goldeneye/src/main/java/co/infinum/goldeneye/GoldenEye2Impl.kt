@@ -38,7 +38,7 @@ internal class GoldenEye2Impl(
     private val onFocusChangedCallback: OnFocusChangedCallback?,
     private val pictureTransformation: PictureTransformation?,
     logger: Logger? = null
-) : BaseGoldenEyeImpl(CameraApi.VERSION_2) {
+) : BaseGoldenEye(CameraApi.VERSION_2) {
 
     private val cameraManager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     private var cameraDevice: CameraDevice? = null
