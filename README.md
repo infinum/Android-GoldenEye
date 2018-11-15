@@ -7,7 +7,7 @@
 #### Add dependency
 
 ```gradle
-implementation 'co.infinum:goldeneye:1.0.0'
+implementation 'co.infinum:goldeneye:1.1.0'
 ```
 
 #### Initialize
@@ -136,6 +136,17 @@ In case you want to try and play with advanced features, you can enable them whe
 ```kotlin
 GoldenEye.Builder(activity)
   .withAdvancedFeatures()
+  .build()
+```
+
+#### Force Camera1 API
+
+Force the use of Camera1 API regarding of the device. Camera1 is more consistent when taking pictures than Camera2 so that is the main
+reason why this could be useful. The issue with Camera1 is that some newer devices would **crash** when trying to record a video so be very cautious.
+
+```kotlin
+GoldenEye.Builder(activity)
+  .forceCamera1Api()
   .build()
 ```
 
