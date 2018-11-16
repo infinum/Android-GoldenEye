@@ -205,8 +205,9 @@ interface GoldenEye {
         }
 
         /**
-         * Returns true if GoldenEye will use Camera2 API, otherwise false.
          * Behavior can be overridden by using [setCameraApi] method.
+         *
+         * @return true if GoldenEye will use Camera2 API, otherwise false.
          */
         fun shouldUseCamera2Api() =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
