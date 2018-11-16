@@ -16,6 +16,7 @@ import android.support.annotation.RequiresPermission
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
+import co.infinum.goldeneye.models.CameraApi
 import co.infinum.goldeneye.utils.IncompatibleDevicesUtils
 import java.io.File
 
@@ -107,7 +108,7 @@ interface GoldenEye {
         private var onFocusChangedCallback: OnFocusChangedCallback? = null
         private var pictureTransformation: PictureTransformation? = PictureTransformation.Default
         private var advancedFeaturesEnabled = false
-        private var forceCamera1Api = false
+        private var cameraApi: CameraApi? = null
 
         /**
          * @see Logger
@@ -184,12 +185,30 @@ interface GoldenEye {
         fun withAdvancedFeatures() = apply { this.advancedFeaturesEnabled = true }
 
         /**
-         * Forces the use of [GoldenEye1Impl] regarding of the device.
+         * Manually set which Camera API should be used.
          *
-         * CAUTION: Video recording does not work for some newer devices that are supposed
-         * to be using Camera2 instead.
+         * It might be useful to force Camera1 API if application does not use video recording feature
+         * because it is more consistent when taking pictures with [co.infinum.goldeneye.models.FlashMode.ON].
+         *
+         * CAUTION: Video recording on newer Android devices can crash when using Camera1 API!
          */
-        fun forceCamera1Api() = apply { this.forceCamera1Api = true }
+        @Throws(IllegalArgumentException::class)
+        fun setCameraApi(cameraApi: CameraApi): GoldenEye.Builder {
+            if (cameraApi == CameraApi.CAMERA2 && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                throw IllegalArgumentException("Cannot use Camera2 on Kitkat or older devices.")
+            }
+
+            return apply { this.cameraApi = cameraApi }
+        }
+
+        /**
+         * Returns true if GoldenEye will use Camera2 API, otherwise false.
+         * Behavior can be overridden by using [setCameraApi] method.
+         */
+        fun shouldUseCamera2Api() =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                && isLegacyCamera().not()
+                && IncompatibleDevicesUtils.isIncompatibleDevice(Build.MODEL).not()
 
         /**
          * Builds GoldenEye implementation. Builds Camera1 API wrapper for devices older than
@@ -197,18 +216,14 @@ interface GoldenEye {
          */
         @SuppressLint("NewApi")
         fun build(): GoldenEye {
-            return if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-                && isLegacyCamera().not()
-                && IncompatibleDevicesUtils.isIncompatibleDevice(Build.MODEL).not()
-                && forceCamera1Api.not()
-            ) {
-                GoldenEye2Impl(
+            val pickedCameraApi = this.cameraApi ?: (if (shouldUseCamera2Api()) CameraApi.CAMERA2 else CameraApi.CAMERA1)
+
+            return when (pickedCameraApi) {
+                CameraApi.CAMERA1 -> GoldenEye1Impl(
                     activity, advancedFeaturesEnabled, onZoomChangedCallback,
                     onFocusChangedCallback, pictureTransformation, logger
                 )
-            } else {
-                GoldenEye1Impl(
+                CameraApi.CAMERA2 -> GoldenEye2Impl(
                     activity, advancedFeaturesEnabled, onZoomChangedCallback,
                     onFocusChangedCallback, pictureTransformation, logger
                 )
