@@ -191,11 +191,13 @@ interface GoldenEye {
          * because it is more consistent when taking pictures with [co.infinum.goldeneye.models.FlashMode.ON].
          *
          * CAUTION: Video recording on newer Android devices can crash when using Camera1 API!
+         *
+         * @throws IllegalArgumentException when trying to force Camera2 API on devices older than Lollipop.
          */
         @Throws(IllegalArgumentException::class)
         fun setCameraApi(cameraApi: CameraApi): GoldenEye.Builder {
             if (cameraApi == CameraApi.CAMERA2 && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                throw IllegalArgumentException("Cannot use Camera2 on Kitkat or older devices.")
+                throw IllegalArgumentException("Camera2 API is available from SDK 21.")
             }
 
             return apply { this.cameraApi = cameraApi }
