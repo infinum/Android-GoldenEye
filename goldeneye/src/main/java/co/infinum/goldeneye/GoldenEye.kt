@@ -186,7 +186,7 @@ interface GoldenEye {
         fun withAdvancedFeatures() = apply { this.advancedFeaturesEnabled = true }
 
         /**
-         * Manually set which Camera API should be used.
+         * Manually select Camera API version.
          *
          * It might be useful to force Camera1 API if application does not use video recording feature
          * because it is more consistent when taking pictures with [co.infinum.goldeneye.models.FlashMode.ON].
@@ -220,9 +220,9 @@ interface GoldenEye {
          */
         @SuppressLint("NewApi")
         fun build(): GoldenEye {
-            val pickedCameraApi = this.cameraApi ?: (if (shouldUseCamera2Api()) CameraApi.CAMERA2 else CameraApi.CAMERA1)
+            val selectedCameraApi = this.cameraApi ?: (if (shouldUseCamera2Api()) CameraApi.CAMERA2 else CameraApi.CAMERA1)
 
-            return when (pickedCameraApi) {
+            return when (selectedCameraApi) {
                 CameraApi.CAMERA1 -> GoldenEye1Impl(
                     activity, advancedFeaturesEnabled, onZoomChangedCallback,
                     onFocusChangedCallback, pictureTransformation, logger
