@@ -20,6 +20,7 @@ import co.infinum.goldeneye.models.CameraApi
 import co.infinum.goldeneye.utils.IncompatibleDevicesUtils
 import java.io.File
 
+@Suppress("MemberVisibilityCanBePrivate")
 interface GoldenEye {
 
     /**
