@@ -7,7 +7,7 @@
 #### Add dependency
 
 ```gradle
-implementation 'co.infinum:goldeneye:1.1.0'
+implementation 'co.infinum:goldeneye:1.1.1'
 ```
 
 #### Initialize
@@ -139,14 +139,15 @@ GoldenEye.Builder(activity)
   .build()
 ```
 
-#### Force Camera1 API
+#### Manually set Camera API
 
-Force the use of Camera1 API regarding of the device. Camera1 is more consistent when taking pictures than Camera2 so that is the main
-reason why this could be useful. The issue with Camera1 is that some newer devices would **crash** when trying to record a video so be very cautious.
+You can manually set Camera API and override default GoldenEye behavior. You can call `GoldenEye.preferredCameraApi(Context)` to check which
+Camera API will be used by default. It can be useful to force Camera1 API as it is more consistent when taking pictures with FlashMode.ON 
+than Camera2. The issue with Camera1 is that some newer devices would **crash** when trying to record a video so be very cautious.
 
 ```kotlin
 GoldenEye.Builder(activity)
-  .forceCamera1Api()
+  .setCameraApi(CameraApi.CAMERA1)
   .build()
 ```
 

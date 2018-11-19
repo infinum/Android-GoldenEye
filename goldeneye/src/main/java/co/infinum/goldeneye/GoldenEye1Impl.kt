@@ -36,7 +36,7 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
     private val onFocusChangedCallback: OnFocusChangedCallback?,
     private val pictureTransformation: PictureTransformation?,
     logger: Logger? = null
-) : BaseGoldenEye(CameraApi.VERSION_1) {
+) : BaseGoldenEye(CameraApi.CAMERA1) {
 
     private var camera: Camera? = null
     private var textureView: TextureView? = null

@@ -65,7 +65,7 @@ internal object CameraUtils {
         /* scaleX and scaleY are used to reverse the process and scale is used to scale image according to PreviewScale */
         val (scaleX, scaleY, scale) = calculateScale(activity, textureView, config)
 
-        if (BaseGoldenEye.version == CameraApi.VERSION_2 && getDeviceOrientation(activity) % 180 != 0) {
+        if (BaseGoldenEye.version == CameraApi.CAMERA2 && getDeviceOrientation(activity) % 180 != 0) {
             matrix.postScale(
                 textureView.height / textureView.width.toFloat() / scaleY * scale,
                 textureView.width / textureView.height.toFloat() / scaleX * scale,
