@@ -141,9 +141,9 @@ GoldenEye.Builder(activity)
 
 #### Manually set Camera API
 
-You can manually set Camera API and override default GoldenEye behavior. It can be useful to force Camera1 API as it is more consistent
-when taking pictures with FlashMode.ON than Camera2. The issue with Camera1 is that some newer devices would **crash** when trying to 
-record a video so be very cautious.   
+You can manually set Camera API and override default GoldenEye behavior. You can call `GoldenEye.preferredCameraApi(Context)` to check which
+Camera API will be used by default. It can be useful to force Camera1 API as it is more consistent when taking pictures with FlashMode.ON 
+than Camera2. The issue with Camera1 is that some newer devices would **crash** when trying to record a video so be very cautious.
 
 ```kotlin
 GoldenEye.Builder(activity)

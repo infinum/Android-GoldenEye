@@ -24,7 +24,7 @@ import java.io.File
 interface GoldenEye {
     companion object {
         /**
-         * Returned Camera API will be used by default. Change used Camera API with [GoldenEye.Builder.setCameraApi] method.
+         * Returned Camera API will be used by default. Change Camera API with [GoldenEye.Builder.setCameraApi] method.
          *
          * @return preferred Camera API that will be used by default.
          */
