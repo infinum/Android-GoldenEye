@@ -22,6 +22,40 @@ import java.io.File
 
 @Suppress("MemberVisibilityCanBePrivate")
 interface GoldenEye {
+    companion object {
+        /**
+         * Returned Camera API will be used by default. Change used Camera API with [GoldenEye.Builder.setCameraApi] method.
+         *
+         * @return preferred Camera API that will be used by default.
+         */
+        fun preferredCameraApi(context: Context) = if (shouldUseCamera2Api(context)) CameraApi.CAMERA2 else CameraApi.CAMERA1
+
+        private fun shouldUseCamera2Api(context: Context) =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                && isLegacyCamera(context).not()
+                && IncompatibleDevicesUtils.isIncompatibleDevice(Build.MODEL).not()
+
+        /**
+         * There were more issues than benefits when using Legacy camera with Camera2 API.
+         * I found it to be working much better with deprecated Camera1 API instead.
+         *
+         * @see CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+         */
+        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+        private fun isLegacyCamera(context: Context): Boolean {
+            return try {
+                val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager
+                val characteristics = cameraManager?.cameraIdList?.map { cameraManager.getCameraCharacteristics(it) }
+                val characteristic = characteristics?.firstOrNull {
+                    it.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK
+                } ?: characteristics?.get(0)
+                val hardwareLevel = characteristic?.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL)
+                hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+            } catch (t: Throwable) {
+                false
+            }
+        }
+    }
 
     /**
      * List of available cameras. List is available as soon as GoldenEye
@@ -205,22 +239,12 @@ interface GoldenEye {
         }
 
         /**
-         * Behavior can be overridden by using [setCameraApi] method.
-         *
-         * @return true if GoldenEye will use Camera2 API, otherwise false.
-         */
-        fun shouldUseCamera2Api() =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-                && isLegacyCamera().not()
-                && IncompatibleDevicesUtils.isIncompatibleDevice(Build.MODEL).not()
-
-        /**
          * Builds GoldenEye implementation. Builds Camera1 API wrapper for devices older than
          * LOLLIPOP and devices that use LEGACY camera, otherwise Camera2 API wrapper is built.
          */
         @SuppressLint("NewApi")
         fun build(): GoldenEye {
-            val selectedCameraApi = this.cameraApi ?: (if (shouldUseCamera2Api()) CameraApi.CAMERA2 else CameraApi.CAMERA1)
+            val selectedCameraApi = this.cameraApi ?: preferredCameraApi(activity)
 
             return when (selectedCameraApi) {
                 CameraApi.CAMERA1 -> GoldenEye1Impl(
@@ -234,25 +258,5 @@ interface GoldenEye {
             }
         }
 
-        /**
-         * There were more issues than benefits when using Legacy camera with Camera2 API.
-         * I found it to be working much better with deprecated Camera1 API instead.
-         *
-         * @see CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
-         */
-        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-        private fun isLegacyCamera(): Boolean {
-            return try {
-                val cameraManager = activity.getSystemService(Context.CAMERA_SERVICE) as? CameraManager
-                val characteristics = cameraManager?.cameraIdList?.map { cameraManager.getCameraCharacteristics(it) }
-                val characteristic = characteristics?.firstOrNull {
-                    it.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK
-                } ?: characteristics?.get(0)
-                val hardwareLevel = characteristic?.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL)
-                hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
-            } catch (t: Throwable) {
-                false
-            }
-        }
     }
 }
