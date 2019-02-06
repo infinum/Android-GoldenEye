@@ -7,7 +7,7 @@
 #### Add dependency
 
 ```gradle
-implementation 'co.infinum:goldeneye:1.1.1'
+implementation 'co.infinum:goldeneye:1.1.2'
 ```
 
 #### Initialize

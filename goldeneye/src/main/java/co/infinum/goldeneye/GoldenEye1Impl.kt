@@ -138,7 +138,6 @@ internal class GoldenEye1Impl @JvmOverloads constructor(
         }
 
         state = CameraState.RECORDING_VIDEO
-        applyConfig()
         startPreview()
         camera?.unlock()
         videoRecorder?.startRecording(file, object : VideoCallback {
