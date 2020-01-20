@@ -9,7 +9,8 @@ interface VideoConfig {
      * Defines the quality of recorded video.
      *
      * Default value is the first supported of [VideoQuality.RESOLUTION_2160P],
-     * [VideoQuality.RESOLUTION_1080P], [VideoQuality.RESOLUTION_720P], [VideoQuality.HIGH],
+     * [VideoQuality.RESOLUTION_1080P], [VideoQuality.RESOLUTION_720P], [VideoQuality.RESOLUTION_480P],
+     * [VideoQuality.RESOLUTION_QVGA], [VideoQuality.HIGH],
      * [VideoQuality.LOW]. If none is supported, [VideoQuality.UNKNOWN] is used.
      *
      * @see VideoQuality
@@ -51,6 +52,8 @@ internal abstract class BaseVideoConfig<T : Any>(
             supportedVideoQualities.contains(VideoQuality.RESOLUTION_2160P) -> VideoQuality.RESOLUTION_2160P
             supportedVideoQualities.contains(VideoQuality.RESOLUTION_1080P) -> VideoQuality.RESOLUTION_1080P
             supportedVideoQualities.contains(VideoQuality.RESOLUTION_720P) -> VideoQuality.RESOLUTION_720P
+            supportedVideoQualities.contains(VideoQuality.RESOLUTION_480P) -> VideoQuality.RESOLUTION_480P
+            supportedVideoQualities.contains(VideoQuality.RESOLUTION_QVGA) -> VideoQuality.RESOLUTION_QVGA
             supportedVideoQualities.contains(VideoQuality.HIGH) -> VideoQuality.HIGH
             supportedVideoQualities.contains(VideoQuality.LOW) -> VideoQuality.LOW
             else -> VideoQuality.UNKNOWN

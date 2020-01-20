@@ -16,6 +16,14 @@ enum class VideoQuality(
      */
     HIGH(CamcorderProfile.QUALITY_HIGH),
     /**
+     * @see CamcorderProfile.QUALITY_480P
+     */
+    RESOLUTION_480P(CamcorderProfile.QUALITY_480P),
+    /**
+     * @see CamcorderProfile.QUALITY_QVGA
+     */
+    RESOLUTION_QVGA(CamcorderProfile.QUALITY_QVGA),
+    /**
      * @see CamcorderProfile.QUALITY_720P
      */
     RESOLUTION_720P(CamcorderProfile.QUALITY_720P),
