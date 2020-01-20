@@ -25,6 +25,7 @@ import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.Logger
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
+import co.infinum.goldeneye.config.VideoConfig
 import co.infinum.goldeneye.models.VideoQuality
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
@@ -65,20 +66,20 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         initGoldenEye()
-        videoFile = File.createTempFile("vid", ".mp4",
+        videoFile = File.createTempFile("vid", ".mov",
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES))
         initListeners()
     }
 
     private fun initListeners() {
-        /*settingsView.setOnClickListener {
+        settingsView.setOnClickListener {
             prepareItems()
             settingsRecyclerView.apply {
                 visibility = View.VISIBLE
                 layoutManager = LinearLayoutManager(this@MainActivity)
                 adapter = settingsAdapter
             }
-        }*/
+        }
 
         takePictureView.setOnClickListener { _ ->
             goldenEye.takePicture(
