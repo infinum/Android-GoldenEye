@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.app.ActivityCompat
@@ -18,6 +19,7 @@ import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
+import android.widget.Toast
 import co.infinum.goldeneye.GoldenEye
 import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.Logger
@@ -62,7 +64,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         initGoldenEye()
-        videoFile = File.createTempFile("vid", "")
+        videoFile = File.createTempFile("vid", ".mp4",
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES))
         initListeners()
     }
 
@@ -201,11 +204,11 @@ class MainActivity : AppCompatActivity() {
             } else {
                 AlertDialog.Builder(this)
                     .setTitle("GoldenEye")
-                    .setMessage("Smartass Detected!")
-                    .setPositiveButton("I am smartass") { _, _ ->
-                        throw SmartassException
+                    .setMessage("Permission needed to access app features")
+                    .setPositiveButton("Deny") { _, _ ->
+                        throw NoPermissionException
                     }
-                    .setNegativeButton("Sorry") { _, _ ->
+                    .setNegativeButton("Allow") { _, _ ->
                         openCamera(goldenEye.availableCameras[0])
                     }
                     .setCancelable(false)
@@ -234,6 +237,7 @@ class MainActivity : AppCompatActivity() {
         MediaPlayer().apply {
             setSurface(Surface(previewVideoView.surfaceTexture))
             setDataSource(videoFile.absolutePath)
+            Toast.makeText(baseContext, videoFile.absolutePath, Toast.LENGTH_LONG).show()
             setOnCompletionListener {
                 mainHandler.postDelayed({
                     previewVideoContainer.visibility = View.GONE
@@ -258,4 +262,4 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-object SmartassException : Throwable()
+object NoPermissionException : Throwable()
