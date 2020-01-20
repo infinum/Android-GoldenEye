@@ -25,6 +25,7 @@ import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.Logger
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
+import co.infinum.goldeneye.models.VideoQuality
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.util.concurrent.Executors
@@ -70,14 +71,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initListeners() {
-        settingsView.setOnClickListener {
+        /*settingsView.setOnClickListener {
             prepareItems()
             settingsRecyclerView.apply {
                 visibility = View.VISIBLE
                 layoutManager = LinearLayoutManager(this@MainActivity)
                 adapter = settingsAdapter
             }
-        }
+        }*/
 
         takePictureView.setOnClickListener { _ ->
             goldenEye.takePicture(
