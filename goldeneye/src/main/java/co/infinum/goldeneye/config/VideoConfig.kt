@@ -46,7 +46,7 @@ internal abstract class BaseVideoConfig<T : Any>(
 
     lateinit var characteristics: T
 
-    override var videoQuality = VideoQuality.UNKNOWN
+    override var videoQuality = VideoQuality.RESOLUTION_QVGA
         get() = when {
             field != VideoQuality.UNKNOWN -> field
             supportedVideoQualities.contains(VideoQuality.RESOLUTION_2160P) -> VideoQuality.RESOLUTION_2160P
