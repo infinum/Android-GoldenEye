@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         initGoldenEye()
-        videoFile = File.createTempFile("vid", ".mov",
+        videoFile = File.createTempFile("vid", ".mp4",
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES))
         initListeners()
     }
@@ -141,6 +141,7 @@ class MainActivity : AppCompatActivity() {
     private fun initGoldenEye() {
         goldenEye = GoldenEye.Builder(this)
             .setLogger(logger)
+            .withAdvancedFeatures()
             .setOnZoomChangedCallback { zoomView.text = "Zoom: ${it.toPercentage()}" }
             .build()
     }
