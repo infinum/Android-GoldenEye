@@ -287,6 +287,4 @@ private fun saveImage(bitmap:Bitmap, title:String, context:Context):Uri{
     return Uri.parse(savedImageURL)
 }
 
-
-
 object NoPermissionException : Throwable()
