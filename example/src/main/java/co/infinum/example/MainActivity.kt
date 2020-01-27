@@ -2,13 +2,19 @@ package co.infinum.example
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ContentValues
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
+import android.provider.MediaStore.MediaColumns
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
@@ -18,6 +24,7 @@ import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
+import android.widget.Toast
 import co.infinum.goldeneye.GoldenEye
 import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.Logger
@@ -25,6 +32,9 @@ import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
+import java.io.File.separator
+import java.io.FileOutputStream
+import java.io.OutputStream
 import java.util.concurrent.Executors
 import kotlin.math.min
 
@@ -62,7 +72,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         initGoldenEye()
-        videoFile = File.createTempFile("vid", "")
+        videoFile = File.createTempFile("vid", ".mp4",
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES))
         initListeners()
     }
 
@@ -80,6 +91,7 @@ class MainActivity : AppCompatActivity() {
             goldenEye.takePicture(
                 onPictureTaken = { bitmap ->
                     if (bitmap.width <= 4096 && bitmap.height <= 4096) {
+                        saveImage(bitmap, "MyExperience" + java.util.Calendar.getInstance(), this)
                         displayPicture(bitmap)
                     } else {
                         reducePictureSize(bitmap)
@@ -136,6 +148,7 @@ class MainActivity : AppCompatActivity() {
     private fun initGoldenEye() {
         goldenEye = GoldenEye.Builder(this)
             .setLogger(logger)
+            .withAdvancedFeatures()
             .setOnZoomChangedCallback { zoomView.text = "Zoom: ${it.toPercentage()}" }
             .build()
     }
@@ -201,11 +214,11 @@ class MainActivity : AppCompatActivity() {
             } else {
                 AlertDialog.Builder(this)
                     .setTitle("GoldenEye")
-                    .setMessage("Smartass Detected!")
-                    .setPositiveButton("I am smartass") { _, _ ->
-                        throw SmartassException
+                    .setMessage("Permission needed to access app features")
+                    .setPositiveButton("Deny") { _, _ ->
+                        throw NoPermissionException
                     }
-                    .setNegativeButton("Sorry") { _, _ ->
+                    .setNegativeButton("Allow") { _, _ ->
                         openCamera(goldenEye.availableCameras[0])
                     }
                     .setCancelable(false)
@@ -234,6 +247,7 @@ class MainActivity : AppCompatActivity() {
         MediaPlayer().apply {
             setSurface(Surface(previewVideoView.surfaceTexture))
             setDataSource(videoFile.absolutePath)
+            Toast.makeText(baseContext, videoFile.absolutePath, Toast.LENGTH_LONG).show()
             setOnCompletionListener {
                 mainHandler.postDelayed({
                     previewVideoContainer.visibility = View.GONE
@@ -258,4 +272,19 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-object SmartassException : Throwable()
+// Method to save an image to gallery and return uri
+private fun saveImage(bitmap:Bitmap, title:String, context:Context):Uri{
+
+    // Save image to gallery
+    val savedImageURL = MediaStore.Images.Media.insertImage(
+            context.contentResolver,
+            bitmap,
+            title,
+            "Image of $title"
+    )
+
+    // Parse the gallery image url to uri
+    return Uri.parse(savedImageURL)
+}
+
+object NoPermissionException : Throwable()
