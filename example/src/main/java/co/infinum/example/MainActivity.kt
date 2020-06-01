@@ -9,11 +9,11 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.support.v4.app.ActivityCompat
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.app.AppCompatDelegate
-import android.support.v7.widget.LinearLayoutManager
+import androidx.core.app.ActivityCompat
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.recyclerview.widget.LinearLayoutManager
 import android.util.Log
 import android.view.Surface
 import android.view.TextureView
@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
             prepareItems()
             settingsRecyclerView.apply {
                 visibility = View.VISIBLE
-                layoutManager = LinearLayoutManager(this@MainActivity)
+                layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@MainActivity)
                 adapter = settingsAdapter
             }
         }

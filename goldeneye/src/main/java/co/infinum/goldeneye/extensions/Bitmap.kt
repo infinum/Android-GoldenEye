@@ -7,7 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.Image
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import co.infinum.goldeneye.utils.Intrinsics
 
 /**

@@ -3,7 +3,7 @@ package co.infinum.goldeneye.extensions
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.support.v4.app.ActivityCompat
+import androidx.core.app.ActivityCompat
 
 internal fun Context.hasCameraPermission() = hasPermission(Manifest.permission.CAMERA)
 internal fun Context.hasAudioPermission() = hasPermission(Manifest.permission.RECORD_AUDIO)

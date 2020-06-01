@@ -5,7 +5,7 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.media.MediaRecorder
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import android.view.Surface
 import android.view.TextureView
 import co.infinum.goldeneye.CameraConfigurationFailedException

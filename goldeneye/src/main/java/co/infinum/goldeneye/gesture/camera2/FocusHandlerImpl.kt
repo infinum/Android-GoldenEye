@@ -4,7 +4,7 @@ import android.app.Activity
 import android.graphics.Point
 import android.graphics.PointF
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl

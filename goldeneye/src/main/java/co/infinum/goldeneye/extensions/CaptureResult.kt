@@ -4,7 +4,7 @@ package co.infinum.goldeneye.extensions
 
 import android.hardware.camera2.CaptureResult
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 
 fun CaptureResult?.isLocked() = isFocusReady() && isExposureReady()
 

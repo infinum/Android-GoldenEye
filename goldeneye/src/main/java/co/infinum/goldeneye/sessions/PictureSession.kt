@@ -7,7 +7,7 @@ import android.hardware.camera2.*
 import android.hardware.camera2.params.MeteringRectangle
 import android.media.ImageReader
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import android.view.TextureView
 import co.infinum.goldeneye.*
 import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl

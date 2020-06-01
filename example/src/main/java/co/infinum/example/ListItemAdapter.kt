@@ -1,6 +1,6 @@
 package co.infinum.example
 
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,7 +9,7 @@ import android.widget.TextView
 class ListItemAdapter<T>(
     private val items: List<ListItem<T>>,
     private val onClick: (T) -> Unit
-) : RecyclerView.Adapter<ListItemAdapter.ViewHolder>() {
+) : androidx.recyclerview.widget.RecyclerView.Adapter<ListItemAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int)=
         ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_list, parent, false))
 
@@ -21,6 +21,6 @@ class ListItemAdapter<T>(
         holder.itemView.setOnClickListener { onClick(item.realItem) }
     }
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    class ViewHolder(view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view)
 
 }

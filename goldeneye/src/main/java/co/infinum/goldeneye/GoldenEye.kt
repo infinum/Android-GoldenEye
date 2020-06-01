@@ -11,8 +11,8 @@ import android.graphics.Point
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.os.Build
-import android.support.annotation.RequiresApi
-import android.support.annotation.RequiresPermission
+import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo

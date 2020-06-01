@@ -5,7 +5,7 @@ import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import android.view.TextureView
 import co.infinum.goldeneye.InitCallback
 import co.infinum.goldeneye.PictureCallback

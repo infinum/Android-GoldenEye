@@ -6,8 +6,8 @@ import android.graphics.Rect
 import android.hardware.camera2.*
 import android.hardware.camera2.params.MeteringRectangle
 import android.os.Build
-import android.support.annotation.CallSuper
-import android.support.annotation.RequiresApi
+import androidx.annotation.CallSuper
+import androidx.annotation.RequiresApi
 import android.view.Surface
 import android.view.TextureView
 import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl

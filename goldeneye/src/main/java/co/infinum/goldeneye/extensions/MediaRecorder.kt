@@ -8,7 +8,7 @@ import android.media.CamcorderProfile
 import android.media.MediaCodec
 import android.media.MediaRecorder
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.models.Facing
 import co.infinum.goldeneye.utils.CameraUtils

@@ -3,7 +3,7 @@ package co.infinum.goldeneye.config.camera2
 import android.hardware.camera2.CameraCharacteristics
 import android.media.CamcorderProfile
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import co.infinum.goldeneye.config.BaseVideoConfig
 import co.infinum.goldeneye.models.CameraProperty
 import co.infinum.goldeneye.models.VideoQuality

@@ -2,7 +2,7 @@ package co.infinum.goldeneye
 
 import android.Manifest
 import android.graphics.Bitmap
-import android.support.annotation.RequiresPermission
+import androidx.annotation.RequiresPermission
 import android.view.TextureView
 import co.infinum.goldeneye.config.CameraConfig
 import co.infinum.goldeneye.config.CameraInfo

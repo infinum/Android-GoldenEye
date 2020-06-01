@@ -2,7 +2,7 @@ package co.infinum.goldeneye.extensions
 
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import co.infinum.goldeneye.config.camera2.Camera2ConfigImpl
 import co.infinum.goldeneye.models.FlashMode
 import co.infinum.goldeneye.utils.CameraUtils

@@ -2,7 +2,7 @@ package co.infinum.goldeneye.models
 
 import android.media.CamcorderProfile
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 
 enum class VideoQuality(
     val key: Int

@@ -5,7 +5,7 @@ package co.infinum.goldeneye.models
 import android.hardware.Camera
 import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import co.infinum.goldeneye.IllegalEnumException
 
 enum class FlashMode {

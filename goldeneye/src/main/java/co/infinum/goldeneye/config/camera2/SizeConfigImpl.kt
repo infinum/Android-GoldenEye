@@ -4,7 +4,7 @@ import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import co.infinum.goldeneye.config.BaseSizeConfig
 import co.infinum.goldeneye.config.CameraInfo
 import co.infinum.goldeneye.config.VideoConfig
