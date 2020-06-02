@@ -29,15 +29,12 @@ import androidx.camera.core.impl.VideoCaptureConfig
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import kotlinx.android.synthetic.main.main_activity2.*
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.min
-
-private const val REQUEST_CODE_PERMISSIONS = 14
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
 class MainActivity : AppCompatActivity() {
@@ -49,13 +46,9 @@ class MainActivity : AppCompatActivity() {
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
     }
 
-    private var preview: Preview? = null
     private var videoCapture: VideoCapture? = null
     private var imageCapture: ImageCapture? = null
     private var camera: Camera? = null
-
-    private lateinit var outputDirectory: File
-    private lateinit var cameraExecutor: ExecutorService
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -66,17 +59,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.main_activity2)
-        if (allPermissionsGranted()) {
-            startCamera()
-        } else {
-            ActivityCompat.requestPermissions(
-                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
-            )
-        }
+        setContentView(R.layout.activity_main)
 
-        outputDirectory = getOutputDirectory()
-        cameraExecutor = Executors.newSingleThreadExecutor()
         videoFile = File.createTempFile("vid", "")
 
         initListeners()
@@ -118,6 +102,7 @@ class MainActivity : AppCompatActivity() {
         switchCameraView.setOnClickListener { _ ->
             cameraLensSelector =
                 if (cameraLensSelector == CameraSelector.DEFAULT_BACK_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+            CameraX.getCameraWithCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
             CameraX.getCameraWithCameraSelector(cameraLensSelector)
             recreateCamera()
         }
@@ -129,12 +114,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePicture(onPictureTaken: (Bitmap) -> Unit) {
-        // Get a stable reference of the modifiable image capture use case
-        val imageCapture = imageCapture ?: return
 
         // Create timestamped output file to hold the image
         val photoFile = File(
-            outputDirectory,
+            getOutputDirectory(),
             SimpleDateFormat(
                 FILENAME_FORMAT, Locale.US
             ).format(System.currentTimeMillis()) + ".jpg"
@@ -145,7 +128,7 @@ class MainActivity : AppCompatActivity() {
 
         // Setup image capture listener which is triggered after photo has
         // been taken
-        imageCapture.takePicture(
+        imageCapture?.takePicture(
             outputOptions, ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
@@ -200,10 +183,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openCamera() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+        if (allPermissionsGranted()) {
             startCamera()
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 0x1)
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
     }
 
@@ -215,7 +198,7 @@ class MainActivity : AppCompatActivity() {
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
             // Preview
-            preview = Preview.Builder()
+            val preview = Preview.Builder()
                 .build()
             imageCapture = ImageCapture.Builder()
                 .build()
@@ -232,7 +215,7 @@ class MainActivity : AppCompatActivity() {
                 camera = cameraProvider.bindToLifecycle(
                     this, cameraSelector, preview, imageCapture, videoCapture
                 )
-                preview?.setSurfaceProvider(viewFinder.createSurfaceProvider(camera?.cameraInfo))
+                preview.setSurfaceProvider(viewFinder.createSurfaceProvider(camera?.cameraInfo))
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -252,8 +235,7 @@ class MainActivity : AppCompatActivity() {
         isRecording = true
         recordVideoView.setImageResource(R.drawable.ic_stop)
 
-        val videoCapture = videoCapture ?: return
-        videoCapture.startRecording(videoFile, ContextCompat.getMainExecutor(this), object : VideoCapture.OnVideoSavedCallback {
+        videoCapture?.startRecording(videoFile, ContextCompat.getMainExecutor(this), object : VideoCapture.OnVideoSavedCallback {
             override fun onVideoSaved(file: File) {
                 previewVideoContainer.visibility = View.VISIBLE
                 if (previewVideoView.isAvailable) {
