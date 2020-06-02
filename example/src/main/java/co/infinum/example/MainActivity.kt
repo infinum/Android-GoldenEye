@@ -29,7 +29,6 @@ import androidx.camera.core.impl.VideoCaptureConfig
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.main_activity2.*
 import java.io.File
 import java.text.SimpleDateFormat
@@ -62,7 +61,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var videoFile: File
     private var isRecording = false
-    private var lensFacing = CameraSelector.LENS_FACING_BACK
+    private var cameraLensSelector = CameraSelector.DEFAULT_BACK_CAMERA
 //    private var settingsAdapter = SettingsAdapter(listOf())
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -117,9 +116,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         switchCameraView.setOnClickListener { _ ->
-            lensFacing =
-                if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
-            CameraX.getCameraWithLensFacing(lensFacing)
+            cameraLensSelector =
+                if (cameraLensSelector == CameraSelector.DEFAULT_BACK_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+            CameraX.getCameraWithCameraSelector(cameraLensSelector)
             recreateCamera()
         }
     }
@@ -223,7 +222,7 @@ class MainActivity : AppCompatActivity() {
             videoCapture = VideoCaptureConfig.Builder().build()
 
             // Select camera lens
-            val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+            val cameraSelector = cameraLensSelector
 
             try {
                 // Unbind use cases before rebinding
