@@ -6,11 +6,9 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.util.Log
 import android.view.ScaleGestureDetector
 import android.view.Surface
@@ -23,6 +21,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraX
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.VideoCapture
 import androidx.camera.core.impl.VideoCaptureConfig
@@ -31,8 +30,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Locale
 import java.util.concurrent.Executors
 import kotlin.math.min
 
@@ -115,34 +112,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun takePicture(onPictureTaken: (Bitmap) -> Unit) {
 
-        // Create timestamped output file to hold the image
-        val photoFile = File(
-            getOutputDirectory(),
-            SimpleDateFormat(
-                FILENAME_FORMAT, Locale.US
-            ).format(System.currentTimeMillis()) + ".jpg"
-        )
-
-        // Create output options object which contains file + metadata
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-
         // Setup image capture listener which is triggered after photo has
         // been taken
-        imageCapture?.takePicture(
-            outputOptions, ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageSavedCallback {
-                override fun onError(exc: ImageCaptureException) {
-                    Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
-                }
+        imageCapture?.takePicture(ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageCapturedCallback() {
+            override fun onError(exc: ImageCaptureException) {
+                Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
+            }
 
-                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val savedUri = Uri.fromFile(photoFile)
-                    val msg = "Photo capture succeeded: $savedUri"
-                    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                    val image = MediaStore.Images.Media.getBitmap(contentResolver, savedUri)
-                    onPictureTaken(image)
-                    Log.d(TAG, msg)
+            @SuppressLint("UnsafeExperimentalUsageError")
+            override fun onCaptureSuccess(image: ImageProxy) {
+                image.image?.let {
+                    onPictureTaken(it.toBitmap())
                 }
-            })
+                super.onCaptureSuccess(image)
+            }
+        })
     }
 
     private fun reducePictureSize(bitmap: Bitmap) {

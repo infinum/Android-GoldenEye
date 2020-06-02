@@ -1,8 +1,14 @@
 package co.infinum.example
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
+import android.graphics.YuvImage
+import android.media.Image
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.camera.core.ImageProxy
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import co.infinum.goldeneye.config.CameraConfig
@@ -14,6 +20,9 @@ import co.infinum.goldeneye.models.PreviewScale
 import co.infinum.goldeneye.models.Size
 import co.infinum.goldeneye.models.VideoQuality
 import co.infinum.goldeneye.models.WhiteBalanceMode
+import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+
 
 fun FocusMode.convertToString() = name.toLowerCase()
 fun FlashMode.convertToString() = name.toLowerCase()
@@ -238,4 +247,11 @@ fun <T> displayDialog(
             config.prepareItems(context, settingsAdapter)
         }
     }
+}
+
+fun Image.toBitmap(): Bitmap {
+    val buffer: ByteBuffer = planes.first().buffer
+    val bytes = ByteArray(buffer.remaining())
+    buffer.get(bytes)
+    return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
 }
