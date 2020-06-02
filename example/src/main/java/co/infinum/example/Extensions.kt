@@ -1,12 +1,19 @@
 package co.infinum.example
 
 import android.content.Context
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.widget.Toast
 import co.infinum.goldeneye.config.CameraConfig
-import co.infinum.goldeneye.models.*
+import co.infinum.goldeneye.models.AntibandingMode
+import co.infinum.goldeneye.models.ColorEffectMode
+import co.infinum.goldeneye.models.FlashMode
+import co.infinum.goldeneye.models.FocusMode
+import co.infinum.goldeneye.models.PreviewScale
+import co.infinum.goldeneye.models.Size
+import co.infinum.goldeneye.models.VideoQuality
+import co.infinum.goldeneye.models.WhiteBalanceMode
 
 fun FocusMode.convertToString() = name.toLowerCase()
 fun FlashMode.convertToString() = name.toLowerCase()
@@ -208,7 +215,8 @@ fun CameraConfig.prepareItems(context: Context, adapter: SettingsAdapter) {
     adapter.updateDataSet(settingsItems)
 }
 
-fun <T> displayDialog(context: Context, config: CameraConfig, settingsAdapter: SettingsAdapter,
+fun <T> displayDialog(
+    context: Context, config: CameraConfig, settingsAdapter: SettingsAdapter,
     title: String, listItems: List<ListItem<T>>, onClick: (T) -> Unit
 ) {
     if (listItems.isEmpty()) {
@@ -222,8 +230,8 @@ fun <T> displayDialog(context: Context, config: CameraConfig, settingsAdapter: S
         .setTitle(title)
         .show()
 
-    dialog.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recyclerView)?.apply {
-        layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
+    dialog.findViewById<RecyclerView>(R.id.recyclerView)?.apply {
+        layoutManager = LinearLayoutManager(context)
         adapter = ListItemAdapter(listItems) {
             onClick(it)
             dialog.dismiss()

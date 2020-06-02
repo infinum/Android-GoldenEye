@@ -10,7 +10,7 @@ import kotlinx.android.synthetic.main.item_settings.view.*
 
 class SettingsAdapter(
     private var settingsItems: List<SettingsItem>
-) : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
         if (viewType == 0) {
@@ -29,7 +29,7 @@ class SettingsAdapter(
     override fun getItemViewType(position: Int) = settingsItems[position].type
 
     @SuppressLint("SetTextI18n")
-    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = settingsItems[position]
         if (holder is ItemViewHolder) {
             holder.itemView.apply {
@@ -44,6 +44,6 @@ class SettingsAdapter(
         }
     }
 
-    class ItemViewHolder(view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view)
-    class HeaderViewHolder(view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view)
+    class ItemViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    class HeaderViewHolder(view: View) : RecyclerView.ViewHolder(view)
 }
