@@ -51,8 +51,6 @@ data class CameraXConfig(
     val previewSize: Size = Size(1440, 1080),
     @AspectRatio.Ratio var aspectRatio: Int = AspectRatio.RATIO_16_9,
     var pictureSize: Size? = null,
-//    var videoFrameRate: Int? = null,
-//    var videoStabilicationEnabled: Boolean = false,
     var pinchToZoomEnabled: Boolean = true,
     @ImageCapture.FlashMode var flashMode: Int = ImageCapture.FLASH_MODE_AUTO,
     var focusMode: Int = FOCUS_MODE_AUTO
@@ -102,6 +100,7 @@ fun CameraXConfig.prepareItems(context: Context, adapter: SettingsAdapter) {
                 }
             )
         },
+        // Only found a way to set frame rate but not video quality with camerax
 //        SettingsItem("Video quality:", videoQuality.convertToString()) {
 //            displayDialog(
 //                context = context,
@@ -112,6 +111,8 @@ fun CameraXConfig.prepareItems(context: Context, adapter: SettingsAdapter) {
 //                onClick = { videoQuality = it }
 //            )
 //        },
+        // Didn't find a way to do this with camerax, so if we want this, we need to use camera2 directly
+        // so this is a point for goldeneye
 //        SettingsItem("Video stabilization:", videoStabilizationEnabled.convertToString()) {
 //            if (isVideoStabilizationSupported) {
 //                displayDialog(
@@ -148,6 +149,8 @@ fun CameraXConfig.prepareItems(context: Context, adapter: SettingsAdapter) {
                 onClick = { focusMode = it }
             )
         },
+        // This is not a feature of camerax and needs to be implemented as it is in goldeneye to have it
+        // so this is another point for goldeneye
 //        SettingsItem("Tap to focus - reset focus delay:", tapToFocusResetDelay.toString()) {
 //            if (isTapToFocusSupported) {
 //                displayDialog(
