@@ -56,16 +56,6 @@ data class CameraXConfig(
     var focusMode: Int = FOCUS_MODE_AUTO
 )
 
-fun ImageCapture.Builder.applyConfigs(
-    @ImageCapture.FlashMode flashMode: Int? = null,
-    @AspectRatio.Ratio aspectRatio: Int? = null
-) {
-    apply {
-        flashMode?.let { setFlashMode(it) }
-        aspectRatio?.let { setTargetAspectRatio(it) }
-    }
-}
-
 fun CameraXConfig.prepareItems(context: Context, adapter: SettingsAdapter) {
     val settingsItems = listOf(
         SettingsItem(name = "Basic features", type = 1),
