@@ -1,5 +1,7 @@
 buildscript {
 
+    apply from: "maven.gradle"
+
     ext.sdk = [
         min   : 14,
         target: 28,
