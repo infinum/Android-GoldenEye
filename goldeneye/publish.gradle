@@ -25,8 +25,8 @@ afterEvaluate {
         }
         publications {
             release(MavenPublication) {
-                groupId = releaseConfig.group
-                version = releaseConfig.version
+                groupId = 'co.infinum'
+                version = versions.goldeneye
 
                 artifactId = 'goldeneye'
 
@@ -47,7 +47,7 @@ afterEvaluate {
                     developers {
                         developer {
                             id = 'novakmarijan'
-                            name = 'novakmarijan'
+                            name = 'Marijan Novak'
                             email = 'marijan.novak@infinum.com'
                         }
                     }
