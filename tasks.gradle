@@ -9,21 +9,6 @@ afterEvaluate {
     })
 }
 
-dokka {
-    outputFormat = 'html'
-    outputDirectory = "$buildDir/javadoc"
-}
-
-task javadocsJar(type: Jar, dependsOn: dokka) {
-    classifier = 'javadoc'
-    from dokka.outputDirectory
-}
-
-task sourcesJar(type: Jar, dependsOn: assemble) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
 task generateReadme {
     doFirst {
         def readmeFile = new File("${project.rootDir}/README.md")
