@@ -1,4 +1,10 @@
-# GoldenEye [![JCenter](https://api.bintray.com/packages/infinum/android/goldeneye/images/download.svg)](https://bintray.com/infinum/android/goldeneye/_latestVersion)
+## Deprecation notice
+
+This library is no longer being maintained. Since it is still being actively used on many projects, we will consider fixing any potential critical bugs, but there will be no further feature development nor minor bug fixing. 
+
+We recommend migrating to [CameraX](https://developer.android.com/training/camerax). While some very simple use-cases are still easier with GoldenEye, CameraX is lifecycle-aware and is an overall more complete solution.
+
+# GoldenEye
 
 <img src='./logo.svg' width='264'/>
 
