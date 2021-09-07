@@ -1,4 +1,4 @@
-## Deprecation notice
+# DEPRECATION NOTICE
 
 This library is no longer being maintained. Since it is still being actively used on many projects, we will consider fixing any potential critical bugs, but there will be no further feature development nor minor bug fixing. 
 
